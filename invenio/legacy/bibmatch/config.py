@@ -20,6 +20,7 @@ import logging
 import logging.handlers
 from invenio.config import CFG_TMPDIR
 
+
 def get_logger(logname, logfile):
     """
     Intializes and returns a logging object used in BibMatch.

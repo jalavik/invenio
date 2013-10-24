@@ -56,8 +56,8 @@ class BibMatchValidationTest(InvenioTestCase):
 
     def test_validation_get_paired_comparisons(self):
         """bibmatch - validation: check generated paired comparisons """
-        first_list = [1,2,3]
-        second_list = [4,5]
+        first_list = [1, 2, 3]
+        second_list = [4, 5]
         # Should return empty, as lists are not equal in length
         self.assertFalse(get_paired_comparisons(first_list, second_list, False))
 
@@ -144,11 +144,11 @@ class BibMatchValidationTest(InvenioTestCase):
         self.assertTrue(result)
 
         # Check longer titles
-        original_record_instances = ['Buffered Electropolishing \xe2\x80\x93 A New Way for ' \
-                                     'Achieving Extremely Smooth Surface Finish on Nb SRF ' \
+        original_record_instances = ['Buffered Electropolishing \xe2\x80\x93 A New Way for '
+                                     'Achieving Extremely Smooth Surface Finish on Nb SRF '
                                      'Cavities to be Used in Particle Accelerators']
-        matched_record_instances = ['Buffered Electropolishing: A New Way for Achieving ' \
-                                    'Extremely Smooth Surface Finish on Nb SRF Cavities ' \
+        matched_record_instances = ['Buffered Electropolishing: A New Way for Achieving '
+                                    'Extremely Smooth Surface Finish on Nb SRF Cavities '
                                     'To be Used in Particle Accelerators']
         comparisons = get_paired_comparisons(original_record_instances, matched_record_instances)
         result, dummy = compare_fieldvalues_title(comparisons, threshold, matches_needed)
