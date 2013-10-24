@@ -25,7 +25,7 @@ __revision__ = "$Id$"
 import sys
 if sys.hexversion < 0x2040000:
     # pylint: disable=W0622
-    from sets import Set as set #for "&" intersection
+    from sets import Set as set  # for "&" intersection
     # pylint: enable=W0622
 import string
 import os
@@ -36,32 +36,36 @@ from six import iteritems
 from tempfile import mkstemp
 from time import sleep
 
-from invenio.config import CFG_SITE_SECURE_URL, CFG_BIBMATCH_FUZZY_WORDLIMITS, \
-                           CFG_BIBMATCH_QUERY_TEMPLATES, \
-                           CFG_BIBMATCH_FUZZY_EMPTY_RESULT_LIMIT, \
-                           CFG_BIBMATCH_LOCAL_SLEEPTIME, \
-                           CFG_BIBMATCH_REMOTE_SLEEPTIME, \
-                           CFG_SITE_RECORD, \
-                           CFG_BIBMATCH_SEARCH_RESULT_MATCH_LIMIT
-from invenio.legacy.bibmatch.config import CFG_BIBMATCH_LOGGER, \
-                                    CFG_LOGFILE
-from invenio.utils.connector import InvenioConnector, \
-                                      InvenioConnectorAuthError
-from invenio.legacy.bibrecord import create_records, \
-    record_get_field_values, record_xml_output, record_modify_controlfield, \
-    record_has_field, record_add_field
+from invenio.base.globals.config import (CFG_SITE_SECURE_URL,
+                                         CFG_SITE_RECORD)
+from invenio.utils.connector import (InvenioConnector,
+                                     InvenioConnectorAuthError)
+from invenio.legacy.bibrecord import (create_records, record_get_field_values,
+                                      record_xml_output,
+                                      record_modify_controlfield,
+                                      record_has_field,
+                                      record_add_field)
 from invenio.legacy.bibconvert import api as bibconvert
-from invenio.legacy.search_engine import get_fieldcodes, \
-    re_pattern_single_quotes, \
-    re_pattern_double_quotes, \
-    re_pattern_regexp_quotes, \
-    re_pattern_spaces_after_colon
+from invenio.legacy.search_engine import (get_fieldcodes,
+                                          re_pattern_single_quotes,
+                                          re_pattern_double_quotes,
+                                          re_pattern_regexp_quotes,
+                                          re_pattern_spaces_after_colon)
 from invenio.legacy.search_engine.query_parser import SearchQueryParenthesisedParser
 from invenio.legacy.dbquery import run_sql
 from invenio.legacy.bibrecord.scripts.textmarc2xmlmarc import transform_file
-from invenio.legacy.bibmatch.validator import validate_matches, transform_record_to_marc, \
-                                       validate_tag, BibMatchValidationError
 from invenio.utils.text import translate_to_ascii, xml_entities_to_utf8
+
+from .config import (CFG_BIBMATCH_LOGGER,
+                     CFG_BIBMATCH_FUZZY_WORDLIMITS,
+                     CFG_BIBMATCH_QUERY_TEMPLATES,
+                     CFG_BIBMATCH_FUZZY_EMPTY_RESULT_LIMIT,
+                     CFG_BIBMATCH_LOCAL_SLEEPTIME,
+                     CFG_BIBMATCH_REMOTE_SLEEPTIME,
+                     CFG_BIBMATCH_SEARCH_RESULT_MATCH_LIMIT,
+                     CFG_LOGFILE)
+from .validator import (validate_matches, transform_record_to_marc,
+                        validate_tag, BibMatchValidationError)
 
 try:
     from six import StringIO
@@ -70,9 +74,9 @@ except ImportError:
 
 re_querystring = re.compile("\s?([^\s$]*)\[(.+?)\]([^\s$]*).*?", re.DOTALL)
 
+
 def usage():
     """Print help"""
-
     print(""" BibMatch - match bibliographic data against database, either locally or remotely
  Usage: %s [options] [QUERY]
 
@@ -212,8 +216,8 @@ def usage():
  $ bibmatch --collection 'Theses' --user admin < input.xml
     """ % (sys.argv[0],), file=sys.stderr)
     sys.exit(1)
-
     return
+
 
 class Querystring:
     """
@@ -233,7 +237,7 @@ class Querystring:
              given record. If any BibConvert formats are specified for this field, these will
              be applied.
     """
-    def __init__(self, operator="AND", clean=False, ascii_mode=False):
+    def __init__(self, operator="OR", clean=False, ascii_mode=False):
         """
         Creates Querystring instance.
 
@@ -302,7 +306,9 @@ class Querystring:
                 new_values = []
                 for value in value_list:
                     new_values.append("%s%s%s" % (field_prefix, value, field_suffix))
-                new_query = new_query.replace("%s[%s]%s" % (field_prefix, field_reference, field_suffix), \
+                new_query = new_query.replace("%s[%s]%s" % (field_prefix,
+                                                            field_reference,
+                                                            field_suffix),
                                               operator_delimiter.join(set(new_values)))
             all_queries = [new_query]
         else:
@@ -319,8 +325,12 @@ class Querystring:
             for query in query_tuples:
                 new_query = self.pattern
                 for (field_prefix, field_reference, field_suffix), value in query:
-                    new_query = new_query.replace("%s[%s]%s" % (field_prefix, field_reference, field_suffix), \
-                                                  "%s%s%s" % (field_prefix, value, field_suffix))
+                    new_query = new_query.replace("%s[%s]%s" % (field_prefix,
+                                                                field_reference,
+                                                                field_suffix),
+                                                  "%s%s%s" % (field_prefix,
+                                                              value,
+                                                              field_suffix))
                 all_queries.append(new_query)
         # Finally we concatenate all unique queries into one, delimited by chosen operator
         self.query = operator_delimiter.join(set(all_queries))
@@ -484,14 +494,14 @@ class Querystring:
             for field in tag_list:
                 # Check if it is really a reference to a tag to not confuse with e.g. regex syntax
                 tag_structure = validate_tag(field)
-                if tag_structure != None:
+                if tag_structure is not None:
                     tag, ind1, ind2, code = tag_structure
                     value_list = record_get_field_values(record, tag, ind1, ind2, code)
                     if len(value_list) > 0:
                         # Apply any BibConvert formatting functions to each value
                         updated_value_list = self._apply_formats(fieldname, value_list)
                         # Also remove any errornous XML entities. I.e. &amp; -> &
-                        updated_value_list = [xml_entities_to_utf8(v, skip=[]) \
+                        updated_value_list = [xml_entities_to_utf8(v, skip=[])
                                               for v in updated_value_list]
                         if self.ascii_mode:
                             updated_value_list = translate_to_ascii(updated_value_list)
@@ -553,6 +563,7 @@ class Querystring:
         else:
             return value_list
 
+
 def get_field_tags_from_fieldname(field):
     """
     Gets list of field 'field' for the record with 'sysno' system number from the database.
@@ -564,6 +575,7 @@ def get_field_tags_from_fieldname(field):
     for row in res:
         out.append(row[0])
     return out
+
 
 def cproduct(args):
     """
@@ -584,9 +596,11 @@ def cproduct(args):
         result = [x + [y] for x in result for y in value]
     return [tuple(res) for res in result]
 
+
 def bylen(word1, word2):
     """ Sort comparison method that compares by length """
     return len(word1) - len(word2)
+
 
 def get_longest_words(wstr, limit=5):
     """
@@ -626,6 +640,7 @@ def get_longest_words(wstr, limit=5):
         words = words[:limit]
     return words
 
+
 def add_recid(record, recid):
     """
     Add a given record-id to the record as $$001 controlfield. If an 001 field already
@@ -638,11 +653,12 @@ def add_recid(record, recid):
     @type recid: int
     """
     if record_has_field(record, '001'):
-        record_modify_controlfield(record, '001', \
-                                   controlfield_value=str(recid), \
+        record_modify_controlfield(record, '001',
+                                   controlfield_value=str(recid),
                                    field_position_global=1)
     else:
         record_add_field(record, '001', controlfield_value=str(recid))
+
 
 def match_result_output(bibmatch_recid, recID_list, server_url, query, matchmode="no match"):
     """
@@ -666,21 +682,19 @@ def match_result_output(bibmatch_recid, recID_list, server_url, query, matchmode
     @rtype str
     @return XML result string
     """
-    result = ["<!-- BibMatch-Matching-Results: -->", \
+    result = ["<!-- BibMatch-Matching-Results: -->",
               "<!-- BibMatch-Matching-Record-Identifier: %s -->" % (bibmatch_recid,)]
     for recID in recID_list:
-        result.append("<!-- BibMatch-Matching-Found: %s/%s/%s -->" \
-                             % (server_url, CFG_SITE_RECORD, recID))
-    result.append("<!-- BibMatch-Matching-Mode: %s -->" \
-                              % (matchmode,))
-    result.append("<!-- BibMatch-Matching-Criteria: %s -->" \
-                              % (query,))
+        result.append("<!-- BibMatch-Matching-Found: %s/%s/%s -->"
+                      % (server_url, CFG_SITE_RECORD, recID))
+    result.append("<!-- BibMatch-Matching-Mode: %s -->" % (matchmode,))
+    result.append("<!-- BibMatch-Matching-Criteria: %s -->" % (query,))
     return "\n".join(result)
 
-def match_records(records, qrystrs=None, search_mode=None, operator="and", \
-                  verbose=1, server_url=CFG_SITE_SECURE_URL, modify=0, \
-                  sleeptime=CFG_BIBMATCH_LOCAL_SLEEPTIME, \
-                  clean=False, collections=[], user="", password="", \
+def match_records(records, qrystrs=None, search_mode=None, operator="and",
+                  verbose=1, server_url=CFG_SITE_SECURE_URL, modify=0,
+                  sleeptime=CFG_BIBMATCH_LOCAL_SLEEPTIME,
+                  clean=False, collections=[], user="", password="",
                   fuzzy=True, validate=True, ascii_mode=False,
                   insecure_login=False):
     """
@@ -752,7 +766,7 @@ def match_records(records, qrystrs=None, search_mode=None, operator="and", \
                                   insecure_login=insecure_login)
     except InvenioConnectorAuthError as error:
         if verbose > 0:
-            sys.stderr.write("Authentication error when connecting to server: %s" \
+            sys.stderr.write("Authentication error when connecting to server: %s"
                              % (str(error),))
         CFG_BIBMATCH_LOGGER.info("-- BibMatch ending match with errors (AuthError) --")
         return [newrecs, matchedrecs, ambiguousrecs, fuzzyrecs]
@@ -791,14 +805,18 @@ def match_records(records, qrystrs=None, search_mode=None, operator="and", \
             if len(results) == 1:
                 if modify:
                     add_recid(record[0], results[0])
-                matchedrecs.append((record[0], match_result_output(record_counter, results, server_url, \
-                                                                query, "exact-matched")))
+                matchedrecs.append((record[0],
+                                    match_result_output(record_counter,
+                                                        results, server_url,
+                                                        query, "exact-matched")))
                 if (verbose > 1):
                     sys.stderr.write("Final result: match - %s/record/%s\n" % (server_url, str(results[0])))
                 CFG_BIBMATCH_LOGGER.info("Matching of record %d: Completed as 'match'" % (record_counter,))
             else:
-                ambiguousrecs.append((record[0], match_result_output(record_counter, results, server_url, \
-                                                                  query, "ambiguous-matched")))
+                ambiguousrecs.append((record[0],
+                                      match_result_output(record_counter,
+                                                          results, server_url,
+                                                          query, "ambiguous-matched")))
                 if (verbose > 1):
                     sys.stderr.write("Final result: ambiguous\n")
                 CFG_BIBMATCH_LOGGER.info("Matching of record %d: Completed as 'ambiguous'" % (record_counter,))
@@ -812,14 +830,18 @@ def match_records(records, qrystrs=None, search_mode=None, operator="and", \
                     result_lists.extend(res)
                 results = set([res for res in result_lists])
                 if len(results) == 1:
-                    fuzzyrecs.append((record[0], match_result_output(record_counter, results, server_url, \
-                                                                     query, "fuzzy-matched")))
+                    fuzzyrecs.append((record[0],
+                                      match_result_output(record_counter,
+                                                          results, server_url,
+                                                          query, "fuzzy-matched")))
                     if (verbose > 1):
                         sys.stderr.write("Final result: fuzzy\n")
                     CFG_BIBMATCH_LOGGER.info("Matching of record %d: Completed as 'fuzzy'" % (record_counter,))
                 else:
-                    ambiguousrecs.append((record[0], match_result_output(record_counter, results, server_url, \
-                                                                         query, "ambiguous-matched")))
+                    ambiguousrecs.append((record[0],
+                                          match_result_output(record_counter,
+                                                              results, server_url,
+                                                              query, "ambiguous-matched")))
                     if (verbose > 1):
                         sys.stderr.write("Final result: ambiguous\n")
                     CFG_BIBMATCH_LOGGER.info("Matching of record %d: Completed as 'ambiguous'" % (record_counter,))
@@ -831,8 +853,10 @@ def match_records(records, qrystrs=None, search_mode=None, operator="and", \
                 for res, dummy in ambiguous_results:
                     result_lists.extend(res)
                 results = set([res for res in result_lists])
-                ambiguousrecs.append((record[0], match_result_output(record_counter, results, server_url, \
-                                                                  query, "ambiguous-matched")))
+                ambiguousrecs.append((record[0],
+                                      match_result_output(record_counter,
+                                                          results, server_url,
+                                                          query, "ambiguous-matched")))
                 if (verbose > 1):
                     sys.stderr.write("Final result: ambiguous\n")
                 CFG_BIBMATCH_LOGGER.info("Matching of record %d: Completed as 'ambiguous'" % (record_counter,))
@@ -841,13 +865,14 @@ def match_records(records, qrystrs=None, search_mode=None, operator="and", \
                 if (verbose > 1):
                     sys.stderr.write("Final result: new\n")
                 CFG_BIBMATCH_LOGGER.info("Matching of record %d: Completed as 'new'" % (record_counter,))
-    CFG_BIBMATCH_LOGGER.info("-- BibMatch ending match: New(%d), Matched(%d), Ambiguous(%d), Fuzzy(%d) --" % \
+    CFG_BIBMATCH_LOGGER.info("-- BibMatch ending match: New(%d), Matched(%d), Ambiguous(%d), Fuzzy(%d) --" %
                              (len(newrecs), len(matchedrecs), len(ambiguousrecs), len(fuzzyrecs)))
     return [newrecs, matchedrecs, ambiguousrecs, fuzzyrecs]
 
-def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None, operator="and", \
-                 verbose=1, sleeptime=CFG_BIBMATCH_LOCAL_SLEEPTIME, \
-                 clean=False, collections=[], fuzzy=True, validate=True, \
+
+def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None, operator="and",
+                 verbose=1, sleeptime=CFG_BIBMATCH_LOCAL_SLEEPTIME,
+                 clean=False, collections=[], fuzzy=True, validate=True,
                  ascii_mode=False):
     """
     Matches a single record.
@@ -918,7 +943,7 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                 sys.stderr.write("\nQuery not complete. Flagged as uncertain/ambiguous...\n")
 
         # Determine proper search parameters
-        if search_mode != None:
+        if search_mode is not None:
             search_params = dict(p1=query, f1=field, m1=search_mode, of='id', c=collections)
         else:
             search_params = dict(p=query, f=field, of='id', c=collections)
@@ -931,7 +956,7 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
             result_recids = server.search_with_retry(**search_params)
         except InvenioConnectorAuthError as error:
             if verbose > 0:
-                sys.stderr.write("Authentication error when searching: %s" \
+                sys.stderr.write("Authentication error when searching: %s"
                                  % (str(error),))
             break
 
@@ -945,7 +970,7 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
             if len(result_recids) > CFG_BIBMATCH_SEARCH_RESULT_MATCH_LIMIT:
                 # Too many matches, treat as non-match
                 if (verbose > 8):
-                    sys.stderr.write("result=More then %d results...\n" % \
+                    sys.stderr.write("result=More then %d results...\n" %
                                     (CFG_BIBMATCH_SEARCH_RESULT_MATCH_LIMIT,))
                 continue
 
@@ -954,20 +979,21 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
 
             if validate:
                 # Validation can be run
-                CFG_BIBMATCH_LOGGER.info("Matching of record %d: Query (%s) found %d records: %s" % \
+                CFG_BIBMATCH_LOGGER.info("Matching of record %d: Query (%s) found %d records: %s" %
                                          (bibmatch_recid,
                                           query,
                                           len(result_recids),
                                           str(result_recids)))
+
                 exact_matches = []
                 fuzzy_matches = []
                 try:
-                    exact_matches, fuzzy_matches = validate_matches(bibmatch_recid=bibmatch_recid, \
-                                                                    record=record, \
-                                                                    server=server, \
-                                                                    result_recids=result_recids, \
-                                                                    collections=collections, \
-                                                                    verbose=verbose, \
+                    exact_matches, fuzzy_matches = validate_matches(bibmatch_recid=bibmatch_recid,
+                                                                    record=record,
+                                                                    server=server,
+                                                                    result_recids=result_recids,
+                                                                    collections=collections,
+                                                                    verbose=verbose,
                                                                     ascii_mode=ascii_mode)
                 except BibMatchValidationError, e:
                     sys.stderr.write("ERROR: %s\n" % (str(e),))
@@ -1038,27 +1064,27 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                         current_resultset = server.search_with_retry(**search_params)
                     except InvenioConnectorAuthError as error:
                         if (verbose > 0):
-                            sys.stderr.write("Authentication error when searching: %s" \
+                            sys.stderr.write("Authentication error when searching: %s"
                                              % (str(error),))
                         break
                     CFG_BIBMATCH_LOGGER.info("Results: %s" % (current_resultset[:15],))
                     if (verbose > 8):
                         if len(current_resultset) > CFG_BIBMATCH_SEARCH_RESULT_MATCH_LIMIT:
                             sys.stderr.write("\nSearching with values %s result=%s\n" %
-                                         (search_params, "More then %d results..." % \
-                                          (CFG_BIBMATCH_SEARCH_RESULT_MATCH_LIMIT,)))
+                                             (search_params, "More then %d results..." %
+                                              (CFG_BIBMATCH_SEARCH_RESULT_MATCH_LIMIT,)))
                         else:
-                            sys.stderr.write("\nSearching with values %s result=%s\n" %
-                                         (search_params, current_resultset))
+                            sys.stderr.write("\nSearching with values %s result=%s\n"
+                                             % (search_params, current_resultset))
                     sleep(sleeptime)
-                    if current_resultset == None:
+                    if current_resultset is None:
                         continue
                     if current_resultset == [] and empty_results < CFG_BIBMATCH_FUZZY_EMPTY_RESULT_LIMIT:
                         # Allows some empty results
                         empty_results += 1
                     else:
                         # Intersect results with previous results depending on current operator
-                        if result_hitset == None:
+                        if result_hitset is None:
                             result_hitset = current_resultset
                         if current_operator == '+':
                             result_hitset = list(set(result_hitset) & set(current_resultset))
@@ -1076,7 +1102,7 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                         query_out = " ".join(["%s %s" % (op, qu) for op, qu in fuzzy_query_list])
                         if validate:
                             # We can run validation
-                            CFG_BIBMATCH_LOGGER.info("Matching of record %d: Fuzzy query (%s) found %d records: %s" % \
+                            CFG_BIBMATCH_LOGGER.info("Matching of record %d: Fuzzy query (%s) found %d records: %s" %
                                                      (bibmatch_recid,
                                                       query_out,
                                                       len(result_hitset),
@@ -1084,12 +1110,12 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                             exact_matches = []
                             fuzzy_matches = []
                             try:
-                                exact_matches, fuzzy_matches = validate_matches(bibmatch_recid=bibmatch_recid, \
-                                                                                record=record, \
-                                                                                server=server, \
-                                                                                result_recids=result_hitset, \
-                                                                                collections=collections, \
-                                                                                verbose=verbose, \
+                                exact_matches, fuzzy_matches = validate_matches(bibmatch_recid=bibmatch_recid,
+                                                                                record=record,
+                                                                                server=server,
+                                                                                result_recids=result_hitset,
+                                                                                collections=collections,
+                                                                                verbose=verbose,
                                                                                 ascii_mode=ascii_mode)
                             except BibMatchValidationError, e:
                                 sys.stderr.write("ERROR: %s\n" % (str(e),))
@@ -1121,6 +1147,7 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                                     sys.stderr.write("Ambiguous\n")
     return [matched_results, ambiguous_results, fuzzy_results]
 
+
 def transform_input_to_marcxml(filename=None, file_input=""):
     """
     Takes the filename or input of text-marc and transforms it
@@ -1142,6 +1169,7 @@ def transform_input_to_marcxml(filename=None, file_input=""):
         sys.stdout = old_stdout
     return new_stdout.getvalue()
 
+
 def bibrecs_has_errors(bibrecs):
     """
     Utility function to check a list of parsed BibRec objects, directly
@@ -1153,6 +1181,7 @@ def bibrecs_has_errors(bibrecs):
     """
     return 0 in [err_code for dummy, err_code, dummy2 in bibrecs]
 
+
 def main():
     """
     Record matches database content when defined search gives
@@ -1161,32 +1190,30 @@ def main():
     """
     try:
         opts, args = getopt.getopt(sys.argv[1:], "0123hVm:fq:c:nv:o:b:i:r:tazx:",
-                 [
-                   "print-new",
-                   "print-match",
-                   "print-ambiguous",
-                   "print-fuzzy",
-                   "help",
-                   "version",
-                   "mode=",
-                   "field=",
-                   "query-string=",
-                   "config=",
-                   "no-process",
-                   "verbose=",
-                   "operator=",
-                   "batch-output=",
-                   "input=",
-                   "remote=",
-                   "text-marc-output",
-                   "alter-recid",
-                   "clean",
-                   "collection=",
-                   "user=",
-                   "no-fuzzy",
-                   "no-validation",
-                   "ascii"
-                 ])
+                                   ["print-new",
+                                    "print-match",
+                                    "print-ambiguous",
+                                    "print-fuzzy",
+                                    "help",
+                                    "version",
+                                    "mode=",
+                                    "field=",
+                                    "query-string=",
+                                    "config=",
+                                    "no-process",
+                                    "verbose=",
+                                    "operator=",
+                                    "batch-output=",
+                                    "input=",
+                                    "remote=",
+                                    "text-marc-output",
+                                    "alter-recid",
+                                    "clean",
+                                    "collection=",
+                                    "user=",
+                                    "no-fuzzy",
+                                    "no-validation",
+                                    "ascii"])
 
     except getopt.GetoptError as e:
         usage()
@@ -1321,9 +1348,9 @@ def main():
         if bibrecs_has_errors(records):
             # Still problems.. alert the user and exit
             if verbose:
-                errors = "\n".join([str(err_msg) for dummy, err_code, err_msg in records \
+                errors = "\n".join([str(err_msg) for dummy, err_code, err_msg in records
                                     if err_code == 0])
-                sys.stderr.write("\nBibMatch: Errors during record parsing:\n%s\n" % \
+                sys.stderr.write("\nBibMatch: Errors during record parsing:\n%s\n" %
                                  (errors,))
             sys.exit(1)
 

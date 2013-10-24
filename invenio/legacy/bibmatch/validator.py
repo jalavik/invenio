@@ -34,14 +34,15 @@ from six import iteritems
 from invenio.config import CFG_BIBMATCH_MATCH_VALIDATION_RULESETS, \
                            CFG_BIBMATCH_FUZZY_MATCH_VALIDATION_LIMIT, \
                            CFG_BIBMATCH_MIN_VALIDATION_COMPARISONS
-from invenio.legacy.bibmatch.config import CFG_BIBMATCH_VALIDATION_MATCHING_MODES, \
-                                    CFG_BIBMATCH_VALIDATION_RESULT_MODES, \
-                                    CFG_BIBMATCH_VALIDATION_COMPARISON_MODES, \
-                                    CFG_BIBMATCH_LOGGER
 from invenio.legacy.bibrecord import create_records, record_get_field_values
-from invenio.legacy.bibrecord.scripts.xmlmarc2textmarc import get_sysno_from_record, create_marc_record
 from invenio.legacy.bibauthorid.name_utils import (soft_compare_names,
                                                    string_partition)
+from .config import (CFG_BIBMATCH_VALIDATION_MATCHING_MODES,
+                     CFG_BIBMATCH_VALIDATION_RESULT_MODES,
+                     CFG_BIBMATCH_VALIDATION_COMPARISON_MODES,
+                     CFG_BIBMATCH_LOGGER)
+from invenio.legacy.bibrecord.scripts.xmlmarc2textmarc import (get_sysno_from_record,
+                                                               create_marc_record)
 from invenio.utils.text import translate_to_ascii
 
 re_valid_tag = re.compile("^[0-9]{3}[a-zA-Z0-9_%]{0,3}$")
@@ -51,7 +52,7 @@ class BibMatchValidationError(Exception):
     pass
 
 
-def validate_matches(bibmatch_recid, record, server, result_recids, \
+def validate_matches(bibmatch_recid, record, server, result_recids,
                      collections="", verbose=0, ascii_mode=False):
     """
     Perform record validation on a set of matches. This function will
@@ -114,7 +115,8 @@ def validate_matches(bibmatch_recid, record, server, result_recids, \
     else:
         search_params = dict(p=query, of="xm")
     CFG_BIBMATCH_LOGGER.info("Fetching records to match: %s" % (str(search_params),))
-    result_marcxml = server.search_with_retry(**search_params)
+    result_marcxml_unclean = server.search_with_retry(**search_params)
+    result_marcxml = unicode(result_marcxml_unclean, encoding='utf-8')
     # Check if record was found
     if result_marcxml:
         found_record_list = [r[0] for r in create_records(result_marcxml)]
@@ -133,11 +135,11 @@ def validate_matches(bibmatch_recid, record, server, result_recids, \
     for matched_record in found_record_list:
         recid = record_get_field_values(matched_record, tag="001")[0]
         if verbose > 8:
-            sys.stderr.write("\n Validating matched record #%d (%s):\n" % \
+            sys.stderr.write("\n Validating matched record #%d (%s):\n" %
                              (current_index, recid))
-        CFG_BIBMATCH_LOGGER.info("Matching of record %d: Comparing to matched record %s" % \
+        CFG_BIBMATCH_LOGGER.info("Matching of record %d: Comparing to matched record %s" %
                                  (bibmatch_recid, recid))
-        match_ratio = validate_match(record, matched_record, final_ruleset, \
+        match_ratio = validate_match(record, matched_record, final_ruleset,
                                      verbose, ascii_mode)
         if match_ratio == 1.0:
             # All matches were a success, this is an exact match
@@ -145,7 +147,7 @@ def validate_matches(bibmatch_recid, record, server, result_recids, \
             matches_found.append(recid)
         elif match_ratio >= CFG_BIBMATCH_FUZZY_MATCH_VALIDATION_LIMIT:
             # This means that some matches failed, but some succeeded as well. That's fuzzy...
-            CFG_BIBMATCH_LOGGER.info("Matching of record %d: Fuzzy match found -> %s" % \
+            CFG_BIBMATCH_LOGGER.info("Matching of record %d: Fuzzy match found -> %s" %
                                      (bibmatch_recid, recid))
             fuzzy_matches_found.append(recid)
         else:
@@ -154,6 +156,7 @@ def validate_matches(bibmatch_recid, record, server, result_recids, \
 
     # Return list of matching record IDs
     return matches_found, fuzzy_matches_found
+
 
 def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=False):
     """
@@ -222,8 +225,8 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
         field_tag_list = field_tags.split(',')
         if verbose > 8:
             sys.stderr.write("\nValidating tags: %s in parsing mode '%s' and comparison\
- mode '%s' as '%s' result with threshold %0.2f\n" \
-                             % (field_tag_list, compare_mode, match_mode, \
+ mode '%s' as '%s' result with threshold %0.2f\n"
+                             % (field_tag_list, compare_mode, match_mode,
                                 result_mode, threshold))
         current_matching_status = False
 
@@ -233,7 +236,7 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
         matched_record_values = []
         for field_tag in field_tag_list:
             tag_structure = validate_tag(field_tag)
-            if tag_structure != None:
+            if tag_structure is not None:
                 tag, ind1, ind2, code = tag_structure
                 # Fetch all field instances to match
                 original_values = record_get_field_values(org_record, tag, ind1, ind2, code)
@@ -300,20 +303,20 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
             comparison_function = compare_fieldvalues_normal
 
         # Get list of comparisons to perform containing extracted values
-        field_comparisons = get_paired_comparisons(original_record_values, \
-                                                   matched_record_values, \
+        field_comparisons = get_paired_comparisons(original_record_values,
+                                                   matched_record_values,
                                                    ignore_order)
 
         if verbose > 8:
             sys.stderr.write("Field comparison values:\n%s\n" % (field_comparisons,))
 
         # Run comparisons according to match_mode
-        current_matching_status, matches = comparison_function(field_comparisons, \
-                                                               threshold, \
+        current_matching_status, matches = comparison_function(field_comparisons,
+                                                               threshold,
                                                                matches_needed)
-        CFG_BIBMATCH_LOGGER.info("-- Comparing fields %s with %s = %d matches of %d" % \
-                                 (str(original_record_values), \
-                                  str(matched_record_values), \
+        CFG_BIBMATCH_LOGGER.info("-- Comparing fields %s with %s = %d matches of %d" %
+                                 (str(original_record_values),
+                                  str(matched_record_values),
                                   matches, matches_needed))
 
         ## 3. RESULT MODE
@@ -340,6 +343,7 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
         return 0.0
     return total_number_of_matches / float(total_number_of_comparisons)
 
+
 def transform_record_to_marc(record, options={'text-marc':1, 'aleph-marc':0}):
     """ This function will transform a given bibrec record into marc using
     methods from xmlmarc2textmarc in invenio.utils.text. The function returns the
@@ -355,6 +359,7 @@ def transform_record_to_marc(record, options={'text-marc':1, 'aleph-marc':0}):
     sysno = get_sysno_from_record(record, options)
     # Note: Record dict is copied as create_marc_record() perform deletions
     return create_marc_record(record.copy(), sysno, options)
+
 
 def compare_fieldvalues_normal(field_comparisons, threshold, matches_needed):
     """
@@ -392,7 +397,7 @@ def compare_fieldvalues_normal(field_comparisons, threshold, matches_needed):
     for comparisons in field_comparisons:
         for value, other_value in comparisons:
             # Value matching - put values in lower case and strip leading/trailing spaces
-            diff = difflib.SequenceMatcher(None, value.lower().strip(), \
+            diff = difflib.SequenceMatcher(None, value.lower().strip(),
                                            other_value.lower().strip()).ratio()
             if diff >= threshold:
                 matches_found += 1
@@ -401,6 +406,7 @@ def compare_fieldvalues_normal(field_comparisons, threshold, matches_needed):
         if matches_found >= matches_needed:
             return True, matches_found
     return matches_found >= matches_needed, matches_found
+
 
 def compare_fieldvalues_authorname(field_comparisons, threshold, matches_needed):
     """
@@ -441,9 +447,9 @@ def compare_fieldvalues_authorname(field_comparisons, threshold, matches_needed)
             # and compare to each unique commutative combination. Ex:
             # Doe,J vs. Smith,J -> [(('Smith,J', 'Doe,J'), ('Smith,J', 'J,Doe')),
             #                       (('J,Smith', 'Doe,J'), ('J,Smith', 'J,Doe'))]
-            author_comparisons = [pair for pair in get_paired_comparisons(\
-                                          get_reversed_string_variants(value), \
-                                          get_reversed_string_variants(other_value))][0]
+            pairs = get_paired_comparisons(get_reversed_string_variants(value),
+                                           get_reversed_string_variants(other_value))
+            author_comparisons = [pair for pair in pairs][0]
             for str1, str2 in author_comparisons:
                 # Author-name comparison - using BibAuthorid function
                 diff = soft_compare_names(str1, str2)
@@ -462,6 +468,7 @@ def compare_fieldvalues_authorname(field_comparisons, threshold, matches_needed)
     # be a little lower, using the same threshold
     result = matches_found >= matches_needed or matches_found / float(matches_needed) > threshold
     return result, matches_found
+
 
 def compare_fieldvalues_identifier(field_comparisons, threshold, matches_needed):
     """
@@ -512,6 +519,7 @@ def compare_fieldvalues_identifier(field_comparisons, threshold, matches_needed)
             return True, matches_found
     return matches_found >= matches_needed, matches_found
 
+
 def compare_fieldvalues_title(field_comparisons, threshold, matches_needed):
     """
     Performs field validation given an list of field comparisons using a method
@@ -551,16 +559,17 @@ def compare_fieldvalues_title(field_comparisons, threshold, matches_needed):
     for comparisons in field_comparisons:
         for value, other_value in comparisons:
             # TODO: KB of alias mappings of common names
-            title_comparisons = [pair for pair in _get_grouped_pairs(\
-                                            get_separated_string_variants(value), \
-                                            get_separated_string_variants(other_value))][0]
-            for str1, str2 in title_comparisons:
-                # Title comparison
-                diff = difflib.SequenceMatcher(None, str1.lower().strip(), \
-                                               str2.lower().strip()).ratio()
-                if diff >= threshold:
-                    matches_found += 1
-                    break
+            title_comparisons = _get_grouped_pairs(
+                get_separated_string_variants(value),
+                get_separated_string_variants(other_value))
+            for pair_sets in title_comparisons:
+                for str1, str2 in pair_sets:
+                    # Title comparison
+                    diff = difflib.SequenceMatcher(None, str1.lower().strip(),
+                                                   str2.lower().strip()).ratio()
+                    if diff >= threshold:
+                        matches_found += 1
+                        break
             else:
                 # We continue as no match was found
                 continue
@@ -570,6 +579,7 @@ def compare_fieldvalues_title(field_comparisons, threshold, matches_needed):
         if matches_found >= matches_needed:
             return True, matches_found
     return matches_found >= matches_needed, matches_found
+
 
 def compare_fieldvalues_date(field_comparisons, threshold, matches_needed):
     """
@@ -623,6 +633,7 @@ def compare_fieldvalues_date(field_comparisons, threshold, matches_needed):
             return True, matches_found
     return matches_found >= matches_needed, matches_found
 
+
 def get_validation_ruleset(record):
     """
     This function will iterate over any defined rule-sets in
@@ -658,7 +669,7 @@ def get_validation_ruleset(record):
     # with original record, adding to/overwritin as we go
     validation_ruleset = {}
     for pattern, rules in CFG_BIBMATCH_MATCH_VALIDATION_RULESETS:
-        if pattern == "default" or re.search(pattern, original_record_marc) != None:
+        if pattern == "default" or re.search(pattern, original_record_marc) is not None:
             for rule in rules:
                 # Simple validation of rules syntax
                 if rule['compare_mode'] not in CFG_BIBMATCH_VALIDATION_COMPARISON_MODES:
@@ -670,9 +681,9 @@ def get_validation_ruleset(record):
 
                 try:
                     # Update/Add rule in rule-set
-                    validation_ruleset[rule['tags']] = (rule['threshold'], \
-                                                        rule['compare_mode'], \
-                                                        rule['match_mode'], \
+                    validation_ruleset[rule['tags']] = (rule['threshold'],
+                                                        rule['compare_mode'],
+                                                        rule['match_mode'],
                                                         rule['result_mode'])
                 except KeyError:
                     # Bad rule-set, return None
@@ -695,6 +706,7 @@ def get_validation_ruleset(record):
             normal_list.append((tag, threshold, compare_mode, match_mode, result_mode))
     return final_list + joker_list + normal_list
 
+
 def validate_tag(field_tag):
     """
     This function will return a tuple of (tag, ind1, ind2, code) as extracted
@@ -708,7 +720,7 @@ def validate_tag(field_tag):
     @return: tuple of MARC tag parts, tag, ind1, ind2, code
     @rtype: tuple
     """
-    if re_valid_tag.match(field_tag) != None:
+    if re_valid_tag.match(field_tag) is not None:
         tag = field_tag[0:3]
         ind1 = field_tag[3:4]
         ind2 = field_tag[4:5]
@@ -719,6 +731,7 @@ def validate_tag(field_tag):
             ind2 = ""
         return tag, ind1, ind2, code
     return None
+
 
 def get_paired_comparisons(first_list, second_list, ignore_order=True):
     """
@@ -745,9 +758,10 @@ def get_paired_comparisons(first_list, second_list, ignore_order=True):
         if len(first_list) != len(second_list):
             return []
         # Now prepare direct one-to-one comparisons
-        paired_comparisons = [((first_list[i], second_list[i]),) \
-                                for i in range(0, len(first_list))]
+        paired_comparisons = [((first_list[i], second_list[i]),)
+                              for i in range(0, len(first_list))]
     return paired_comparisons
+
 
 def compare_numbers(num1, num2):
     """
@@ -769,6 +783,7 @@ def compare_numbers(num1, num2):
     @rtype: float
     """
     return 1.0 - (abs(num1 - num2) * 0.1)
+
 
 def get_separated_string_variants(s, sep=':'):
     """
@@ -821,6 +836,7 @@ def get_separated_string_variants(s, sep=':'):
             break
     return string_variants
 
+
 def get_reversed_string_variants(s, sep=','):
     """
     This function will return a tuple containing a pair of the original
@@ -841,6 +857,7 @@ def get_reversed_string_variants(s, sep=','):
     # Extract the different parts of the name using partition function.
     left, sep, right = string_partition(s, sep)
     return (left + sep + right, right + sep + left)
+
 
 def _get_grouped_pairs(first_list, second_list):
     """
