@@ -26,13 +26,13 @@ __revision__ = "$Id$"
 from invenio.base.wrappers import lazy_import
 from invenio.testsuite import make_test_suite, run_test_suite, InvenioTestCase
 
-compare_fieldvalues_normal = lazy_import('invenio.legacy.bibmatch.validator:compare_fieldvalues_normal')
-compare_fieldvalues_authorname = lazy_import('invenio.legacy.bibmatch.validator:compare_fieldvalues_authorname')
-compare_fieldvalues_identifier = lazy_import('invenio.legacy.bibmatch.validator:compare_fieldvalues_identifier')
-compare_fieldvalues_title = lazy_import('invenio.legacy.bibmatch.validator:compare_fieldvalues_title')
-compare_fieldvalues_date = lazy_import('invenio.legacy.bibmatch.validator:compare_fieldvalues_date')
-get_paired_comparisons = lazy_import('invenio.legacy.bibmatch.validator:get_paired_comparisons')
-get_longest_words = lazy_import('invenio.legacy.bibmatch.engine:get_longest_words')
+compare_fieldvalues_normal = lazy_import('invenio.modules.matcher.validator:compare_fieldvalues_normal')
+compare_fieldvalues_authorname = lazy_import('invenio.modules.matcher.validator:compare_fieldvalues_authorname')
+compare_fieldvalues_identifier = lazy_import('invenio.modules.matcher.validator:compare_fieldvalues_identifier')
+compare_fieldvalues_title = lazy_import('invenio.modules.matcher.validator:compare_fieldvalues_title')
+compare_fieldvalues_date = lazy_import('invenio.modules.matcher.validator:compare_fieldvalues_date')
+get_paired_comparisons = lazy_import('invenio.modules.matcher.validator:get_paired_comparisons')
+get_longest_words = lazy_import('invenio.modules.matcher.engine:get_longest_words')
 
 
 class BibMatchTest(InvenioTestCase):
