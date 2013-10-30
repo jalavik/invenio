@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
+## -*- mode: python; coding: utf-8; -*-
 ##
 ## This file is part of Invenio.
-## Copyright (C) 2006, 2007, 2008, 2010, 2011, 2013 CERN.
+## Copyright (C) 2013, 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -18,6 +18,9 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
+Matcher - a tool that attempts to match a record, or a batch of records,
+against existing records within Invenio; either a local instance or remote.
+
 Match bibliographic data in a MARCXML file against database content.
 
  Usage: bibmatch [options] < input.xml > output.xml
@@ -76,10 +79,19 @@ Match bibliographic data in a MARCXML file against database content.
 
 """
 
-from invenio.base.factory import with_app_context
+try:
+    from invenio.base.factory import with_app_context
+except ImportError, e:
+    print "Error: %s" % e
+    import sys
+    sys.exit(1)
 
 
 @with_app_context()
 def main():
-    from invenio.legacy.bibmatch.engine import main as engine_main
-    return engine_main()
+    from invenio.modules.matcher.cli import main as matcher_main
+    matcher_main()
+
+
+if __name__ == '__main__':
+    main()

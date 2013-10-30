@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 ## This file is part of Invenio.
-## Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2014 CERN.
+## Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2013, 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -16,8 +17,8 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
-BibMatch - tool to match records with database content of
-an Invenio instance, either locally or remotely.
+Matcher - a tool that attempts to match a record, or a batch of records,
+against existing records within Invenio; either a local instance or remote.
 
 bibmatch_validator - module containing functions for match validation step
 """
@@ -31,19 +32,20 @@ import difflib
 
 from six import iteritems
 
-from invenio.config import CFG_BIBMATCH_MATCH_VALIDATION_RULESETS, \
-                           CFG_BIBMATCH_FUZZY_MATCH_VALIDATION_LIMIT, \
-                           CFG_BIBMATCH_MIN_VALIDATION_COMPARISONS
 from invenio.legacy.bibrecord import create_records, record_get_field_values
-from invenio.legacy.bibauthorid.name_utils import (soft_compare_names,
-                                                   string_partition)
-from .config import (CFG_BIBMATCH_VALIDATION_MATCHING_MODES,
-                     CFG_BIBMATCH_VALIDATION_RESULT_MODES,
-                     CFG_BIBMATCH_VALIDATION_COMPARISON_MODES,
-                     CFG_BIBMATCH_LOGGER)
 from invenio.legacy.bibrecord.scripts.xmlmarc2textmarc import (get_sysno_from_record,
                                                                create_marc_record)
+from invenio.legacy.bibauthorid.name_utils import (soft_compare_names,
+                                                   string_partition)
 from invenio.utils.text import translate_to_ascii
+
+from .config import (MATCHER_MATCH_VALIDATION_RULESETS,
+                     MATCHER_FUZZY_MATCH_VALIDATION_LIMIT,
+                     MATCHER_MIN_VALIDATION_COMPARISONS,
+                     MATCHER_VALIDATION_MATCHING_MODES,
+                     MATCHER_VALIDATION_RESULT_MODES,
+                     MATCHER_VALIDATION_COMPARISON_MODES)
+
 
 re_valid_tag = re.compile("^[0-9]{3}[a-zA-Z0-9_%]{0,3}$")
 
@@ -96,15 +98,15 @@ def validate_matches(bibmatch_recid, record, server, result_recids,
     # Generate final rule-set by analyzing the record
     final_ruleset = get_validation_ruleset(record)
     if not final_ruleset:
-        raise BibMatchValidationError("Bad configuration rule-set." \
-                                      "Please check that CFG_BIBMATCH_MATCH_VALIDATION_RULESETS" \
+        raise BibMatchValidationError("Bad configuration rule-set."
+                                      "Please check that MATCHER_MATCH_VALIDATION_RULESETS"
                                       " is formed correctly.")
 
     if verbose > 8:
         sys.stderr.write("\nStart record validation:\n\nFinal validation ruleset used:\n")
         pp = pprint.PrettyPrinter(stream=sys.stderr, indent=2)
         pp.pprint(final_ruleset)
-    CFG_BIBMATCH_LOGGER.info("Final validation ruleset used: %s" % (final_ruleset,))
+    MATCHER_LOGGER.info("Final validation ruleset used: %s" % (final_ruleset,))
 
     # Fetch all records in MARCXML and convert to BibRec
     found_record_list = []
@@ -114,7 +116,7 @@ def validate_matches(bibmatch_recid, record, server, result_recids,
         search_params = dict(p=query, of="xm", c=collections)
     else:
         search_params = dict(p=query, of="xm")
-    CFG_BIBMATCH_LOGGER.info("Fetching records to match: %s" % (str(search_params),))
+    MATCHER_LOGGER.info("Fetching records to match: %s" % (str(search_params),))
     result_marcxml_unclean = server.search_with_retry(**search_params)
     result_marcxml = unicode(result_marcxml_unclean, encoding='utf-8')
     # Check if record was found
@@ -123,12 +125,12 @@ def validate_matches(bibmatch_recid, record, server, result_recids,
         # Check if BibRecord generation was successful
         if not found_record_list:
             # Error fetching records. Unable to validate. Abort.
-            raise BibMatchValidationError("Error retrieving MARCXML for possible matches from %s. Aborting." \
+            raise BibMatchValidationError("Error retrieving MARCXML for possible matches from %s. Aborting."
                                           % (server.server_url,))
         if len(found_record_list) < len(result_recids):
             # Error fetching all records. Will still continue.
-            sys.stderr.write("\nError retrieving all MARCXML for possible matched records from %s.\n" \
-                              % (server.server_url,))
+            sys.stderr.write("\nError retrieving all MARCXML for possible matched records from %s.\n"
+                             % (server.server_url,))
 
     # Validate records one-by-one, adding any matches to the list of matching record IDs
     current_index = 1
@@ -137,22 +139,22 @@ def validate_matches(bibmatch_recid, record, server, result_recids,
         if verbose > 8:
             sys.stderr.write("\n Validating matched record #%d (%s):\n" %
                              (current_index, recid))
-        CFG_BIBMATCH_LOGGER.info("Matching of record %d: Comparing to matched record %s" %
+        MATCHER_LOGGER.info("Matching of record %d: Comparing to matched record %s" %
                                  (bibmatch_recid, recid))
         match_ratio, fuzzy = validate_match(record, matched_record, final_ruleset,
                                             verbose, ascii_mode)
 
         if match_ratio == 1.0 and not fuzzy:
             # All matches were a success, this is an exact match
-            CFG_BIBMATCH_LOGGER.info("Matching of record %d: Exact match found -> %s" % (bibmatch_recid, recid))
+            MATCHER_LOGGER.info("Matching of record %d: Exact match found -> %s" % (bibmatch_recid, recid))
             matches_found.append(recid)
-        elif match_ratio >= CFG_BIBMATCH_FUZZY_MATCH_VALIDATION_LIMIT or fuzzy:
+        elif match_ratio >= MATCHER_FUZZY_MATCH_VALIDATION_LIMIT or fuzzy:
             # This means that some matches failed, but some succeeded as well. That's fuzzy...
-            CFG_BIBMATCH_LOGGER.info("Matching of record %d: Fuzzy match found -> %s" %
+            MATCHER_LOGGER.info("Matching of record %d: Fuzzy match found -> %s" %
                                      (bibmatch_recid, recid))
             fuzzy_matches_found.append(recid)
         else:
-            CFG_BIBMATCH_LOGGER.info("Matching of record %d: Not a match" % (bibmatch_recid,))
+            MATCHER_LOGGER.info("Matching of record %d: Not a match" % (bibmatch_recid,))
         current_index += 1
 
     # Return list of matching record IDs
@@ -200,7 +202,6 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
         'fuzzy'     : a failed match will cause the validation to continue on other rules (if any)
                       so long as it is the only rule that is failing, else exit as failure.
                       a successful match will cause the validation to continue on other rules (if any)
-
 
     Fields are considered matching when all its subfields or values match. ALL matching strategy
     must return successfully for a match to be validated (except for 'joker' mode).
@@ -320,7 +321,7 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
         current_matching_status, matches = comparison_function(field_comparisons,
                                                                threshold,
                                                                matches_needed)
-        CFG_BIBMATCH_LOGGER.info("-- Comparing fields %s with %s = %d matches of %d" %
+        MATCHER_LOGGER.info("-- Comparing fields %s with %s = %d matches of %d" %
                                  (str(original_record_values),
                                   str(matched_record_values),
                                   matches, matches_needed))
@@ -350,15 +351,14 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
             else:
                 if verbose > 8:
                     sys.stderr.write("Fields not matching. \n")
-    if total_number_of_matches < CFG_BIBMATCH_MIN_VALIDATION_COMPARISONS \
-        or total_number_of_comparisons == 0:
+    if (total_number_of_matches < MATCHER_MIN_VALIDATION_COMPARISONS
+       or total_number_of_comparisons == 0):
         return (0.0, fuzzy_flag)
     ratio = total_number_of_matches / float(total_number_of_comparisons)
     return (ratio, fuzzy_flag)
 
 
-
-def transform_record_to_marc(record, options={'text-marc':1, 'aleph-marc':0}):
+def transform_record_to_marc(record, options={'text-marc': 1, 'aleph-marc': 0}):
     """ This function will transform a given bibrec record into marc using
     methods from xmlmarc2textmarc in invenio.utils.text. The function returns the
     record as a MARC string.
@@ -651,7 +651,7 @@ def compare_fieldvalues_date(field_comparisons, threshold, matches_needed):
 def get_validation_ruleset(record):
     """
     This function will iterate over any defined rule-sets in
-    CFG_BIBMATCH_MATCH_VALIDATION_RULESETS, generating a validation
+    MATCHER_MATCH_VALIDATION_RULESETS, generating a validation
     rule-set for use when comparing records.
 
     in the order of appearance. Meaning that the last rules will have
@@ -682,15 +682,15 @@ def get_validation_ruleset(record):
     # Lets parse the rule-set configuration to try to match rule-sets
     # with original record, adding to/overwritin as we go
     validation_ruleset = {}
-    for pattern, rules in CFG_BIBMATCH_MATCH_VALIDATION_RULESETS:
+    for pattern, rules in MATCHER_MATCH_VALIDATION_RULESETS:
         if pattern == "default" or re.search(pattern, original_record_marc) is not None:
             for rule in rules:
                 # Simple validation of rules syntax
-                if rule['compare_mode'] not in CFG_BIBMATCH_VALIDATION_COMPARISON_MODES:
+                if rule['compare_mode'] not in MATCHER_VALIDATION_COMPARISON_MODES:
                     return
-                if rule['match_mode'] not in CFG_BIBMATCH_VALIDATION_MATCHING_MODES:
+                if rule['match_mode'] not in MATCHER_VALIDATION_MATCHING_MODES:
                     return
-                if rule['result_mode'] not in CFG_BIBMATCH_VALIDATION_RESULT_MODES:
+                if rule['result_mode'] not in MATCHER_VALIDATION_RESULT_MODES:
                     return
 
                 try:

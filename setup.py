@@ -188,7 +188,8 @@ setup(
         'console_scripts': [
             'inveniomanage = invenio.base.manage:main',
             'plotextractor = invenio.utils.scripts.plotextractor:main',
-            # Legacy
+            'matcher = invenio.modules.matcher.scripts.matcher:main',
+            ## Legacy
             'alertengine = invenio.legacy.webalert.scripts.alertengine:main',
             'batchuploader = invenio.legacy.bibupload.scripts.batchuploader',
             'bibcircd = invenio.legacy.bibcirculation.scripts.bibcircd:main',
@@ -199,7 +200,6 @@ setup(
             'bibedit = invenio.legacy.bibedit.scripts.bibedit:main',
             'bibencode = invenio.modules.encoder.scripts.encoder:main',
             'bibindex = invenio.legacy.bibindex.scripts.bibindex:main',
-            'bibmatch = invenio.legacy.bibmatch.scripts.bibmatch:main',
             'bibrank = invenio.legacy.bibrank.scripts.bibrank:main',
             'bibrankgkb = invenio.legacy.bibrank.scripts.bibrankgkb:main',
             'bibreformat = invenio.legacy.bibformat.scripts.bibreformat:main',
