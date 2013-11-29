@@ -44,9 +44,9 @@ except IOError:
 # during record validation.
 CFG_BIBMATCH_VALIDATION_MATCHING_MODES = ['title', 'author', 'identifier', 'date', 'normal']
 
-# CFG_BIBMATCH_VALIDATION_RESULT_MODES - list of supported result modes
-# during record validation.
-CFG_BIBMATCH_VALIDATION_RESULT_MODES = ['normal', 'final', 'joker']
+## CFG_BIBMATCH_VALIDATION_RESULT_MODES - list of supported result modes
+## during record validation.
+CFG_BIBMATCH_VALIDATION_RESULT_MODES = ['normal', 'final', 'joker', 'fuzzy']
 
 # CFG_BIBMATCH_VALIDATION_COMPARISON_MODES - list of supported parsing modes
 # during record validation.
