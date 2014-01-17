@@ -52,7 +52,7 @@ class approval_widget(Form):
                  'w_metadata_list': w_metadata_list,
                  'workflow_func_list': workflow_func_list})
 
-    def run_widget(self, bwobject_id, request):
+    def run_widget(self, object_id, request):
         """
         Resolves the action taken in the approval widget
         """
@@ -61,15 +61,15 @@ class approval_widget(Form):
         from ..views.holdingpen import _delete_from_db
         from ..models import BibWorkflowObject
 
-        bwobject = BibWorkflowObject.query.get(bwobject_id)
+        bwobject = BibWorkflowObject.query.get(object_id)
 
         if request.form['decision'] == 'Accept':
             bwobject.remove_widget()
-            continue_oid_delayed(bwobject_id)
+            continue_oid_delayed(object_id)
             flash('Record Accepted')
             
         elif request.form['decision'] == 'Reject':
-            _delete_from_db(bwobject_id)
+            _delete_from_db(object_id)
             flash('Record Rejected')
 
 approval_widget.__title__ = 'Approve Record'
