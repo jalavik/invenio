@@ -28,14 +28,16 @@
             url.widget = "{{ url_for('holdingpen.show_widget') }}";
             url.details = "{{ url_for('holdingpen.details')|safe }}";
             url.batch_widget = "{{ url_for('holdingpen.batch_widget') }}";
+            url.preview = "{{ url_for('holdingpen.entry_data_preview') }}";
 
             init_urls(url);
             init_urls_approval(url);
             oTable = init_datatable();
 
-            setInterval(function(){
-                oTable.fnDraw(false);
-            }, 5000);
+            // setInterval(function(){
+            //     oTable.fnDraw(false);
+            //     oTable.fnReloadAjax();
+            // }, 5000);
         });
     </script>
 {% endblock javascript %}
@@ -49,13 +51,10 @@
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
-            <li class="active">
-                <a href="#">Home</a>
-            </li>
            <!--  <li><a href="#">Assigned to me</a></li> -->
             <p class="navbar-text" style="margin-right:0px; color:light gray;">Show Records by:</p>
             <li class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Actions<b class="caret"></b></a>
+                <a class="dropdown-toggle dropdown-headline" data-toggle="dropdown" href="#">Actions<b class="caret"></b></a>
                 <ul class="dropdown-menu">
                 {% set i = 0 %}
                 {% for task in widget_list.iterkeys() %}
@@ -65,7 +64,7 @@
                 </ul>
             </li>
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Status<b class="caret"></b></a>
+                <a href="#" class="dropdown-toggle dropdown-headline" data-toggle="dropdown">Status<b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu">
                     <li><a id="version-halted" class="version-selection" name="Halted">Halted</a></li>
                     <li><a id="version-final" class="version-selection" name="Final">Completed</a></li>
@@ -73,7 +72,7 @@
                 </ul>
             </li>
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Type<b class="caret"></b></a>
+                <a href="#" class="dropdown-toggle dropdown-headline" data-toggle="dropdown">Type<b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu">
                     <li><a id="type-record" class="type-selection" name="{{ type_list.RECORD }}">Record</a></li>
                     <li><a id="type-submission" class="type-selection" name="{{ type_list.DEPOSIT }}">Deposit</a></li>
@@ -81,7 +80,7 @@
                 </ul>
             </li>
         </ul>
-        <ul class="nav navbar-nav pull-right">
+        <ul id="navbar-right" class="nav navbar-nav pull-right">
         </ul>
       </div>
     </nav>

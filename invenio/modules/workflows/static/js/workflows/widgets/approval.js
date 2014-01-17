@@ -20,7 +20,9 @@
 var bwoid;
 var datapreview = "hd";
 var number_of_objs = $(".theform").length;
+console.log(number_of_objs);
 var current_number = number_of_objs-1;
+console.log(current_number);
 url = new Object();
 
 function init_urls_approval(url_){
@@ -59,7 +61,25 @@ function approveAll() {
     var acceptBtn = '<button type="button" class="btn btn-success">'+
                     '<a id="accept-multi" href="javascript:void(0)" class="mini-approval-btn">'+
                     'Accept</a></button>';
-    $('#multi-approval').append(rejectBtn, acceptBtn);
+    if($('#batch-btn').exists()){
+
+    }
+    else{
+        var batch_btn = '<li><a id="batch-btn" style="cursor:pointer">Multiple Approval</a></li>';
+        $('#navbar-right').append(batch_btn);
+        $('#batch-btn').on('click', function() {
+        console.log("HERE");
+        if (rowList.length >= 1){
+            var rowList_out = JSON.stringify(rowList);
+            console.log(rowList_out);
+            window.location = url.batch_widget + "?bwolist=" + rowList_out;
+            $(this).prop("disabled", true);
+            return false;
+        }
+    });
+    }
+
+    // $('#multi-approval').append(rejectBtn, acceptBtn);
     $('#accept-multi').click( function(){
         for(i=0; i<recordsToApprove.length; i++){
             jQuery.ajax({
@@ -78,11 +98,11 @@ function approveAll() {
     });
 };
 
-function mini_approval(decision, event, objectid){
+function mini_approval(decision, event, object_id){
     jQuery.ajax({
         type: "POST",
         url: url.resolve_widget,
-        data: {'objectid': objectid,
+        data: {'object_id': object_id,
                'widget': "approval_widget",
                'decision': decision},
         success: function(json){
@@ -114,13 +134,17 @@ $(document).ready(function(){
     $('.theform #submitButton').click( function(event) {
         event.preventDefault();
 
-        var form_id = $(this)[0].form.parentElement.previousElementSibling.id;
-        id_number = form_id.substring(form_id.indexOf("d")+1);
-        btn_div_id = "decision-btns"+id_number;
-        hr_id = "hr"+id_number;
+        var form_name = $(this)[0].form.name;
+        var bwo_id = form_name.substring(form_name.indexOf('bwobject_id')+12);
+        var form_id = $(this)[0].form.id.substring(4);
+
+        // id_number = form_id.substring(form_id.indexOf("d")+1);
+        btn_div_id = "decision-btns"+form_id;
+        hr_id = "hr"+form_id;
         
         formdata = $(this)[0].value;
         formurl = event.currentTarget.parentElement.name;
+        console.log(formurl);
         $.ajax({
             type: "POST",
             url: formurl,
@@ -146,8 +170,8 @@ $(document).ready(function(){
     window.setDataPreview = function(dp, id){
         bwoid = id;
         datapreview = dp;
-        console.log(url_preview);
-        data_preview(url_preview, bwoid, datapreview);
+        console.log(url.preview);
+        data_preview(url.preview, bwoid, datapreview);
     }
 
     $('#submitButtonMini').click( function (event){

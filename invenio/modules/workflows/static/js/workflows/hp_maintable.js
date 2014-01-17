@@ -68,7 +68,6 @@ function init_datatable(){
                     $(this).addClass('maintablerowhover');
                 });
             });
-
             $('table#maintable td').bind('mouseleave', function () {
                 $(this).parent().children().each(function() {
                     $(this).removeClass('maintablerowhover');
@@ -81,25 +80,15 @@ function init_datatable(){
     return oTable;
 }
 
-$('#batch_btn').on('click', function() {
-    if (rowList.length >= 1){
-        var rowList_out = JSON.stringify(rowList);
-        console.log(rowList_out);
-        window.location = url.batch_widget + "?bwolist=" + rowList_out;
-        $(this).prop("disabled", true);
-        return false;
-    }
-});
-
-$('#refresh_button').on('click', function() {
-    jQuery.ajax({
-        url: url.refresh,
-        success: function(json){
+// $('#refresh_button').on('click', function() {
+//     jQuery.ajax({
+//         url: url.refresh,
+//         success: function(json){
             
-        }
-    });
-    oTable.fnDraw(false);
-});
+//         }
+//     });
+//     oTable.fnDraw(false);
+// });
 
 // DataTables row selection functions
 //***********************************
@@ -265,19 +254,21 @@ window.addEventListener("keydown", function(e){
 });
 
 function selectCellByTitle(row, title){
-    console.log(row);
-    console.log(title);
     for(var i=0; i<oSettings.aoHeader[0].length; i++){
-        console.log(oSettings.aoHeader[0]);
         var trimmed_title = $.trim(oSettings.aoHeader[0][i].cell.innerText);
-        console.log(trimmed_title);
         if(trimmed_title === title){
-            console.log("returning");
-            console.log(i);
-            console.log($(row).children()[i - 1]);
             return $(row).children()[i - 1];
         }
     }
+}
+
+function getCellIndex(row, title){
+    for(var i=0; i<oSettings.aoHeader[0].length; i++){
+        var trimmed_title = $.trim(oSettings.aoHeader[0][i].cell.innerText);
+        if(trimmed_title === title){
+            return i
+        }
+    }   
 }
 
 function selectRow(row, id, e, oSettings) {
@@ -287,9 +278,9 @@ function selectRow(row, id, e, oSettings) {
         selectRange(row);
     }
     else{
-        var widget_name = selectCellByTitle(row, 'Actions').innerText;    
-        widget_name = widget_name.substring(0, widget_name.length-4);
-        
+        if(selectCellByTitle(row, 'Actions').childNodes[0].id === 'submitButtonMini'){
+            widget_name = 'Approve Record';
+        }
         if($.inArray(id, rowList) <= -1){
             // Select row
             rowList.push(id);
@@ -299,6 +290,7 @@ function selectRow(row, id, e, oSettings) {
             if (selectCellByTitle(row, 'Actions').innerText != 'N/A'){                    
                 if(widget_name === 'Approve Record'){
                     recordsToApprove.push(id);
+                    console.log(recordsToApprove);
                 }
             }
 
@@ -340,7 +332,7 @@ $(document).keyup(function(e){
 $('.task-btn').on('click', function(){
     if($.inArray($(this)[0].name, tagList) <= -1){
         var widget_name = $(this)[0].name;
-        $('#tag-area').append('<div class="alert alert-info tag-alert col-md-1">'+widget_name+'<a id="'+widget_name+'class="close-btn" data-dismiss="alert" name='+widget_name+' onclick="closeTag(this.parentElement)">&times;</a></div>');
+        $('#tag-area').append('<div class="alert alert-info tag-alert col-md-1">'+widget_name+'<a id="'+widget_name+'" class="close-btn pull-right" data-dismiss="alert" name='+widget_name+' onclick="closeTag(this.parentElement)">&times;</a></div>');
         tagList.push($(this)[0].name);
         oTable.fnFilter($(this)[0].name);
 
@@ -348,7 +340,8 @@ $('.task-btn').on('click', function(){
     else{
         closeTag($('#'+widget_name));
         oTable.fnFilter( '^$', 4, true, false );
-        $('#refresh_button').click();
+        // $('#refresh_button').click();
+        oTable.fnDraw(false);
     }   
     // requestNewObjects();
 });
@@ -410,7 +403,7 @@ function requestNewObjects(){
         contentType: 'application/json;charset=UTF-8',
         traditional: true,
         success: function(result) {
-            $('#refresh_button').click();
+            oTable.fnDraw(false);
         }
     });
 }
@@ -422,6 +415,10 @@ function isInt(n) {
 function emptyLists(){
     rowList = [];
     rowIndexList = [];
+}
+
+$.fn.exists = function () {
+    return this.length !== 0;
 }
 
 function bootstrap_alert(message) {
