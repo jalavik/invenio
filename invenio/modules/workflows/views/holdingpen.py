@@ -209,6 +209,8 @@ def load_table(version_showing):
     if a_search or rebuild_containers:
         # FIXME: Temp measure until Redis is hooked up
         from ..containers import create_hp_containers
+        print 'rebuilding containers'
+        print 'with version:', VERSION_SHOWING
         bwolist = create_hp_containers(sSearch=a_search, version_showing=VERSION_SHOWING)
 
     if 'iSortCol_0' in current_app.config:

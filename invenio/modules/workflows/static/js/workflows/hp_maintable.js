@@ -62,8 +62,8 @@ function init_datatable(){
         }
     });
     oSettings = oTable.fnSettings();
-
     return oTable;
+    // $('#version-halted').click();
 }
 
 $('#batch_btn').on('click', function() {
@@ -319,23 +319,44 @@ $(document).keyup(function(e){
 $('.task-btn').on('click', function(){
     if($.inArray($(this)[0].name, tagList) <= -1){
         var widget_name = $(this)[0].name;
-        console.log($(this));
-        $('#tag-area').html('');
-        $('#tag-area').append('<div class="alert alert-info tag-alert span1">'+widget_name+'<a class="close-btn" data-dismiss="alert" name='+widget_name+' onclick="closeTag(this)">&times;</a></div>');
-        tagList = [];
-
+        $('#tag-area').append('<div class="alert alert-info tag-alert col-md-1">'+widget_name+'<a id="'+widget_name+'class="close-btn" data-dismiss="alert" name='+widget_name+' onclick="closeTag(this.parentElement)">&times;</a></div>');
         tagList.push($(this)[0].name);
+        oTable.fnFilter($(this)[0].name);
+
     }
-    console.log($(this));
-    oTable.fnFilter($(this)[0].name);
+    else{
+        closeTag($('#'+widget_name));
+        oTable.fnFilter( '^$', 4, true, false );
+        $('#refresh_button').click();
+    }   
+    // requestNewObjects();
+});
+
+$('.version-selection').on('click', function(){
+    console.log($(this)[0].name);
+    console.log(tagList);
+
+    if($.inArray($(this)[0].name, tagList) <= -1){
+        console.log("TAG NOT IN TAGLIST");
+        $('#tag-area').append('<div id="tag-version-'+$(this)[0].name+'" name="'+$(this)[0].name+'" class="alert alert-info tag-alert col-md-1">'+$(this)[0].name+'<a class="close-btn pull-right" data-dismiss="alert" onclick="closeTag(this.parentElement)">&times;</a></div>');
+        tagList.push($(this)[0].name);
+    } 
+    else{
+        closeTag($('#tag-version-'+$(this)[0].name)[0]);
+    }    
+    requestNewObjects();
 });
 
 function closeTag(obj){
-    tagList = [];
-    $('#tag-area').html('');
-    oTable.fnFilter('');
-    // tagList.splice(tagList.indexOf(obj.name), 1);
-    console.log(tagList);
+    // console.log(tagList);
+    // console.log(obj);
+    // console.log(obj.name);
+    var tag_name = obj.innerText.substr(0,obj.innerText.length-1);
+    console.log(tag_name);
+    tagList.splice(tagList.indexOf(obj.name), 1);
+    
+    obj.remove();
+    requestNewObjects();
 };
 //***********************************
 
@@ -353,15 +374,13 @@ function fnGetSelected( oTableLocal ){
     return aReturn;
 }
 
-$('.version_selection').on('click', function(){
-    var version_final = $('#version_final')[0];
-    var version_running = $('#version_running')[0];
-    var version_halted = $('#version_halted')[0];
-
+function requestNewObjects(){
     var version_showing = new Object;
-    version_showing['final'] = (version_final.checked) ? true : false;
-    version_showing['halted'] = (version_halted.checked) ? true : false;
-    version_showing['running'] = (version_running.checked) ? true : false;
+    // var widget_showing = new Object;
+
+    version_showing['final'] = ($.inArray('Final', tagList) <= -1) ? false : true;
+    version_showing['halted'] = ($.inArray('Halted', tagList) <= -1) ? false : true;
+    version_showing['running'] = ($.inArray('Running', tagList) <= -1) ? false : true;
 
     $.ajax({
         type : "POST",
@@ -372,8 +391,8 @@ $('.version_selection').on('click', function(){
         success: function(result) {
             $('#refresh_button').click();
         }
-    });    
-});
+    });
+}
 
 function isInt(n) {
    return typeof n === 'number' && n % 1 === 0;
