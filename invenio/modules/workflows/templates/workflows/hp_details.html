@@ -147,11 +147,11 @@
                                 {% endfor %}
 
                                 {% if bwobject.version == 1 %}
-                                    <span class="badge badge-success">Completed</span>
+                                    <span class="label label-success">Completed</span>
                                 {% elif bwobject.version == 2 %}
-                                    <span class="badge badge-warning">Halted</span>
+                                    <span class="label label-warning">Halted</span>
                                 {% else %}
-                                    <span class="badge badge-info">Initial</span>
+                                    <span class="label label-info">Initial</span>
                                 {% endif %}
                             </tbody>
                         </table>

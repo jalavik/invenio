@@ -40,10 +40,11 @@ def create_hp_containers(iSortCol_0=None, sSortDir_0=None,
     ).all()
 
     print "VERSION:", version_showing
-    print "BEFORE:", len(bwobject_list)
     #bwobject_list = [o for o in bwobject_list if o.data_type in type_showing]
 
+    print 'GOT THAT MANY RECORDS HERE:', len(bwobject_list)
     if sSearch:
+        print sSearch
         if len(sSearch) < 4:
             pass
         else:
