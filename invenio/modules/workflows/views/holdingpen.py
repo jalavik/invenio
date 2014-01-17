@@ -175,28 +175,20 @@ def load_table(version_showing):
     """
     from ..containers import bwolist
 
-    try:
-        version_showing = request.get_json()
-        VERSION_SHOWING = []
+    version_showing = request.get_json()
+    VERSION_SHOWING = []
+    rebuild_containers = True
 
+    if version_showing:
         if version_showing['final'] == True:
             VERSION_SHOWING.append(CFG_OBJECT_VERSION.FINAL)
         if version_showing['halted'] == True:
             VERSION_SHOWING.append(CFG_OBJECT_VERSION.HALTED)
         if version_showing['running'] == True:
             VERSION_SHOWING.append(CFG_OBJECT_VERSION.RUNNING)
-        print 'NEW STUFF'
-        current_app.config['VERSION_SHOWING'] = VERSION_SHOWING
-        rebuild_containers = True
-    except:
-        print 'OLD STUFFS'
-        version_showing = request.get_json()
-        try:
-            VERSION_SHOWING = current_app.config['VERSION_SHOWING']
-            rebuild_containers = True
-        except:
-            VERSION_SHOWING = [CFG_OBJECT_VERSION.HALTED]
-            rebuild_containers = False
+    else:
+        VERSION_SHOWING = [CFG_OBJECT_VERSION.HALTED]
+    current_app.config['VERSION_SHOWING'] = VERSION_SHOWING
 
     # sSearch will be used for searching later
     a_search = request.args.get('sSearch')
@@ -283,7 +275,7 @@ def load_table(version_showing):
     table_data['iTotalDisplayRecords'] = len(bwolist)
 
     print 'LOAD TABLE RETURNING THAT MANY RECORDS:', len(bwolist)
-    return table_data
+    return jsonify(table_data)
 
 
 @blueprint.route('/details', methods=['GET', 'POST'])

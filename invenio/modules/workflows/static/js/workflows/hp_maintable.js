@@ -36,8 +36,6 @@ function init_urls(url_) {
     url.refresh = url_.refresh;
     url.widget = url_.widget;
     url.details = url_.details;
-
-    init_datatable();
 }
 
 function init_datatable(){
@@ -64,6 +62,8 @@ function init_datatable(){
         }
     });
     oSettings = oTable.fnSettings();
+
+    return oTable;
 }
 
 $('#batch_btn').on('click', function() {
