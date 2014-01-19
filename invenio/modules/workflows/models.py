@@ -29,11 +29,16 @@ from sqlalchemy import desc
 from sqlalchemy.orm.exc import NoResultFound
 from invenio.ext.sqlalchemy import db
 from invenio.base.globals import cfg
-from .config import CFG_OBJECT_VERSION
+from .config import CFG_OBJECT_VERSION, enum
 from .utils import redis_create_search_entry, WorkflowsTaskResult
-
 from .logger import (get_logger,
                      BibWorkflowLogHandler)
+
+
+DATA_TYPES = enum(RECORD="record",
+                  DEPOSIT="deposit",
+                  HARVEST="harvest",
+                  ANY="any")
 
 
 def get_default_data():
@@ -51,7 +56,8 @@ def get_default_extra_data():
                           "last_task_name": "",
                           "latest_object": -1,
                           "widget": None,
-                          "redis_search": {}}
+                          "redis_search": {},
+                          "source": ""}
     return base64.b64encode(cPickle.dumps(extra_data_default))
 
 
@@ -219,7 +225,7 @@ class BibWorkflowObject(db.Model):
                          onupdate=datetime.now, nullable=False)
     status = db.Column(db.String(255), default="", nullable=False)
 
-    data_type = db.Column(db.String(150), default="",
+    data_type = db.Column(db.String(150), default=DATA_TYPES.ANY,
                           nullable=True)
 
     uri = db.Column(db.String(500), default="")
@@ -341,12 +347,29 @@ BibWorkflowObject
         self.set_extra_data(extra_data)
 
     def add_widget(self, widget, message):
+        """
+        Assign a widget to this object for an action to be taken
+        in holdingpen. The widget is reffered to by a string with
+        the filename minus extension. Ex: approval_widget.
+
+        A message is also needed to tell the user the action
+        required.
+        """
         extra_data = self.get_extra_data()
         extra_data["widget"] = widget
         extra_data["message"] = message
         self.set_extra_data(extra_data)
 
+    def get_widget(self):
+        """
+        Retrive the currently assigned widget, if any.
+        """
+        return self.get_extra_data()["widget"]
+        
     def remove_widget(self):
+        """
+        Removes the currently assigned widget.
+        """
         extra_data = self.get_extra_data()
         extra_data["widget"] = None
         extra_data["message"] = ""

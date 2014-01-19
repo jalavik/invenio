@@ -1,36 +1,28 @@
-#checkbox$
-<input type="checkbox">
 #id$
-{{record.id}}
+{{object.id}}
+#checkbox$
+<input type="checkbox" class="hp-check">
 #title$
-{% if record.get_extra_data()['redis_search'].has_key('title') %}{{ record.get_extra_data()['redis_search']['title'] }}
-{% else %}None
-{% endif %}
+{{ record.get('title', {}).get('main', "No title") }}
 #source$
-{% if record.get_extra_data()['redis_search'].has_key('source') %}{{ record.get_extra_data()['redis_search']['source'] }}
-{% else %}None
-{% endif %}
+{{ extra_data.get('source', "No source") }}
 #category$
-{% if record.get_extra_data()['redis_search'].has_key('category') %}{{ record.get_extra_data()['redis_search']['category'] }}
-{% else %}None
-{% endif %}
-#workflow_id$
-{{record.id_workflow}}
-#owner$
-{% if record.get_extra_data()['owner'] == None %}None{% endif %}
+{{ ", ".join(categories) or "No category" }}
 #pretty_date$
-{{ pretty_date(record.created)}}
+{{ pretty_date(object.created)}}
 #version$
-{% if record.version == 1 %}<span class="label label-success">Final</span>
-{% elif record.version == 2 %}<span class="label label-warning">Halted</span>
+{% if object.version == 1 %}<span class="label label-success">Completed</span>
+{% elif object.version == 2 %}<span class="label label-warning">Halted</span>
 {% else %}<span class="label label-info">Running</span>
 {% endif %}
+#type$
+{{object.data_type}}
 #details$
 {% if widget == None %}
-	<a href="{{url_for('holdingpen.details', bwobject_id=record.id)}}">Details</a>
+	<a href="{{url_for('holdingpen.details', objectid=object.id)}}">Details</a>
 {% else %}
 {% set widget_instance = widget() %}
-	<a href="{{url_for('holdingpen.show_widget', bwobject_id=record.id, widget=widget_instance.__class__.__name__)}}">Details</a>
+	<a href="{{url_for('holdingpen.show_widget', objectid=object.id)}}">Details</a>
 {% endif %}
 #widget$
 {% if widget != None %}

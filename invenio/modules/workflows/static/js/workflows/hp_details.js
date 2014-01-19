@@ -17,14 +17,14 @@
 // 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
-function action_buttons (url_restart_record, url_restart_record_prev, url_continue) {
+function action_buttons(url_restart_record, url_restart_record_prev, url_continue) {
 
     $('#restart_button').on('click', function() {
         bwo_id = $(this).attr('name');
         console.log(bwo_id);
         jQuery.ajax({
             url: url_restart_record,
-            data: bwo_id,
+            data: {'bwobject_id': bwo_id},
             success: function(json){
                 bootstrap_alert('Object restarted');
             }
@@ -36,7 +36,7 @@ function action_buttons (url_restart_record, url_restart_record_prev, url_contin
         console.log(bwo_id);
         jQuery.ajax({
             url: url_restart_record_prev,
-            data: bwo_id,
+            data: {'bwobject_id': bwo_id},
             success: function(json){
                 bootstrap_alert('Object restarted from previous task');
             }
@@ -48,7 +48,7 @@ function action_buttons (url_restart_record, url_restart_record_prev, url_contin
         console.log(bwo_id);
         jQuery.ajax({
             url: url_continue,
-            data: bwo_id,
+            data: {'bwobject_id': bwo_id},
             success: function(json){
                 bootstrap_alert('Object continued from next task');
             }
