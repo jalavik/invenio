@@ -84,9 +84,6 @@ def maintable():
     # FIXME: need to autodiscover widgets properly
     widget_list = {}
     for widget in widgets:
-        import IPython
-        # IPython.embed()
-        print widget
         widget_list[widgets[widget].__title__] = [0, []]
 
     for bwo in bwolist:
@@ -209,8 +206,6 @@ def load_table(version_showing):
     if a_search or rebuild_containers:
         # FIXME: Temp measure until Redis is hooked up
         from ..containers import create_hp_containers
-        print 'rebuilding containers'
-        print 'with version:', VERSION_SHOWING
         bwolist = create_hp_containers(sSearch=a_search, version_showing=VERSION_SHOWING)
 
     if 'iSortCol_0' in current_app.config:
@@ -248,48 +243,55 @@ def load_table(version_showing):
         records_showing += 1
 
         mini_widget = getattr(widget, "mini_widget", None)
-        row = render_template('workflows/row_formatter.html', record=bwo,
-                               widget=widget, mini_widget=mini_widget,
-                               pretty_date=pretty_date)
+        record = bwo.get_data()
+        if not isinstance(record, dict):
+            record = {}
+        extra_data = bwo.get_extra_data()
+        categories = ["%s (%s)" % (subject['term'], subject['scheme'])
+                      for subject in record.get('subject_term', [])]
+        row = render_template('workflows/row_formatter.html',
+                              object=bwo,
+                              record=record,
+                              extra_data=extra_data,
+                              categories=categories,
+                              widget=widget,
+                              mini_widget=mini_widget,
+                              pretty_date=pretty_date)
 
-        list1 = [r.split('$') for r in row.split('#')]
+        list1 = [r.split('$') for r in row.split('#') if r]
         d = {}
-        list1.pop(0)
         for key, value in list1:
-            d[key] = value
+            d[key] = value.strip()
 
         table_data['aaData'].append(
-            [d['checkbox'],
-             d['id'],
+            [d['id'],
+             d['checkbox'],
              d['title'],
              d['source'],
              d['category'],
-             d['workflow_id'],
-             d['owner'],
              d['pretty_date'],
              d['version'],
              d['details'],
              d['widget']
-            ])
+            ]
+        )
 
     table_data['sEcho'] = sEcho
     table_data['iTotalRecords'] = len(bwolist)
     table_data['iTotalDisplayRecords'] = len(bwolist)
-
-    print 'LOAD TABLE RETURNING THAT MANY RECORDS:', len(bwolist)
     return jsonify(table_data)
 
 
-@blueprint.route('/details', methods=['GET', 'POST'])
+@blueprint.route('/details/<objectid>', methods=['GET', 'POST'])
 @register_breadcrumb(blueprint, '.details', "Record Details")
 @login_required
-@wash_arguments({'bwobject_id': (int, 0)})
-def details(bwobject_id):
+def details(objectid):
     """
     Displays info about the object, and presents the data
     of all available versions of the object. (Initial, Error, Final)
     """
-    bwobject = BibWorkflowObject.query.get(bwobject_id)
+    bwobject = BibWorkflowObject.query.filter(
+        BibWorkflowObject.id == objectid).first_or_404()
 
     extracted_data = extract_data(bwobject)
 
@@ -380,16 +382,18 @@ def delete_multi(bwolist):
     return 'Records Deleted'
 
 
-@blueprint.route('/widget', methods=['GET', 'POST'])
+@blueprint.route('/action/<objectid>', methods=['GET', 'POST'])
 @register_breadcrumb(blueprint, '.widget', "Widget")
 @login_required
-@wash_arguments({'bwobject_id': (int, 0),
-                 'widget': (unicode, 'default')})
-def show_widget(bwobject_id, widget):
+def show_widget(objectid):
     """
     Renders the widget assigned to a specific record
     """
-    bwobject = BibWorkflowObject.query.get(bwobject_id)
+    bwobject = BibWorkflowObject.query.filter(
+        BibWorkflowObject.id == objectid).first_or_404()
+
+    widget = bwobject.get_widget()
+    # FIXME: add case here if no widget
     widget_form = widgets[widget]
     extracted_data = extract_data(bwobject)
     result = widget_form().render([bwobject],

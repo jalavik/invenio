@@ -116,19 +116,21 @@ approve_record.__title__ = "Record Approval"
 approve_record.__description__ = "This task assigns the approval widget to a record."
 
 
-def inspire_filter_category(category_accepted=[], category_refused=[], category_widgeted=[], widget=None):
+def inspire_filter_category(category_accepted=[], category_refused=[],
+                            category_widgeted=[], widget=None):
     def _inspire_filter_category(obj, eng):
         category = None
-        obj.add_task_result("arXiv categorie filter", category)
         try:
             category = obj.data["report_number"]
             if isinstance(category, list):
-                while isinstance(category,list):
+                while isinstance(category, list):
                     category = category[0]
-            category = category["arxiv_category"]
+            category = category["category"]
+            obj.add_task_result("Category filter", category)
         except KeyError:
-            eng.log.error("Category not find in the record. Human intervention needed")
-            eng.halt("Category not find in the record. Human intervention needed", widget=widget)
+            msg = "Category not found in the record. Human intervention needed"
+            eng.log.error(msg)
+            eng.halt(msg, widget=widget)
 
         #We want this record to pass to next step
         if category in category_accepted:
@@ -138,8 +140,8 @@ def inspire_filter_category(category_accepted=[], category_refused=[], category_
             eng.stopProcessing()
         #We think that this record needs a human intervention
         elif category in category_widgeted:
-            eng.halt("Category filtering need a human intervention", widget=widget)
-
+            eng.halt("Category filtering needs human intervention",
+                     widget=widget)
         else:
             #We allow the * option which means at final case
             if '*' in category_accepted:
@@ -147,8 +149,10 @@ def inspire_filter_category(category_accepted=[], category_refused=[], category_
             elif '*' in category_refused:
                 eng.stopProcessing()
             else:
-                #We don't know what we should do, in doubt query human... they are nice!
-                eng.halt("Category out of task definition. Human intervention needed", widget=widget)
+                # We don't know what we should do, in doubt query human... they are nice!
+                msg = ("Category out of task definition. "
+                       "Human intervention needed")
+                eng.halt(msg, widget=widget)
 
     return _inspire_filter_category
 
@@ -162,7 +166,8 @@ def convert_record_to_bibfield(obj, eng):
 
     obj.extra_data["last_task_name"] = "last task name: convert_record_to_bibfield"
     obj.data = create_record(obj.data).dumps()
-    eng.log.info("Conversion succeed")
+    print obj.data
+    eng.log.info("Field conversion succeeded")
 
 
 def init_harvesting(obj, eng):

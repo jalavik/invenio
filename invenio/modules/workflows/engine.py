@@ -402,6 +402,8 @@ BibWorkflowEngine
         """
         callback_list = self.getCallbacks()
         if callback_list:
+            self.log.info(str(self.getCallbacks()))
+            self.log.info(str(self.getCurrTaskId()))
             for i in self.getCurrTaskId():
                 callback_list = callback_list[i]
             self.log.error(str(callback_list.func_name))

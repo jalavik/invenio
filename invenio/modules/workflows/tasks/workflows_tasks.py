@@ -46,6 +46,11 @@ def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
             myobject.data = data
         eng.log.info("Workflow object ready")
 
+        # FIXME currently hard-coded for expecting repository
+        extra = myobject.get_extra_data()
+        extra['source'] = obj.extra_data['repository']['name']
+        myobject.set_extra_data(extra)
+
         myobject.save()
         workflow_id = start_delayed(workflow_to_run, data=[myobject],
                                     stop_on_error=True, **kwargs)
@@ -185,9 +190,8 @@ def write_something_generic(messagea, func):
     """
 
     def _write_something_generic(obj, eng):
-
         if isinstance(messagea, basestring):
-            if isinstance(func,list):
+            if isinstance(func, list):
                 for function in func:
                     function(messagea)
             else:
@@ -199,7 +203,7 @@ def write_something_generic(messagea, func):
                 I = messagea
                 while callable(I):
                     I = I(obj, eng)
-                if isinstance(func,list):
+                if isinstance(func, list):
                     for function in func:
                         function(I)
                 else:
@@ -215,7 +219,7 @@ def write_something_generic(messagea, func):
                     temp += str(I)
                 elif isinstance(I, basestring):
                     temp += I
-            if isinstance(func,list):
+            if isinstance(func, list):
                 for function in func:
                     function(temp)
             else:
@@ -239,15 +243,14 @@ def get_status_async_result_obj_data(obj, eng):
     return obj.data.state
 
 
-def get_workflows_progress(obj,eng):
-    #twist explicit conversion is 4 time slower
-
+def get_workflows_progress(obj, eng):
     try:
         return (eng.extra_data["nb_workflow_finish"]*100.0)/(eng.extra_data["nb_workflow"])
     except KeyError:
         return "No progress (key missing)"
     except ZeroDivisionError:
         return "No workflows"
+
 
 def workflows_reviews(obj, eng):
     """

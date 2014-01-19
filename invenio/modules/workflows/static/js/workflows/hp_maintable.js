@@ -39,7 +39,7 @@ function init_urls(url_) {
 }
 
 function init_datatable(){
-    oTable = $('#example').dataTable({
+    oSettings = {
         "sDom": 'lf<"clear">rtip',
         "bJQueryUI": true,
         "bProcessing": true,
@@ -52,18 +52,33 @@ function init_datatable(){
             "sAlign": "left",
             "iOverlayFade": 1
         },
-        "aoColumnDefs":[{'bSortable': false, 'aTargets': [0]}],
+        "aoColumnDefs":[{'bSortable': false, 'aTargets': [1]},
+                        {'bSearchable': false, 'bVisible': false, 'aTargets': [0]}],
         "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-            rememberSelected(nRow);
+            var id = aData[0];
+            rememberSelected(nRow, id);
             oSettings = oTable.fnSettings();
             nRow.addEventListener("click", function(e) {
-                selectRow(nRow, e, oSettings);
+                selectRow(nRow, id, e, oSettings);
+            });
+        },
+        "fnDrawCallback": function(){
+            $('table#maintable td').bind('mouseenter', function () {
+                $(this).parent().children().each(function() {
+                    $(this).addClass('maintablerowhover');
+                });
+            });
+
+            $('table#maintable td').bind('mouseleave', function () {
+                $(this).parent().children().each(function() {
+                    $(this).removeClass('maintablerowhover');
+                });
             });
         }
-    });
-    oSettings = oTable.fnSettings();
+    };
+    oTable = $('#maintable').dataTable(oSettings);
+    $('#version-halted').click();
     return oTable;
-    // $('#version-halted').click();
 }
 
 $('#batch_btn').on('click', function() {
@@ -171,11 +186,11 @@ function selectAll(){
     }
 }
 
-function rememberSelected(row) {
+function rememberSelected(row, id) {
     selectedRow = row;
-    if($.inArray($.trim(selectCellByTitle(row, 'Id').innerText), rowList) > -1){
+    if($.inArray(id, rowList) > -1){
         selectedRow.style.background = "#ffa";
-        selectedRow.cells[0].childNodes[1].checked = true;
+        //selectedRow.cells[0].childNodes[1].checked = true;
     }
 }
 
@@ -250,15 +265,23 @@ window.addEventListener("keydown", function(e){
 });
 
 function selectCellByTitle(row, title){
+    console.log(row);
+    console.log(title);
     for(var i=0; i<oSettings.aoHeader[0].length; i++){
+        console.log(oSettings.aoHeader[0]);
         var trimmed_title = $.trim(oSettings.aoHeader[0][i].cell.innerText);
+        console.log(trimmed_title);
         if(trimmed_title === title){
-            return row.cells[i];
+            console.log("returning");
+            console.log(i);
+            console.log($(row).children()[i - 1]);
+            return $(row).children()[i - 1];
         }
     }
 }
 
-function selectRow(row, e, oSettings) {
+function selectRow(row, id, e, oSettings) {
+    console.log(id);
     selectedRow = row;
     if( e.shiftKey === true ){
         selectRange(row);
@@ -267,37 +290,35 @@ function selectRow(row, e, oSettings) {
         var widget_name = selectCellByTitle(row, 'Actions').innerText;    
         widget_name = widget_name.substring(0, widget_name.length-4);
         
-        if($.inArray(selectCellByTitle(row, 'Id').innerText, rowList) <= -1){
-            if (selectCellByTitle(row, 'Actions').innerText != 'N/A'){
-                rowList.push(selectCellByTitle(row, 'Id').innerText);
-                rowIndexList.push(row._DT_RowIndex+oSettings._iDisplayStart);
-                selectedRow.style.background = "#ffa";
-                
+        if($.inArray(id, rowList) <= -1){
+            // Select row
+            rowList.push(id);
+            rowIndexList.push(row._DT_RowIndex+oSettings._iDisplayStart);
+            selectedRow.style.background = "#ffa";
+
+            if (selectCellByTitle(row, 'Actions').innerText != 'N/A'){                    
                 if(widget_name === 'Approve Record'){
-                    recordsToApprove.push(selectCellByTitle(row, 'Id').innerText);
+                    recordsToApprove.push(id);
                 }
-                checkbox = selectCellByTitle(row, "").childNodes[1];
-                console.log(checkbox);
-                checkbox.checked = true;
             }
+
+            checkbox = $(selectedRow).find(".hp-check");
+            checkbox.attr('checked', true);
         }
         else{
-            rowList.splice(rowList.indexOf(selectCellByTitle(row, 'Id').innerText), 1);
+            // De-Select row??
+            rowList.splice(rowList.indexOf(id), 1);
             rowIndexList.splice(rowIndexList.indexOf(row._DT_RowIndex+oSettings._iDisplayStart), 1);
             selectedRow.style.background = "white";
             
             if(widget_name === 'Approve Record'){
-                recordsToApprove.splice(recordsToApprove.indexOf(selectCellByTitle(row, 'Id').innerText), 1);
+                recordsToApprove.splice(recordsToApprove.indexOf(id), 1);
             }
-            checkbox = selectCellByTitle(row, "").childNodes[1];
-            checkbox.checked = false;
+            checkbox = $(selectedRow).find(".hp-check");
+            checkbox.attr('checked', false);
         }
     }
     checkRecordsToApprove();
-
-    console.log(rowList);
-    console.log(rowIndexList);
-    console.log(recordsToApprove);
 }
 
 function deselectAll(){
