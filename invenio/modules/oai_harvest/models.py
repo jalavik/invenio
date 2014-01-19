@@ -25,10 +25,27 @@ Oai harvest database models.
 from invenio.ext.sqlalchemy import db
 
 # Create your models here.
-from invenio.utils.serializers import deserialize_via_marshal
+from invenio.utils.serializers import (deserialize_via_marshal,
+                                       serialize_via_marshal)
 #from websearch_model import Collection
 from invenio.modules.records.models import Record as Bibrec
 from invenio.modules.scheduler.models import SchTASK
+
+
+def get_default_arguments():
+    """ Returns the base64 representation of the extra_data default value """
+    arguments_default = {'c_stylesheet': '',
+                         'r_kb-rep-no-file': '',
+                         'r_format': '',
+                         'u_name': '',
+                         'a_rt-queue': '',
+                         'r_kb-journal-file': '',
+                         'u_priority': '',
+                         'a_stylesheet': '',
+                         't_doctype': '',
+                         'f_filter-file': '',
+                         'p_extraction-source': []}
+    return serialize_via_marshal(arguments_default)
 
 
 class OaiHARVEST(db.Model):
@@ -41,7 +58,8 @@ class OaiHARVEST(db.Model):
     baseurl = db.Column(db.String(255), nullable=False, server_default='')
     metadataprefix = db.Column(db.String(255), nullable=False,
                                server_default='oai_dc')
-    arguments = db.Column(db.LargeBinary, nullable=True)
+    arguments = db.Column(db.LargeBinary, nullable=True,
+                          default=get_default_arguments())
     comment = db.Column(db.Text, nullable=True)
     name = db.Column(db.String(255), nullable=False)
     lastrun = db.Column(db.DateTime, nullable=True)
