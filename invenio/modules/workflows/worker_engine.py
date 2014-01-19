@@ -19,7 +19,7 @@
 from invenio.ext.sqlalchemy import db
 from .client import run_workflow, continue_execution
 from .engine import BibWorkflowEngine
-from .models import BibWorkflowObject, Workflow
+from .models import BibWorkflowObject, Workflow, DATA_TYPES
 from .config import CFG_OBJECT_VERSION
 
 
@@ -89,34 +89,38 @@ def continue_worker(oid, restart_point="continue_next", **kwargs):
 
 def prepare_objects(data, workflow_object):
     objects = []
+    data_type = workflow_object.get_default_data_type()
     for obj in data:
         if isinstance(obj, BibWorkflowObject):
             if obj.id:
-                obj.log.debug("Object found for process")
+                obj.log.info("Object found for process")
                 objects.append(_prepare_objects_helper(obj, workflow_object))
             else:
+                obj.log.info("Object not found for process")
                 objects.append(obj)
         else:
             # First we create an initial object for each data item
             new_initial = \
                 BibWorkflowObject(id_workflow=workflow_object.uuid,
-                                  version=CFG_OBJECT_VERSION.INITIAL
-                                  )
+                                  version=CFG_OBJECT_VERSION.INITIAL,
+                                  data_type=data_type)
             new_initial.set_data(obj)
             new_initial._update_db()
 
             # Then we create another object to actually work on
             current_obj = BibWorkflowObject(id_workflow=workflow_object.uuid,
                                             version=CFG_OBJECT_VERSION.RUNNING,
-                                            id_parent=new_initial.id)
+                                            id_parent=new_initial.id,
+                                            data_type=data_type)
             current_obj.set_data(obj)
             objects.append(current_obj)
     return objects
 
+
 def _prepare_objects_helper(obj, workflow_object):
     assert obj
     if obj.version == CFG_OBJECT_VERSION.INITIAL:
-        obj.log.debug("State: Initial")
+        obj.log.info("State: Initial")
         new_id = obj._create_version_obj(id_workflow=workflow_object.uuid,
                                          version=CFG_OBJECT_VERSION.RUNNING,
                                          id_parent=obj.id,
@@ -124,7 +128,7 @@ def _prepare_objects_helper(obj, workflow_object):
         return BibWorkflowObject.query.filter(BibWorkflowObject.id ==
                                               new_id).first()
     elif obj.version in (CFG_OBJECT_VERSION.HALTED, CFG_OBJECT_VERSION.FINAL):
-        obj.log.debug("State: Halted or Final")
+        obj.log.info("State: Halted or Final")
         # creating INITIAL object
         # for FINAL version: maybe it should set
         # id_parent to the previous final object
@@ -139,7 +143,7 @@ def _prepare_objects_helper(obj, workflow_object):
                                               new_id).first()
     elif obj.version == CFG_OBJECT_VERSION.RUNNING:
         # object shuld be deleted restart from INITIAL
-        obj.log.debug("State: Running")
+        obj.log.info("State: Running")
 
         if obj.id_workflow is not None:
             obj.log.info("""WARNING! You want to restart from temporary object.
@@ -163,7 +167,7 @@ and RUNNING object will be deleted.""")
             return BibWorkflowObject.query.filter(BibWorkflowObject.id ==
                                                   new_id).first()
         else:
-            obj.log.info("""You are running workflow on a object created manualy
+            obj.log.info("""You are running workflow on a object created manually
 outside of the workflow. Workflow will execute on THIS object (it will change
 its state and/or data) but it would also create INITIAL version of the object to
  keep its original state.""")

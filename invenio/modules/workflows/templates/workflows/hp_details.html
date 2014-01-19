@@ -74,7 +74,7 @@
         <ul class="nav navbar-nav pull-right">
             <li>
                 {% if bwobject.get_extra_data()['widget'] %}
-                <a href="{{ url_for('holdingpen.show_widget', bwobject_id=bwobject.id, widget=info['widget']) }}" ><i class="icon-wrenchwhite icon-wrench"></i>Widget</a>
+                <a href="{{ url_for('holdingpen.show_widget', objectid=bwobject.id) }}" ><i class="icon-wrenchwhite icon-wrench"></i>Action needed</a>
                 {% else %}
                 
                 {% endif %}
@@ -142,7 +142,7 @@
                                 {% endfor %}
 
                                 {% if bwobject.version == 1 %}
-                                    <span class="badge badge-success">Final</span>
+                                    <span class="badge badge-success">Completed</span>
                                 {% elif bwobject.version == 2 %}
                                     <span class="badge badge-warning">Halted</span>
                                 {% else %}

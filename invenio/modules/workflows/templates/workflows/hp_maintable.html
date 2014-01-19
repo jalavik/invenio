@@ -5,12 +5,12 @@
     {{ super() }}
     {% css url_for('static', filename='css/ColVis.css') %}
     {% css url_for('static', filename='css/dataTables.bootstrap.css') %}
+    {% css url_for('workflows.static', filename='css/workflows/style.css'), '20-workflows' %}
 {% endblock header %}
 
 {% js url_for('static', filename='js/jquery.dataTables.min.js'), '30-datatables' %}
 {% js url_for('static', filename='js/ColVis.js'), '30-datatables' %}
 {% js url_for('static', filename='js/dataTables.bootstrap.js'), '30-datatables' %}
-{% js url_for('static', filename='js/fnReloadAjax.js'), '30-datatables' %}
 {% js url_for('workflows.static', filename='js/workflows/hp_maintable.js'), '50-workflows' %}
 {% js url_for('workflows.static', filename='js/workflows/widgets/approval.js'), '50-workflows' %}
 
@@ -34,7 +34,7 @@
             oTable = init_datatable();
 
             setInterval(function(){
-                oTable.fnReloadAjax();
+                oTable.fnDraw(false);
             }, 5000);
         });
     </script>
@@ -68,8 +68,16 @@
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Status<b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu">
                     <li><a id="version-halted" class="version-selection" name="Halted">Halted</a></li>
-                    <li><a id="version-final" class="version-selection" name="Final">Final</a></li>
+                    <li><a id="version-final" class="version-selection" name="Final">Completed</a></li>
                     <li><a id="version-running" class="version-selection" name="Running">Running</a></li>
+                </ul>
+            </li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Type<b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a id="type-record" class="type-selection" name="{{ type_list.RECORD }}">Record</a></li>
+                    <li><a id="type-submission" class="type-selection" name="{{ type_list.DEPOSIT }}">Deposit</a></li>
+                    <li><a id="type-any" class="type-selection" name="{{ type_list.ANY }}">Other</a></li>
                 </ul>
             </li>
         </ul>
@@ -83,25 +91,23 @@
 
     <div class="container">
         <div class="row">
-            <table id="example" cellpadding="0" cellspacing="0" border="0" class="table table-bordered">
+            <table id="maintable" cellpadding="0" cellspacing="0" border="0" class="table table-bordered">
                 <thead>
                     <tr>
-                        <th><input id="select-all" type="checkbox"></th>
                         <th>Id</th>
+                        <th><input id="select-all" type="checkbox"></th>
                         <th>Title</th>
                         <th>Source</th>
                         <th>Category</th>
-                        <th>Workflow ID</th>
-                        <th>Owner</th>
                         <th>Created</th>
-                        <th>Version</th>
+                        <th>Status</th>
+                        <th>Type</th>
                         <th>Details</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td></td>
                         <td></td>
                         <td></td>
                         <td></td>

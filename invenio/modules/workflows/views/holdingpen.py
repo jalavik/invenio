@@ -17,10 +17,12 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 """Holding Pen web interface"""
 
-from flask import render_template, Blueprint, redirect, url_for, flash, request, current_app, jsonify
+from flask import (render_template, Blueprint, redirect,
+                   url_for, flash, request, current_app,
+                   jsonify, session)
 from flask.ext.login import login_required
 
-from ..models import BibWorkflowObject, Workflow
+from ..models import BibWorkflowObject, Workflow, DATA_TYPES
 from ..loader import widgets
 from invenio.base.decorators import templated, wash_arguments
 from invenio.modules.formatter.engine import format_record
@@ -52,7 +54,8 @@ def index():
     Displays main interface of Holdingpen.
     Acts as a hub for catalogers (may be removed)
     """
-    from ..containers import bwolist
+    from ..containers import create_hp_containers
+    bwolist = create_hp_containers(type_showing=[DATA_TYPES.RECORD])
 
     # FIXME: need to autodiscover widgets properly
     widget_list = {}
@@ -79,14 +82,12 @@ def maintable():
     """
     Displays main table interface of Holdingpen.
     """
-    from ..containers import bwolist
+    from ..containers import create_hp_containers
+    bwolist = create_hp_containers(type_showing=[DATA_TYPES.RECORD])
 
     # FIXME: need to autodiscover widgets properly
     widget_list = {}
     for widget in widgets:
-        import IPython
-        # IPython.embed()
-        print widget
         widget_list[widgets[widget].__title__] = [0, []]
 
     for bwo in bwolist:
@@ -98,7 +99,8 @@ def maintable():
     for key in widget_list:
         widget_list[key][0] = len(widget_list[key][1])
 
-    return dict(bwolist=bwolist, widget_list=widget_list)
+    return dict(bwolist=bwolist, widget_list=widget_list,
+                type_list=DATA_TYPES)
 
 
 @blueprint.route('/refresh', methods=['GET', 'POST'])
@@ -110,7 +112,7 @@ def refresh():
     """
     # FIXME: Temp hack until redis is hooked up
     try:
-        version_showing=current_app.config['VERSION_SHOWING']
+        version_showing=session['VERSION_SHOWING']
         load_table(version_showing)
     except:
         pass
@@ -173,11 +175,9 @@ def load_table(version_showing):
     """
     Function used for the passing of JSON data to the DataTable
     """
-    from ..containers import bwolist
-
-    version_showing = request.get_json()
+    from ..containers import create_hp_containers
     VERSION_SHOWING = []
-    rebuild_containers = True
+    version_showing = request.get_json()
 
     if version_showing:
         if version_showing['final'] == True:
@@ -192,7 +192,7 @@ def load_table(version_showing):
 
     # sSearch will be used for searching later
     a_search = request.args.get('sSearch')
-
+    
     try:
         i_sortcol_0 = request.args.get('iSortCol_0')
         s_sortdir_0 = request.args.get('sSortDir_0')
@@ -206,13 +206,7 @@ def load_table(version_showing):
         i_display_length = current_app.config['iDisplayLength']
         sEcho = current_app.config['sEcho'] + 1
 
-    if a_search or rebuild_containers:
-        # FIXME: Temp measure until Redis is hooked up
-        from ..containers import create_hp_containers
-        print 'rebuilding containers'
-        print 'with version:', VERSION_SHOWING
-        bwolist = create_hp_containers(sSearch=a_search, version_showing=VERSION_SHOWING)
-
+    bwolist = create_hp_containers(sSearch=a_search, version_showing=VERSION_SHOWING)
     if 'iSortCol_0' in current_app.config:
         i_sortcol_0 = int(i_sortcol_0)
         if i_sortcol_0 != current_app.config['iSortCol_0'] \
@@ -224,11 +218,10 @@ def load_table(version_showing):
     current_app.config['iSortCol_0'] = i_sortcol_0
     current_app.config['sSortDir_0'] = s_sortdir_0
     current_app.config['sEcho'] = sEcho
-
+    
     table_data = {
         "aaData": []
     }
-
     table_data['iTotalRecords'] = len(bwolist)
     table_data['iTotalDisplayRecords'] = len(bwolist)
     #This will be simplified once Redis is utilized.
@@ -248,48 +241,56 @@ def load_table(version_showing):
         records_showing += 1
 
         mini_widget = getattr(widget, "mini_widget", None)
-        row = render_template('workflows/row_formatter.html', record=bwo,
-                               widget=widget, mini_widget=mini_widget,
-                               pretty_date=pretty_date)
+        record = bwo.get_data()
+        if not isinstance(record, dict):
+            record = {}
+        extra_data = bwo.get_extra_data()
+        categories = ["%s (%s)" % (subject['term'], subject['scheme'])
+                      for subject in record.get('subject_term', [])]
+        row = render_template('workflows/row_formatter.html',
+                              object=bwo,
+                              record=record,
+                              extra_data=extra_data,
+                              categories=categories,
+                              widget=widget,
+                              mini_widget=mini_widget,
+                              pretty_date=pretty_date)
 
-        list1 = [r.split('$') for r in row.split('#')]
+        list1 = [r.split('$') for r in row.split('#') if r]
         d = {}
-        list1.pop(0)
         for key, value in list1:
-            d[key] = value
+            d[key] = value.strip()
 
         table_data['aaData'].append(
-            [d['checkbox'],
-             d['id'],
+            [d['id'],
+             d['checkbox'],
              d['title'],
              d['source'],
              d['category'],
-             d['workflow_id'],
-             d['owner'],
              d['pretty_date'],
              d['version'],
+             d['type'],
              d['details'],
              d['widget']
-            ])
+            ]
+        )
 
     table_data['sEcho'] = sEcho
     table_data['iTotalRecords'] = len(bwolist)
     table_data['iTotalDisplayRecords'] = len(bwolist)
-
-    print 'LOAD TABLE RETURNING THAT MANY RECORDS:', len(bwolist)
     return jsonify(table_data)
 
 
-@blueprint.route('/details', methods=['GET', 'POST'])
+@blueprint.route('/details/<objectid>', methods=['GET', 'POST'])
 @register_breadcrumb(blueprint, '.details', "Record Details")
 @login_required
-@wash_arguments({'bwobject_id': (int, 0)})
-def details(bwobject_id):
+def details(objectid):
     """
     Displays info about the object, and presents the data
     of all available versions of the object. (Initial, Error, Final)
     """
-    bwobject = BibWorkflowObject.query.get(bwobject_id)
+    bwobject = BibWorkflowObject.query.filter(
+        BibWorkflowObject.id == objectid).first_or_404()
 
     extracted_data = extract_data(bwobject)
 
@@ -380,16 +381,18 @@ def delete_multi(bwolist):
     return 'Records Deleted'
 
 
-@blueprint.route('/widget', methods=['GET', 'POST'])
+@blueprint.route('/action/<objectid>', methods=['GET', 'POST'])
 @register_breadcrumb(blueprint, '.widget', "Widget")
 @login_required
-@wash_arguments({'bwobject_id': (int, 0),
-                 'widget': (unicode, 'default')})
-def show_widget(bwobject_id, widget):
+def show_widget(objectid):
     """
     Renders the widget assigned to a specific record
     """
-    bwobject = BibWorkflowObject.query.get(bwobject_id)
+    bwobject = BibWorkflowObject.query.filter(
+        BibWorkflowObject.id == objectid).first_or_404()
+
+    widget = bwobject.get_widget()
+    # FIXME: add case here if no widget
     widget_form = widgets[widget]
     extracted_data = extract_data(bwobject)
     result = widget_form().render([bwobject],
@@ -490,3 +493,13 @@ def extract_data(bwobject):
         get_workflow_definition(extracted_data['w_metadata'].name).workflow
 
     return extracted_data
+
+
+def prepare_session():
+    """
+    """
+    session['iDisplayStart'] = i_display_start
+    session['iDisplayLength'] = i_display_length
+    session['iSortCol_0'] = i_sortcol_0
+    session['sSortDir_0'] = s_sortdir_0
+    session['sEcho'] = sEcho
