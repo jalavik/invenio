@@ -119,52 +119,67 @@ approve_record.__description__ = "This task assigns the approval widget to a rec
 def inspire_filter_category(category_accepted=[], category_refused=[],
                             category_widgeted=[], widget=None):
     def _inspire_filter_category(obj, eng):
-
         category = None
+        category_to_process = []
+        action_to_take = [0, 0, 0]
         try:
             category = obj.data["report_number"]
             if isinstance(category, list):
-                while isinstance(category, list):
-                    category = category[0]
-            try:
-                category = category["arxiv_category"]
-            except KeyError:
-                category = category["category"]
-            obj.add_task_result("Category filter", category)
+                for i in category:
+                    category_to_process.append(i["arxiv_category"])
+            else:
+                category_to_process.append(category["arxiv_category"])
+            obj.add_task_result("Category filter", category_to_process)
         except KeyError:
             msg = "Category not found in the record. Human intervention needed"
             eng.log.error(msg)
             eng.halt(msg, widget=widget)
 
-
-        #We want this record to pass to next step
-        for i in category_accepted:
-            if i != '*':
-                i = re.compile('^' + i + '.*')
-                if i.match(category):
-                    return None
-                    #We want this record to  not pass to next step
-        for i in category_refused:
-            if i != '*':
-                i = re.compile('^' + i + '.*')
-                if i.match(category):
-                    eng.stopProcessing()#We think that this record needs a human intervention
         for i in category_widgeted:
             if i != '*':
                 i = re.compile('^' + i + '.*')
-                if i.match(category):
-                    eng.halt("Category filtering needs human intervention",
-                             widget=widget)
+                for y in category_to_process:
+                    if i.match(y):
+                        action_to_take[0] += 1
 
-        #We allow the * option which means at final case
-        if '*' in category_accepted:
-            return None
-        elif '*' in category_refused:
-            eng.stopProcessing()
+        for i in category_accepted:
+            if i != '*':
+                i = re.compile('^' + i + '.*')
+                for y in category_to_process:
+                    if i.match(y):
+                        action_to_take[1] += 1
+
+        for i in category_refused:
+            if i != '*':
+                i = re.compile('^' + i + '.*')
+                for y in category_to_process:
+                    if i.match(y):
+                        action_to_take[2] += 1
+
+        sum_action = action_to_take[0] + action_to_take[1] + action_to_take[2]
+
+        if sum_action == 0:
+            #We allow the * option which means at final case
+            if '*' in category_accepted:
+                return None
+            elif '*' in category_refused:
+                eng.stopProcessing()
+            else:
+                # We don't know what we should do, in doubt query human... they are nice!
+                msg = ("Category out of task definition. "
+                       "Human intervention needed")
+                eng.halt(msg, widget=widget)
         else:
-            # We don't know what we should do, in doubt query human... they are nice!
-            msg = ("Category marked for human intervention.")
-            eng.halt(msg, widget=widget)
+            if sum_action == action_to_take[0]:
+                eng.halt("Category filtering needs human intervention",
+                         widget=widget)
+            elif sum_action == action_to_take[1]:
+                return None
+            elif sum_action == action_to_take[2]:
+                eng.stopProcessing()
+            else:
+                eng.halt("Category filtering needs human intervention, rules are incoherent !!!",
+                         widget=widget)
 
     return _inspire_filter_category
 
@@ -175,10 +190,8 @@ def convert_record_to_bibfield(obj, eng):
     thanks to BibField
     """
     from invenio.base.records.api import create_record
-
     obj.extra_data["last_task_name"] = "last task name: convert_record_to_bibfield"
     obj.data = create_record(obj.data).dumps()
-    print obj.data
     eng.log.info("Field conversion succeeded")
 
 

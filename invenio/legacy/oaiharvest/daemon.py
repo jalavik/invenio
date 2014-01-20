@@ -103,14 +103,24 @@ def task_run_core():
         write_message("ERROR HAPPEN")
         write_message("____________Workflow log output____________")
 
-        workflowlog = BibWorkflowEngineLog.query.filter(BibWorkflowEngineLog.id_object == e.id_workflow).all()
+        workflowlog = BibWorkflowEngineLog.query.filter(BibWorkflowEngineLog.id_object == e.id_workflow)\
+            .filter(BibWorkflowEngineLog.log_type == 40).all()
 
         for log in workflowlog:
             write_message(log.message)
 
+        for i in e.payload:
+            write_message("\n\n____________Workflow " + i + " log output____________")
+            workflowlog = BibWorkflowEngineLog.query.filter(BibWorkflowEngineLog.id_object == i) \
+            .filter(BibWorkflowEngineLog.log_type == 40).all()
+            for log in workflowlog:
+                write_message(log.message)
+
+
         write_message("ERROR HAPPEN")
         write_message("____________Object log output____________")
-        objectlog = BibWorkflowObjectLog.query.filter(BibWorkflowObjectLog.id_object == e.id_object).all()
+        objectlog = BibWorkflowObjectLog.query.filter(BibWorkflowObjectLog.id_object == e.id_object)\
+            .filter(BibWorkflowEngineLog.log_type == 40).all()
         for log in objectlog:
             write_message(log.message)
         execution_time = round(time.time() - start_time, 2)

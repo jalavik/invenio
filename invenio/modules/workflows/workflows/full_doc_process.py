@@ -43,8 +43,10 @@ class full_doc_process(object):
                 [
                     plot_extract(["latex"]),
                     fulltext_download,
-                    bibclassify(taxonomy="/home/jlavik/envs/pu/src/invenio/HEP.rdf",
-                                output_mode="dict"),
+                    # bibclassify(taxonomy="/home/jlavik/envs/pu/src/invenio/HEP.rdf",
+                    #             output_mode="dict"),
+                    # bibclassify(taxonomy="/home/someone/src/invenio/HEP.rdf",
+                    #            output_mode="dict", match_mode="partial" ),
                     refextract, author_list,
                     upload_step,
                 ],
