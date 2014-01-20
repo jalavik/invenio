@@ -368,10 +368,7 @@ BibWorkflowEngine
                     else:
                         raise WorkflowHalt(e)
                 except Exception, e:
-                    self.log.error("Unexpected error: %s", sys.exc_info()[0])
-                    self.log.error(e.message)
-                    obj.log.error("Something terribly wrong"
-                                  " happend to this object")
+                    obj.log.error("Something terribly wrong happend to this object")
                     extra_data = obj.get_extra_data()
                     obj.set_extra_data(extra_data)
                     raise
@@ -407,7 +404,7 @@ BibWorkflowEngine
             self.log.info(str(self.getCurrTaskId()))
             for i in self.getCurrTaskId():
                 callback_list = callback_list[i]
-            self.log.error(str(callback_list.func_name))
+            self.log.info(str(callback_list.func_name))
             return callback_list.func_name
 
     def get_current_object(self):
