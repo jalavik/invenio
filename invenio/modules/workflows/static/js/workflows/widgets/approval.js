@@ -78,13 +78,11 @@ function approveAll() {
     });
 };
 
-function mini_approval(decision, event){
-    var bwobject_id = event.currentTarget.parentElement.parentElement.cells[1].innerText;
-
+function mini_approval(decision, event, objectid){
     jQuery.ajax({
         type: "POST",
         url: url.resolve_widget,
-        data: {'bwobject_id': bwobject_id,
+        data: {'objectid': objectid,
                'widget': "approval_widget",
                'decision': decision},
         success: function(json){

@@ -19,20 +19,20 @@
 {{object.data_type}}
 #details$
 {% if widget == None %}
-	<a href="{{url_for('holdingpen.details', objectid=object.id)}}">Details</a>
+    <a href="{{url_for('holdingpen.details', objectid=object.id)}}">Details</a>
 {% else %}
 {% set widget_instance = widget() %}
-	<a href="{{url_for('holdingpen.show_widget', objectid=object.id)}}">Details</a>
+    <a href="{{url_for('holdingpen.show_widget', objectid=object.id)}}">Details</a>
 {% endif %}
 #widget$
 {% if widget != None %}
-	{% set widget = widget() %}
-	{% if mini_widget != None %}
-		{% set mini_widget = mini_widget() %}
-		{% for field in mini_widget %}
-	    	{{ field }}
-		{% endfor %}
-	{% endif %}
+    {% set widget = widget() %}
+    {% if mini_widget != None %}
+        {% set mini_widget = mini_widget() %}
+        {% for field in mini_widget %}
+            {{ field(objectid=object.id) }}
+        {% endfor %}
+    {% endif %}
 {% else %}
 N/A
 {% endif %}
