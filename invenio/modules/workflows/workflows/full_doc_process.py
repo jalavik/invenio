@@ -15,7 +15,6 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111 1307, USA.
 
-
 from ..tasks.marcxml_tasks import (convert_record_with_repository,
                                    plot_extract,
                                    convert_record_to_bibfield,
@@ -39,7 +38,7 @@ from ..models import DATA_TYPES
 class full_doc_process(object):
     object_type = DATA_TYPES.RECORD
     workflow = [convert_record_with_repository("oaiarXiv2inspire_nofilter.xsl"), convert_record_to_bibfield,
-                inspire_filter_category(category_widgeted=["gr-qc"], category_accepted=['*'], widget="approval_widget"),
+                inspire_filter_category(category_widgeted=["gr"], category_accepted=['*'], widget="approval_widget"),
                 workflow_if(quick_match_record, True),
                 [
                     plot_extract(["latex"]),
@@ -51,7 +50,7 @@ class full_doc_process(object):
                 ],
                 workflow_else,
                 [
-                   log_info("Record already into database"),
+                    log_info("Record already into database"),
                 ],
     ]
     #workflow =[convert_record("oaiarxiv2marcxml.xsl"), convert_record_to_bibfield, author_list, upload_step]

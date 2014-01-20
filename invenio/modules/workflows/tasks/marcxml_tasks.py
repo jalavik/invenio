@@ -119,40 +119,52 @@ approve_record.__description__ = "This task assigns the approval widget to a rec
 def inspire_filter_category(category_accepted=[], category_refused=[],
                             category_widgeted=[], widget=None):
     def _inspire_filter_category(obj, eng):
+
         category = None
         try:
             category = obj.data["report_number"]
             if isinstance(category, list):
                 while isinstance(category, list):
                     category = category[0]
-            category = category["category"]
+            try:
+                category = category["arxiv_category"]
+            except KeyError:
+                category = category["category"]
             obj.add_task_result("Category filter", category)
         except KeyError:
             msg = "Category not found in the record. Human intervention needed"
             eng.log.error(msg)
             eng.halt(msg, widget=widget)
 
+
         #We want this record to pass to next step
-        if category in category_accepted:
+        for i in category_accepted:
+            if i != '*':
+                i = re.compile('^' + i + '.*')
+                if i.match(category):
+                    return None
+                    #We want this record to  not pass to next step
+        for i in category_refused:
+            if i != '*':
+                i = re.compile('^' + i + '.*')
+                if i.match(category):
+                    eng.stopProcessing()#We think that this record needs a human intervention
+        for i in category_widgeted:
+            if i != '*':
+                i = re.compile('^' + i + '.*')
+                if i.match(category):
+                    eng.halt("Category filtering needs human intervention",
+                             widget=widget)
+
+        #We allow the * option which means at final case
+        if '*' in category_accepted:
             return None
-        #We want this record to  not pass to next step
-        elif category in category_refused:
+        elif '*' in category_refused:
             eng.stopProcessing()
-        #We think that this record needs a human intervention
-        elif category in category_widgeted:
-            eng.halt("Category filtering needs human intervention",
-                     widget=widget)
         else:
-            #We allow the * option which means at final case
-            if '*' in category_accepted:
-                return None
-            elif '*' in category_refused:
-                eng.stopProcessing()
-            else:
-                # We don't know what we should do, in doubt query human... they are nice!
-                msg = ("Category out of task definition. "
-                       "Human intervention needed")
-                eng.halt(msg, widget=widget)
+            # We don't know what we should do, in doubt query human... they are nice!
+            msg = ("Category marked for human intervention.")
+            eng.halt(msg, widget=widget)
 
     return _inspire_filter_category
 
@@ -190,6 +202,7 @@ def get_repositories_list(repositories):
     Here we are retrieving the oaiharvest configuration for the task.
     It will allows in the future to do all the correct operations.
     """
+
     def _get_repositories_list(obj, eng):
 
         obj.extra_data["last_task_name"] = "last task name: _get_repositories_list"
@@ -380,7 +393,7 @@ def fulltext_download(obj, eng):
     Only for arXiv
     """
     if "result" not in obj.extra_data:
-        obj.extra_data["result"]= {}
+        obj.extra_data["result"] = {}
     obj.extra_data["last_task_name"] = "full-text attachment step started"
     task_sleep_now_if_required()
     if "pdf" not in obj.extra_data["result"]:
@@ -486,7 +499,7 @@ def plot_extract(plotextractor_types):
         # Update converted xml files with generated xml or add it for upload
         task_sleep_now_if_required()
         if "result" not in obj.extra_data:
-            obj.extra_data["result"]= {}
+            obj.extra_data["result"] = {}
         if 'latex' in plotextractor_types:
             # Run LaTeX plotextractor
             if "tarball" not in obj.extra_data["result"]:
@@ -566,7 +579,7 @@ def refextract(obj, eng):
 
     task_sleep_now_if_required()
     if "result" not in obj.extra_data:
-        obj.extra_data["result"]= {}
+        obj.extra_data["result"] = {}
     if "pdf" not in obj.extra_data["result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["pdf"])
@@ -613,7 +626,7 @@ def author_list(obj, eng):
     identifiers = obj.data["system_number_external"]["value"]
     task_sleep_now_if_required()
     if "result" not in obj.extra_data:
-        obj.extra_data["result"]= {}
+        obj.extra_data["result"] = {}
     if "tarball" not in obj.extra_data["result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["tarball"])
@@ -755,9 +768,9 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False, output_mode='text
                 extract_acronyms=False, only_core_tags=False):
     def _bibclassify(obj, eng):
         from invenio.legacy.bibclassify import api
+
         if "result" not in obj.extra_data:
             obj.extra_data["result"] = {}
-
 
         if "pdf" in obj.extra_data["result"]:
             eng.log.error(str(obj.extra_data["result"]["pdf"]))
@@ -767,7 +780,7 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False, output_mode='text
                                                                                       output_mode, output_limit, spires,
                                                                                       match_mode, with_author_keywords,
                                                                                       extract_acronyms, only_core_tags
-                                                                                      )
+            )
             obj.add_task_result("bibclassify", obj.extra_data["result"]["bibclassify"])
         else:
             obj.log.error("No classification done due to missing fulltext."
