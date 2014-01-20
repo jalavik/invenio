@@ -72,6 +72,14 @@
                     <li><a id="version-running" class="version-selection" name="Running">Running</a></li>
                 </ul>
             </li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Type<b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a id="type-record" class="type-selection" name="{{ type_list.RECORD }}">Record</a></li>
+                    <li><a id="type-submission" class="type-selection" name="{{ type_list.DEPOSIT }}">Deposit</a></li>
+                    <li><a id="type-any" class="type-selection" name="{{ type_list.ANY }}">Other</a></li>
+                </ul>
+            </li>
         </ul>
         <ul class="nav navbar-nav pull-right">
         </ul>
@@ -93,12 +101,14 @@
                         <th>Category</th>
                         <th>Created</th>
                         <th>Status</th>
+                        <th>Type</th>
                         <th>Details</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
+                        <td></td>
                         <td></td>
                         <td></td>
                         <td></td>

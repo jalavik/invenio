@@ -36,7 +36,8 @@ from invenio.ext.sqlalchemy import db
 from invenio.config import CFG_DEVEL_SITE
 from .models import (Workflow,
                      BibWorkflowObject,
-                     BibWorkflowEngineLog)
+                     BibWorkflowEngineLog,
+                     DATA_TYPES)
 from .utils import dictproperty, get_workflow_definition
 from .config import (CFG_WORKFLOW_STATUS,
                      CFG_OBJECT_VERSION)
@@ -424,6 +425,15 @@ BibWorkflowEngine
         raise WorkflowHalt(message=msg,
                            widget=widget,
                            id_workflow=self.uuid)
+
+    def get_default_data_type(self):
+        """
+        Returns default data type from workflow
+        definition.
+        """
+        return getattr(self.workflow_definition,
+                       "object_type",
+                       DATA_TYPES.ANY)
 
     def set_counter_initial(self, obj_count):
         self.db_obj.counter_initial = obj_count

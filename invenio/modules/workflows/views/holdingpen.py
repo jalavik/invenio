@@ -17,10 +17,12 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 """Holding Pen web interface"""
 
-from flask import render_template, Blueprint, redirect, url_for, flash, request, current_app, jsonify
+from flask import (render_template, Blueprint, redirect,
+                   url_for, flash, request, current_app,
+                   jsonify, session)
 from flask.ext.login import login_required
 
-from ..models import BibWorkflowObject, Workflow
+from ..models import BibWorkflowObject, Workflow, DATA_TYPES
 from ..loader import widgets
 from invenio.base.decorators import templated, wash_arguments
 from invenio.modules.formatter.engine import format_record
@@ -52,7 +54,8 @@ def index():
     Displays main interface of Holdingpen.
     Acts as a hub for catalogers (may be removed)
     """
-    from ..containers import bwolist
+    from ..containers import create_hp_containers
+    bwolist = create_hp_containers(type_showing=[DATA_TYPES.RECORD])
 
     # FIXME: need to autodiscover widgets properly
     widget_list = {}
@@ -79,7 +82,8 @@ def maintable():
     """
     Displays main table interface of Holdingpen.
     """
-    from ..containers import bwolist
+    from ..containers import create_hp_containers
+    bwolist = create_hp_containers(type_showing=[DATA_TYPES.RECORD])
 
     # FIXME: need to autodiscover widgets properly
     widget_list = {}
@@ -95,7 +99,8 @@ def maintable():
     for key in widget_list:
         widget_list[key][0] = len(widget_list[key][1])
 
-    return dict(bwolist=bwolist, widget_list=widget_list)
+    return dict(bwolist=bwolist, widget_list=widget_list,
+                type_list=DATA_TYPES)
 
 
 @blueprint.route('/refresh', methods=['GET', 'POST'])
@@ -107,7 +112,7 @@ def refresh():
     """
     # FIXME: Temp hack until redis is hooked up
     try:
-        version_showing=current_app.config['VERSION_SHOWING']
+        version_showing=session['VERSION_SHOWING']
         load_table(version_showing)
     except:
         pass
@@ -170,11 +175,9 @@ def load_table(version_showing):
     """
     Function used for the passing of JSON data to the DataTable
     """
-    from ..containers import bwolist
-
-    version_showing = request.get_json()
+    from ..containers import create_hp_containers
     VERSION_SHOWING = []
-    rebuild_containers = True
+    version_showing = request.get_json()
 
     if version_showing:
         if version_showing['final'] == True:
@@ -189,7 +192,7 @@ def load_table(version_showing):
 
     # sSearch will be used for searching later
     a_search = request.args.get('sSearch')
-
+    
     try:
         i_sortcol_0 = request.args.get('iSortCol_0')
         s_sortdir_0 = request.args.get('sSortDir_0')
@@ -203,11 +206,7 @@ def load_table(version_showing):
         i_display_length = current_app.config['iDisplayLength']
         sEcho = current_app.config['sEcho'] + 1
 
-    if a_search or rebuild_containers:
-        # FIXME: Temp measure until Redis is hooked up
-        from ..containers import create_hp_containers
-        bwolist = create_hp_containers(sSearch=a_search, version_showing=VERSION_SHOWING)
-
+    bwolist = create_hp_containers(sSearch=a_search, version_showing=VERSION_SHOWING)
     if 'iSortCol_0' in current_app.config:
         i_sortcol_0 = int(i_sortcol_0)
         if i_sortcol_0 != current_app.config['iSortCol_0'] \
@@ -219,11 +218,10 @@ def load_table(version_showing):
     current_app.config['iSortCol_0'] = i_sortcol_0
     current_app.config['sSortDir_0'] = s_sortdir_0
     current_app.config['sEcho'] = sEcho
-
+    
     table_data = {
         "aaData": []
     }
-
     table_data['iTotalRecords'] = len(bwolist)
     table_data['iTotalDisplayRecords'] = len(bwolist)
     #This will be simplified once Redis is utilized.
@@ -271,6 +269,7 @@ def load_table(version_showing):
              d['category'],
              d['pretty_date'],
              d['version'],
+             d['type'],
              d['details'],
              d['widget']
             ]
@@ -494,3 +493,13 @@ def extract_data(bwobject):
         get_workflow_definition(extracted_data['w_metadata'].name).workflow
 
     return extracted_data
+
+
+def prepare_session():
+    """
+    """
+    session['iDisplayStart'] = i_display_start
+    session['iDisplayLength'] = i_display_length
+    session['iSortCol_0'] = i_sortcol_0
+    session['sSortDir_0'] = s_sortdir_0
+    session['sEcho'] = sEcho

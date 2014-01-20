@@ -1,6 +1,7 @@
 
 from invenio.modules.workflows.models import (BibWorkflowObject,
-                                              BibWorkflowEngineLog)
+                                              BibWorkflowEngineLog,
+                                              DATA_TYPES)
 from invenio.modules.workflows.api import (start_delayed)
 
 from invenio.modules.workflows.errors import WorkflowError
@@ -50,7 +51,7 @@ def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
         extra = myobject.get_extra_data()
         extra['source'] = obj.extra_data['repository']['name']
         myobject.set_extra_data(extra)
-
+        myobject.data_type = DATA_TYPES.RECORD
         myobject.save()
         workflow_id = start_delayed(workflow_to_run, data=[myobject],
                                     stop_on_error=True, **kwargs)

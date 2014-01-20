@@ -21,7 +21,8 @@ from .loader import widgets
 
 
 def create_hp_containers(iSortCol_0=None, sSortDir_0=None,
-                         sSearch=None, version_showing=[CFG_OBJECT_VERSION.HALTED]):
+                         sSearch=None, version_showing=[CFG_OBJECT_VERSION.HALTED],
+                         type_showing=[]):
     """
     Looks for related HPItems and groups them together in HPContainers
 
@@ -35,7 +36,10 @@ def create_hp_containers(iSortCol_0=None, sSortDir_0=None,
 
     bwobject_list = BibWorkflowObject.query.filter(
         BibWorkflowObject.id_parent != 0 and \
-        BibWorkflowObject.version.in_(version_showing)).all()
+        BibWorkflowObject.version.in_(version_showing)
+    ).all()
+
+    #bwobject_list = [o for o in bwobject_list if o.data_type in type_showing]
 
     if sSearch:
         if len(sSearch) < 4:
@@ -75,8 +79,3 @@ def create_hp_containers(iSortCol_0=None, sSortDir_0=None,
             bwobject_list.reverse()
     
     return bwobject_list
-
-try:
-    bwolist = create_hp_containers(version_showing=current_app.config['VERSION_SHOWING'])
-except:    
-    bwolist = create_hp_containers()

@@ -40,8 +40,11 @@ from ..tasks.bibsched_tasks import write_something_bibsched
 
 from invenio.base.config import CFG_TMPSHAREDDIR
 
+from ..models import DATA_TYPES
+
 
 class generic_harvesting_workflow(object):
+    object_type = DATA_TYPES.HARVEST
     workflow = [init_harvesting,
                 write_something_bibsched("starting"),
                 foreach(get_repositories_list(['arxiv']), "repository"),

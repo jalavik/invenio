@@ -358,6 +358,7 @@ def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
         Will convert the object data, if XML, using the stylesheet
         in the OAIrepository stored in the object extra_data.
         """
+        eng.log.info("my type: %s" % (obj.data_type,))
         try:
             if not obj.extra_data["repository"]["arguments"]['c_stylesheet']:
                 stylesheet_to_use = stylesheet

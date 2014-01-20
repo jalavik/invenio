@@ -33,9 +33,11 @@ from ..tasks.workflows_tasks import (log_info)
 from ..tasks.logic_tasks import (workflow_if,
                                  workflow_else
                                  )
+from ..models import DATA_TYPES
 
 
 class full_doc_process(object):
+    object_type = DATA_TYPES.RECORD
     workflow = [convert_record_with_repository("oaiarXiv2inspire_nofilter.xsl"), convert_record_to_bibfield,
                 inspire_filter_category(category_widgeted=["gr-qc"], category_accepted=['*'], widget="approval_widget"),
                 workflow_if(quick_match_record, True),
