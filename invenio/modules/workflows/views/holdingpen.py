@@ -17,6 +17,8 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 """Holding Pen web interface"""
 
+import re
+
 from flask import (render_template, Blueprint, redirect,
                    url_for, flash, request, current_app,
                    jsonify, session)
@@ -41,6 +43,8 @@ blueprint = Blueprint('holdingpen', __name__, url_prefix="/admin/holdingpen",
                       static_folder='../static')
 
 default_breadcrumb_root(blueprint, '.holdingpen')
+
+REG_TD = re.compile("<td id=\"(.+?)\">(.+?)</td>", re.DOTALL)
 
 
 @blueprint.route('/', methods=['GET', 'POST'])
@@ -198,6 +202,7 @@ def load_table(version_showing):
 
     # sSearch will be used for searching later
     a_search = request.args.get('sSearch', None)
+    print "search", a_search
     
     try:
         i_sortcol_0 = request.args.get('iSortCol_0')
@@ -260,8 +265,11 @@ def load_table(version_showing):
         if not isinstance(record, dict):
             record = {}
         extra_data = bwo.get_extra_data()
+        category_list = record.get('subject_term', [])
+        if isinstance(category_list, dict):
+            category_list = [category_list]
         categories = ["%s (%s)" % (subject['term'], subject['scheme'])
-                      for subject in record.get('subject_term', [])]
+                      for subject in category_list]
         row = render_template('workflows/row_formatter.html',
                               object=bwo,
                               record=record,
@@ -271,9 +279,8 @@ def load_table(version_showing):
                               mini_widget=mini_widget,
                               pretty_date=pretty_date)
 
-        list1 = [r.split('$') for r in row.split('#') if r]
         d = {}
-        for key, value in list1:
+        for key, value in REG_TD.findall(row):
             d[key] = value.strip()
 
         table_data['aaData'].append(
