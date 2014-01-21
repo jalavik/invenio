@@ -1,30 +1,39 @@
-#id$
+<td id="id">
 {{object.id}}
-#checkbox$
+</td>
+<td id="checkbox">
 <input type="checkbox" class="hp-check">
-#title$
+</td>
+<td id="title">
 {{ record.get('title', {}).get('main', "No title") }}
-#source$
+</td>
+<td id="source">
 {{ extra_data.get('source', "No source") }}
-#category$
+</td>
+<td id="category">
 {{ ", ".join(categories) or "No category" }}
-#pretty_date$
+</td>
+<td id="pretty_date">
 {{ pretty_date(object.created)}}
-#version$
+</td>
+<td id="version">
 {% if object.version == 1 %}<span class="label label-success">Completed</span>
 {% elif object.version == 2 %}<span class="label label-warning">Halted</span>
 {% else %}<span class="label label-info">Running</span>
 {% endif %}
-#type$
+</td>
+<td id="type">
 {{object.data_type}}
-#details$
+</td>
+<td id="details">
 {% if widget == None %}
     <a href="{{url_for('holdingpen.details', objectid=object.id)}}">Details</a>
 {% else %}
 {% set widget_instance = widget() %}
     <a href="{{url_for('holdingpen.show_widget', objectid=object.id)}}">Details</a>
 {% endif %}
-#widget$
+</td>
+<td id="widget">
 {% if widget != None %}
     {% set widget = widget() %}
     {% if mini_widget != None %}
@@ -36,3 +45,4 @@
 {% else %}
 N/A
 {% endif %}
+</td>

@@ -66,6 +66,6 @@ class generic_harvesting_workflow(object):
                 write_something_bibsched("waiting workflows"),
                 wait_for_workflows_to_complete,
                 write_something_bibsched("the end"),
-                workflows_reviews
+                workflows_reviews()
     ]
 
