@@ -59,7 +59,8 @@ class WorkflowsTaskResult(object):
     Class to contain the current task results.
     """
 
-    def __init__(self, name, result):
+    def __init__(self, task_name, name, result):
+        self.task_name = task_name
         self.name = name
         self.result = result
 

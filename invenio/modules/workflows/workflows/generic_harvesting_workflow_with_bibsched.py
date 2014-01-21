@@ -28,7 +28,8 @@ from ..tasks.workflows_tasks import (start_workflow,
                                      wait_for_a_workflow_to_complete,
                                      workflows_reviews,
                                      get_nb_workflow_created,
-                                     get_workflows_progress
+                                     get_workflows_progress,
+                                     write_something_generic
                                      )
 
 from ..tasks.logic_tasks import (foreach,
@@ -36,14 +37,13 @@ from ..tasks.logic_tasks import (foreach,
                                  simple_for
                                  )
 
-from ..tasks.bibsched_tasks import write_something_generic
 
 
 from invenio.legacy.bibsched.bibtask import task_update_progress, write_message
 
 
 class generic_harvesting_workflow_with_bibsched(object):
-    repository = 'arXiv'
+    repository = 'arXivb'
     workflow = [write_something_generic("Initialisation",[task_update_progress, write_message]),
                 init_harvesting,
                 write_something_generic("Starting", [task_update_progress, write_message]),

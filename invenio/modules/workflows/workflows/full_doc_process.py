@@ -24,20 +24,33 @@ from ..tasks.marcxml_tasks import (convert_record_with_repository,
                                    author_list,
                                    upload_step,
                                    quick_match_record,
-                                   approve_record,
-                                   inspire_filter_category
+                                   inspire_filter_category,
+                                   bibclassify
                                    )
 
-from workflow.patterns import IF_ELSE
+from ..tasks.workflows_tasks import (log_info)
+
+from ..tasks.logic_tasks import (workflow_if,
+                                 workflow_else
+                                 )
 
 
 class full_doc_process(object):
     workflow = [convert_record_with_repository("oaiarxiv2marcxml.xsl"), convert_record_to_bibfield,
-                inspire_filter_category(category_widgeted=["gr-qc"],category_accepted=['*'] , widget="approval_widget"),
-                IF_ELSE(quick_match_record, [], [plot_extract(["latex"]),
-                                                 fulltext_download, refextract, author_list,
-                                                 upload_step
-                ]),
+                inspire_filter_category(category_widgeted=["gr-qc"], category_accepted=['*'], widget="approval_widget"),
+                workflow_if(quick_match_record, True),
+                [
+                    plot_extract(["latex"]),
+                    fulltext_download,
+                    bibclassify(taxonomy="/home/someone/src/invenio/HEP.rdf",
+                                output_mode="dict"),
+                    refextract, author_list,
+                    upload_step,
+                ],
+                workflow_else,
+                [
+                   log_info("Record already into database"),
+                ],
     ]
     #workflow =[convert_record("oaiarxiv2marcxml.xsl"), convert_record_to_bibfield, author_list, upload_step]
 

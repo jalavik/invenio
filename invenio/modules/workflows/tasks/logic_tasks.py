@@ -1,4 +1,3 @@
-
 def foreach(get_list_function=None, savename=None, order="ASC"):
     if order not in ["ASC", "DSC"]:
         order = "ASC"
@@ -16,14 +15,11 @@ def foreach(get_list_function=None, savename=None, order="ASC"):
             my_list_to_process = get_list_function(obj, eng)
         else:
             my_list_to_process = []
-
         if step not in eng.extra_data["Iterators"] and order == "ASC":
             eng.extra_data["Iterators"].update({step: 0})
 
-
         if step not in eng.extra_data["Iterators"] and order == "DSC":
             eng.extra_data["Iterators"].update({step: len(my_list_to_process) - 1})
-
 
         if order == "ASC" and eng.extra_data["Iterators"][step] < len(my_list_to_process):
             obj.data = my_list_to_process[eng.extra_data["Iterators"][step]]
@@ -47,7 +43,6 @@ def foreach(get_list_function=None, savename=None, order="ASC"):
 
 
 def simple_for(initA, endA, incrementA, variable_name=None):
-
     def _simple_for(obj, eng):
 
         init = initA
@@ -109,4 +104,45 @@ def execute_if(fun, *args):
             if not res:
                 eng.jumpCallForward(1)
         fun(obj, eng)
+
     return _execute_if
+
+
+def workflow_if(cond, neg=False):
+    def _workflow_if(obj, eng):
+        conda = cond
+        while callable(conda):
+            conda = conda(obj, eng)
+        if "state" not in eng.extra_data:
+            eng.extra_data["state"] = {}
+        step = str(eng.getCurrTaskId())
+
+        if neg:
+            conda = not conda
+        if step not in eng.extra_data["state"]:
+            eng.extra_data["state"].update({step: conda})
+        if conda:
+            eng.jumpCallForward(1)
+        else:
+            coordonatex = len(eng.getCurrTaskId()) - 1
+            coordonatey = eng.getCurrTaskId()[coordonatex]
+            new_vector = eng.getCurrTaskId()
+            new_vector[coordonatex] = coordonatey + 1
+            eng.setPosition(eng.getCurrObjId(), new_vector)
+
+    return _workflow_if
+
+
+def workflow_else(obj, eng):
+    coordonatex = len(eng.getCurrTaskId()) - 1
+    coordonatey = eng.getCurrTaskId()[coordonatex]
+    new_vector = eng.getCurrTaskId()[:]
+    new_vector[coordonatex] = coordonatey - 2
+    if not eng.extra_data["state"][str(new_vector)]:
+        eng.jumpCallForward(1)
+    else:
+        coordonatex = len(eng.getCurrTaskId()) - 1
+        coordonatey = eng.getCurrTaskId()[coordonatex]
+        new_vector = eng.getCurrTaskId()
+        new_vector[coordonatex] = coordonatey + 1
+        eng.setPosition(eng.getCurrObjId(), new_vector)
