@@ -44,7 +44,7 @@ def get_default_data():
 
 def get_default_extra_data():
     """ Returns the base64 representation of the extra_data default value """
-    extra_data_default = {"tasks_results": {},
+    extra_data_default = {"tasks_results": [],
                           "owner": {},
                           "task_counter": {},
                           "error_msg": "",
@@ -329,14 +329,15 @@ BibWorkflowObject
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def add_task_result(self, task_name, name, result):
+    def add_task_result(self, name, result):
         """
         Adds given task results to extra_data in order to be accessed
         and displayed later on by Holding Pen templates.
         """
-        res_obj = WorkflowsTaskResult(name, result)
         extra_data = self.get_extra_data()
-        extra_data["tasks_results"][task_name] = res_obj
+        task_name = extra_data["last_task_name"]
+        res_obj = WorkflowsTaskResult(task_name, name, result)
+        extra_data["tasks_results"].append(res_obj)
         self.set_extra_data(extra_data)
 
     def add_widget(self, widget, message):

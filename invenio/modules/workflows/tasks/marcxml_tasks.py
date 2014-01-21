@@ -70,7 +70,6 @@ import invenio.legacy.template
 from invenio.utils.plotextractor.converter import (untar,
                                                    convert_images
                                                    )
-from invenio.modules.workflows.utils import WorkflowsTaskResult
 
 oaiharvest_templates = invenio.legacy.template.load('oaiharvest')
 
@@ -104,7 +103,6 @@ def approve_record(obj, eng):
     """
     Will add the approval widget to the record
     """
-
     obj.extra_data["last_task_name"] = 'Record Approval'
     try:
         eng.halt(widget="approval_widget",
@@ -121,9 +119,13 @@ approve_record.__description__ = "This task assigns the approval widget to a rec
 def inspire_filter_category(category_accepted=[], category_refused=[], category_widgeted=[], widget=None):
     def _inspire_filter_category(obj, eng):
         category = None
-        obj.extra_data["tasks_results"] = WorkflowsTaskResult("arXiv categorie filter", category)
+        obj.add_task_result("arXiv categorie filter", category)
         try:
-            category = obj.data["report_number"]["arxiv_category"]
+            category = obj.data["report_number"]
+            if isinstance(category, list):
+                while isinstance(category,list):
+                    category = category[0]
+            category = category["arxiv_category"]
         except KeyError:
             eng.log.error("Category not find in the record. Human intervention needed")
             eng.halt("Category not find in the record. Human intervention needed", widget=widget)
@@ -183,7 +185,6 @@ def get_repositories_list(repositories):
     Here we are retrieving the oaiharvest configuration for the task.
     It will allows in the future to do all the correct operations.
     """
-
     def _get_repositories_list(obj, eng):
 
         obj.extra_data["last_task_name"] = "last task name: _get_repositories_list"
@@ -372,11 +373,11 @@ def fulltext_download(obj, eng):
     Performs the fulltext download step.
     Only for arXiv
     """
-
+    if "result" not in obj.extra_data:
+        obj.extra_data["result"]= {}
     obj.extra_data["last_task_name"] = "full-text attachment step started"
     task_sleep_now_if_required()
-
-    if "pdf" not in obj.extra_data["options"]:
+    if "pdf" not in obj.extra_data["result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"],
                                       extract_path, ["pdf"])
@@ -394,13 +395,13 @@ def fulltext_download(obj, eng):
             doctype = 'arXiv'
 
         if pdf:
-            obj.extra_data["options"]["pdf"] = pdf
+            obj.extra_data["result"]["pdf"] = pdf
             fulltext_xml = ("  <datafield tag=\"FFT\" ind1=\" \" ind2=\" \">\n"
                             "    <subfield code=\"a\">%(url)s</subfield>\n"
                             "    <subfield code=\"t\">%(doctype)s</subfield>\n"
                             "    </datafield>"
 
-                           ) % {'url': obj.extra_data["options"]["pdf"],
+                           ) % {'url': obj.extra_data["result"]["pdf"],
                                 'doctype': doctype}
             updated_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n<record>\n' + fulltext_xml + \
                           '</record>\n</collection>'
@@ -412,8 +413,7 @@ def fulltext_download(obj, eng):
             except:
                 obj.data['fft'] = [new_dict_representation['fft']]
 
-            obj.extra_data["tasks_results"] = WorkflowsTaskResult("fulltext download",
-                                                                  {"filesfft": new_dict_representation["fft"]})
+            obj.add_task_result("filesfft", new_dict_representation["fft"])
     else:
         eng.log.info("There was already a pdf register for this record,"
                      "perhaps a duplicate task in you workflow.")
@@ -479,10 +479,11 @@ def plot_extract(plotextractor_types):
         # Download tarball for each harvested/converted record, then run plotextrator.
         # Update converted xml files with generated xml or add it for upload
         task_sleep_now_if_required()
-
+        if "result" not in obj.extra_data:
+            obj.extra_data["result"]= {}
         if 'latex' in plotextractor_types:
             # Run LaTeX plotextractor
-            if "tarball" not in obj.extra_data["options"]:
+            if "tarball" not in obj.extra_data["result"]:
                 # turn oaiharvest_23_1_20110214161632_converted -> oaiharvest_23_1_material
                 # to let harvested material in same folder structure
                 extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
@@ -495,9 +496,9 @@ def plot_extract(plotextractor_types):
                                             (obj.data["system_number_external"]["value"], extract_path)),
                                         eng.uuid)
 
-                obj.extra_data["options"]["tarball"] = tarball
+                obj.extra_data["result"]["tarball"] = tarball
             else:
-                tarball = obj.extra_data["options"]["tarball"]
+                tarball = obj.extra_data["result"]["tarball"]
 
             sub_dir, refno = get_defaults(tarball, CFG_TMPDIR, "")
 
@@ -544,11 +545,9 @@ def plot_extract(plotextractor_types):
                         obj.data['fft'].append(new_dict_representation["fft"])
                     except KeyError:
                         obj.data['fft'] = [new_dict_representation['fft']]
-                    obj.extra_data["tasks_results"] = WorkflowsTaskResult("Plot extraction download",
-                                                                          {"filesfft": new_dict_representation["fft"],
-                                                                           "number_picture_converted": len(
-                                                                               converted_image_list),
-                                                                           "number_of_picture_total": len(image_list)})
+                    obj.add_task_result("filesfft", new_dict_representation["fft"])
+                    obj.add_task_result("number_picture_converted", len(converted_image_list))
+                    obj.add_task_result("number_of_picture_total", len(image_list))
 
     return _plot_extract
 
@@ -560,24 +559,25 @@ def refextract(obj, eng):
     obj.extra_data["last_task_name"] = "refextraction step started"
 
     task_sleep_now_if_required()
-
-    if "pdf" not in obj.extra_data["options"]:
+    if "result" not in obj.extra_data:
+        obj.extra_data["result"]= {}
+    if "pdf" not in obj.extra_data["result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["pdf"])
         time.sleep(CFG_PLOTEXTRACTOR_DOWNLOAD_TIMEOUT)
         if pdf is not None:
-            obj.extra_data["options"]["pdf"] = pdf
+            obj.extra_data["result"]["pdf"] = pdf
 
-    elif not os.path.isfile(obj.extra_data["options"]["pdf"]):
+    elif not os.path.isfile(obj.extra_data["result"]["pdf"]):
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["pdf"])
         time.sleep(CFG_PLOTEXTRACTOR_DOWNLOAD_TIMEOUT)
         if pdf is not None:
-            obj.extra_data["options"]["pdf"] = pdf
+            obj.extra_data["result"]["pdf"] = pdf
 
-    if os.path.isfile(obj.extra_data["options"]["pdf"]):
+    if os.path.isfile(obj.extra_data["result"]["pdf"]):
 
-        cmd_stdout = extract_references_from_file_xml(obj.extra_data["options"]["pdf"])
+        cmd_stdout = extract_references_from_file_xml(obj.extra_data["result"]["pdf"])
         references_xml = REGEXP_REFS.search(cmd_stdout)
 
         if references_xml:
@@ -592,9 +592,8 @@ def refextract(obj, eng):
             except KeyError:
                 if 'reference' in new_dict_representation:
                     obj.data['reference'] = [new_dict_representation['reference']]
+            obj.add_task_result("reference", new_dict_representation['reference'])
 
-            obj.extra_data["tasks_results"] = WorkflowsTaskResult("Plot extraction download",
-                        {"reference": new_dict_representation['reference']})
     else:
         obj.log.error("Not able to download and process the PDF ")
 
@@ -607,8 +606,9 @@ def author_list(obj, eng):
 
     identifiers = obj.data["system_number_external"]["value"]
     task_sleep_now_if_required()
-
-    if "tarball" not in obj.extra_data["options"]:
+    if "result" not in obj.extra_data:
+        obj.extra_data["result"]= {}
+    if "tarball" not in obj.extra_data["result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["tarball"])
         tarball = str(tarball)
@@ -616,14 +616,14 @@ def author_list(obj, eng):
         if tarball is None:
             raise WorkflowError(str("Error harvesting tarball from id: %s %s" % (identifiers, extract_path)),
                                 eng.uuid)
-        obj.extra_data["options"]["tarball"] = tarball
+        obj.extra_data["result"]["tarball"] = tarball
 
-    sub_dir, dummy = get_defaults(obj.extra_data["options"]["tarball"], CFG_TMPDIR, "")
+    sub_dir, dummy = get_defaults(obj.extra_data["result"]["tarball"], CFG_TMPDIR, "")
 
     try:
-        untar(obj.extra_data["options"]["tarball"], sub_dir)
+        untar(obj.extra_data["result"]["tarball"], sub_dir)
     except Timeout:
-        eng.log.error('Timeout during tarball extraction on %s' % (obj.extra_data["options"]["tarball"]))
+        eng.log.error('Timeout during tarball extraction on %s' % (obj.extra_data["result"]["tarball"]))
 
     xml_files_list = find_matching_files(sub_dir, ["xml"])
 
@@ -673,10 +673,8 @@ def author_list(obj, eng):
             new_dict_representation = create_record(updated_xml).dumps()
             obj.data['authors'] = new_dict_representation["authors"]
             obj.data['number_of_authors'] = new_dict_representation["number_of_authors"]
-
-            obj.extra_data["tasks_results"] = WorkflowsTaskResult("Plot extraction download",
-                {"authors": new_dict_representation["authors"],
-                 "number_of_authors": new_dict_representation["number_of_authors"]})
+            obj.add_task_result("authors", new_dict_representation["authors"])
+            obj.add_task_result("number_of_authors", new_dict_representation["number_of_authors"])
 
 
 author_list.__id__ = "u"
@@ -744,3 +742,28 @@ def upload_step(obj, eng):
                            'bst_run_bibtask[taskname="webcoll", user="oaiharvest", P="6", c="HEP"]']
         task_low_level_submission("bibindex", "oaiharvest", *tuple(bibindex_params))
     eng.log.info("end of upload")
+
+
+def bibclassify(taxonomy, rebuild_cache=False, no_cache=False, output_mode='text',
+                output_limit=20, spires=False, match_mode='full', with_author_keywords=False,
+                extract_acronyms=False, only_core_tags=False):
+    def _bibclassify(obj, eng):
+        from invenio.legacy.bibclassify import api
+        if "result" not in obj.extra_data:
+            obj.extra_data["result"] = {}
+
+
+        if "pdf" in obj.extra_data["result"]:
+            eng.log.error(str(obj.extra_data["result"]["pdf"]))
+            eng.log.error(str(taxonomy))
+            obj.extra_data["result"]["bibclassify"] = api.bibclassify_exhaustive_call(obj.extra_data["result"]["pdf"],
+                                                                                      taxonomy, rebuild_cache, no_cache,
+                                                                                      output_mode, output_limit, spires,
+                                                                                      match_mode, with_author_keywords,
+                                                                                      extract_acronyms, only_core_tags
+                                                                                      )
+            obj.add_task_result("bibclassify", obj.extra_data["result"]["bibclassify"])
+        else:
+            obj.log.error("No classification done due to missing fulltext."
+                          "\n You need to get it before! see fulltext task")
+    return _bibclassify
