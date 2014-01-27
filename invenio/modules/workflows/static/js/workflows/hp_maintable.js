@@ -38,7 +38,7 @@ function init_urls(url_) {
     url.details = url_.details;
 }
 
-function init_datatable(){
+function init_datatable(version_showing){
     oSettings = {
         "sDom": 'lf<"clear">rtip',
         "bJQueryUI": true,
@@ -58,10 +58,13 @@ function init_datatable(){
                         {'sWidth': "15%", 'aTargets': [4]}],
         "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
             var id = aData[0];
-            rememberSelected(nRow, id);
+            rememberSelected(nRow);
             oSettings = oTable.fnSettings();
+            nRow.row_id = id;
+            // console.log(nRow.cells[0].firstChild);
+            nRow.checkbox = nRow.cells[0].firstChild;
             nRow.addEventListener("click", function(e) {
-                selectRow(nRow, id, e, oSettings);
+                selectRow(nRow, e, oSettings);
             });
         },
         "fnDrawCallback": function(){
@@ -78,7 +81,10 @@ function init_datatable(){
         }
     };
     oTable = $('#maintable').dataTable(oSettings);
-    $('#version-halted').click();
+    // $('#tagsinput').tagsinput();
+    console.log(version_showing);
+    initialize_versions(version_showing);
+    // $('#version-halted').click();
     return oTable;
 }
 
@@ -103,7 +109,8 @@ function hoverRow(row) {
 }
 
 function unhoverRow(row) {
-    if($.inArray(selectCellByTitle(row, 'Id').innerText, rowList) > -1){
+    console.log(row.row_id);
+    if($.inArray(row.row_id, rowList) > -1){
         row.style.background = "#ffa";
     }
     else{
@@ -128,17 +135,21 @@ function selectRange(row){
     var toPos = oTable.fnGetPosition(row) + oSettings._iDisplayStart;
     var fromPos = rowIndexList[rowIndexList.length-1];
     var i;
+    var current_row = null;
 
     if (toPos > fromPos){
         for (i=fromPos; i<=toPos; i++){
             j = i % 10;
             if($.inArray(i, rowIndexList) <= -1){
-                if (selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[j]].nTr, 'Actions').innerText != 'N/A'){
+                current_row = oSettings.aoData[oSettings.aiDisplay[j]].nTr;
+                if (selectCellByTitle(current_row, 'Actions').innerText != 'N/A'){
                     rowIndexList.push(i);
-                    rowList.push(selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[j]].nTr, 'Id').innerText);
-                    oSettings.aoData[oSettings.aiDisplay[j]].nTr.style.background = "#ffa";
-                    checkbox = selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[j]].nTr, "").childNodes[1];
-                    checkbox.checked = true;
+                    console.log(current_row.row_id);
+                    rowList.push(current_row.row_id);
+                    current_row.style.background = "#ffa";
+                    // checkbox = selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[j]].nTr, "").childNodes[1];
+                    console.log("EDW");
+                    current_row.checkbox.checked = true;
                 }
             }
         }
@@ -147,13 +158,12 @@ function selectRange(row){
         for (i=fromPos; i>=toPos; i--){
             j = i % 10;
             if($.inArray(i, rowIndexList) <= -1){
-                console.log(oSettings.aoData[oSettings.aiDisplay[j]].nTr);
-                if (selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[j]].nTr, 'Actions').innerText != 'N/A'){
+                current_row = oSettings.aoData[oSettings.aiDisplay[j]].nTr
+                if (selectCellByTitle(current_row, 'Actions').innerText != 'N/A'){
                     rowIndexList.push(i);
-                    rowList.push(selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[j]].nTr, 'Id').innerText);
-                    oSettings.aoData[oSettings.aiDisplay[j]].nTr.style.background = "#ffa";
-                    checkbox = selectCellByTitle(oSettings.aiDisplay[j].nTr, "").childNodes[1];
-                    checkbox.checked = false;
+                    rowList.push(current_row.row_id);
+                    current_row.style.background = "#ffa";
+                    current_row.checkbox.checked = false;
                 }
             }
         }
@@ -177,9 +187,9 @@ function selectAll(){
     }
 }
 
-function rememberSelected(row, id) {
+function rememberSelected(row) {
     selectedRow = row;
-    if($.inArray(id, rowList) > -1){
+    if($.inArray(row.row_id, rowList) > -1){
         selectedRow.style.background = "#ffa";
         //selectedRow.cells[0].childNodes[1].checked = true;
     }
@@ -187,6 +197,7 @@ function rememberSelected(row, id) {
 
 window.addEventListener("keydown", function(e){
     var currentRowIndex;
+    var current_row;
     if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
         e.preventDefault();
     }
@@ -194,11 +205,12 @@ window.addEventListener("keydown", function(e){
         if (e.shiftKey === true){
             currentRowIndex = rowIndexList[rowIndexList.length-1];
             if (currentRowIndex < 9){
-                rowToAdd = currentRowIndex + 1;
-                if($.inArray(selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[rowToAdd]].nTr, 'Id').innerText, rowList) <= -1){
-                    rowIndexList.push(rowToAdd);
-                    rowList.push(selectCellByTitle(oSettings.aoData[oSettings.aiDisplay[rowToAdd]].nTr, 'Id').innerText);
-                    oSettings.aoData[oSettings.aiDisplay[rowToAdd]].nTr.style.background = "#ffa";
+                row_index = currentRowIndex + 1;
+                current_row = oSettings.aoData[oSettings.aiDisplay[row_index]].nTr;
+                if($.inArray(current_row.row_id, rowList) <= -1){
+                    rowIndexList.push(row_index);
+                    rowList.push(current_row.row_id);
+                    current_row.style.background = "#ffa";
                 }
             }
         }
@@ -273,8 +285,8 @@ function getCellIndex(row, title){
     }   
 }
 
-function selectRow(row, id, e, oSettings) {
-    console.log(id);
+function selectRow(row, e, oSettings) {
+    console.log(row.row_id);
     selectedRow = row;
     if( e.shiftKey === true ){
         selectRange(row);
@@ -283,33 +295,32 @@ function selectRow(row, id, e, oSettings) {
         if(selectCellByTitle(row, 'Actions').childNodes[0].id === 'submitButtonMini'){
             widget_name = 'Approve Record';
         }
-        if($.inArray(id, rowList) <= -1){
+        if($.inArray(row.row_id, rowList) <= -1){
             // Select row
-            rowList.push(id);
+            rowList.push(row.row_id);
             rowIndexList.push(row._DT_RowIndex+oSettings._iDisplayStart);
-            selectedRow.style.background = "#ffa";
+            row.style.background = "#ffa";
 
             if (selectCellByTitle(row, 'Actions').innerText != 'N/A'){                    
                 if(widget_name === 'Approve Record'){
-                    recordsToApprove.push(id);
+                    recordsToApprove.push(row.row_id);
                     console.log(recordsToApprove);
                 }
-            }
-
-            checkbox = $(selectedRow).find(".hp-check");
-            checkbox.attr('checked', true);
-        }
+            }   
+            row.checkbox.checked = true;
+        }   
         else{
-            // De-Select row??
-            rowList.splice(rowList.indexOf(id), 1);
+            // De-Select row?? - Yes
+            rowList.splice(rowList.indexOf(row.row_id), 1);
             rowIndexList.splice(rowIndexList.indexOf(row._DT_RowIndex+oSettings._iDisplayStart), 1);
-            selectedRow.style.background = "white";
+            row.style.background = "white";
             
             if(widget_name === 'Approve Record'){
-                recordsToApprove.splice(recordsToApprove.indexOf(id), 1);
+                recordsToApprove.splice(recordsToApprove.indexOf(row.row_id), 1);
             }
-            checkbox = $(selectedRow).find(".hp-check");
-            checkbox.attr('checked', false);
+            // checkbox = $(selectedRow).find(".hp-check");
+            // checkbox.attr('checked', false);
+            row.checkbox.checked = false;
         }
     }
     checkRecordsToApprove();
@@ -334,18 +345,17 @@ $(document).keyup(function(e){
 $('.task-btn').on('click', function(){
     if($.inArray($(this)[0].name, tagList) <= -1){
         var widget_name = $(this)[0].name;
-        $('#tag-area').append('<div class="alert alert-info tag-alert col-md-1">'+widget_name+'<a id="'+widget_name+'" class="close-btn pull-right" data-dismiss="alert" name='+widget_name+' onclick="closeTag(this.parentElement)">&times;</a></div>');
+        // $('#tag-area').append('<div class="alert alert-info tag-alert col-md-1">'+widget_name+'<a id="'+widget_name+'" class="close-btn pull-right" data-dismiss="alert" name='+widget_name+' onclick="closeTag(this.parentElement)">&times;</a></div>');
+        $('#tagsinput').tagsinput('add', $(this)[0].name);
         tagList.push($(this)[0].name);
-        oTable.fnFilter($(this)[0].name);
-
+        // oTable.fnFilter($(this)[0].name);
+        requestNewObjects();
     }
     else{
-        closeTag($('#'+widget_name));
+        closeTag(widget_name);
         oTable.fnFilter( '^$', 4, true, false );
-        // $('#refresh_button').click();
         oTable.fnDraw(false);
     }   
-    // requestNewObjects();
 });
 
 $('.version-selection').on('click', function(){
@@ -354,30 +364,86 @@ $('.version-selection').on('click', function(){
 
     if($.inArray($(this)[0].name, tagList) <= -1){
         console.log("TAG NOT IN TAGLIST");
-        $('#tag-area').append('<div id="tag-version-'+$(this)[0].name+'" name="'+$(this)[0].name+'" class="alert alert-info tag-alert col-md-1">'+$(this)[0].name+'<a class="close-btn pull-right" data-dismiss="alert" onclick="closeTag(this.parentElement)">&times;</a></div>');
+        // $('#tag-area').append('<div id="tag-version-'+$(this)[0].name+'" name="'+$(this)[0].name+'" class="alert alert-info tag-alert col-md-1">'+$(this)[0].name+'<a class="close-btn pull-right" data-dismiss="alert" onclick="closeTag(this.parentElement)">&times;</a></div>');
+        $('#tagsinput').tagsinput('add', $(this)[0].name);
         tagList.push($(this)[0].name);
+        requestNewObjects();
     } 
     else{
-        closeTag($('#tag-version-'+$(this)[0].name)[0]);
+        console.log("TAG IS IN TAGLIST");
+        closeTag($(this)[0].name);
+        // $('#tagsinput').tagsinput('remove', $(this)[0].name);
     }    
+});
+
+$("#tagsinput").on('itemRemoved', function(event) {
+    tagList.splice(tagList.indexOf(event.item), 1);
+    console.log('item removed : '+event.item);
     requestNewObjects();
 });
 
-function closeTag(obj){
-    // console.log(tagList);
-    // console.log(obj);
-    // console.log(obj.name);
-    var tag_name = obj.innerText.substr(0,obj.innerText.length-1);
+$("#tagsinput").on('itemAdded', function(event){
+    if(event.item != 'Halted' && event.item != 'Final' && event.item != 'Running'){
+        oTable.fnFilter(event.item);
+    }
+    else if(event.item === 'Halted'){
+        $('#version-halted').click();
+    }
+    else if(event.item === 'Final'){
+        $('#version-final').click();   
+    }
+    else{
+        $('version-running').click();
+    }
+});
+
+function closeTag(tag_name){
+//     // console.log(tagList);
+//     // console.log(obj.name);
     console.log(tag_name);
-    tagList.splice(tagList.indexOf(obj.name), 1);
-    
-    obj.remove();
+    tagList.splice(tagList.indexOf(tag_name), 1);
+    $('#tagsinput').tagsinput('remove', tag_name);
+    console.log($("#tagsinput").tagsinput('items'));
     requestNewObjects();
 };
 //***********************************
 
 //Utility functions
 //***********************************
+function initialize_versions(version_showing){
+    if(version_showing){
+        for(var i=0; i<version_showing.length; i++){
+            if(version_showing[i] == 1){
+                if ($.inArray('Final', tagList) <= -1){
+                    tagList.push('Final');  
+                } 
+                $('#version-final').click();
+            }
+            else if(version_showing[i] == 2){
+                if ($.inArray('Halted', tagList) <= -1){
+                    tagList.push('Halted');
+                } 
+                $('#version-halted').click();  
+            }
+            else if(version_showing[i] == 3){
+                if ($.inArray('Halted', tagList) <= -1){
+                    tagList.push('Running');
+                } 
+                $('#version-running').click();  
+            }
+        }
+    }
+
+    if ($.inArray('Final', tagList) > -1) $('#tagsinput').tagsinput('add', 'Final');
+    if ($.inArray('Halted', tagList) > -1){
+        // $('#tagsinput').tagsinput('add', 'Halted');
+        $('#version-halted').click();
+        console.log('patisa to halted');
+    } 
+    if ($.inArray('Running', tagList) > -1) $('#tagsinput').tagsinput('add', 'Running');    
+    console.log(tagList);
+}
+
 function fnGetSelected( oTableLocal ){
     var aReturn = [];
     var aTrs = oTableLocal.fnGetNodes();

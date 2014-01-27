@@ -103,8 +103,13 @@ def maintable():
     for key in widget_list:
         widget_list[key][0] = len(widget_list[key][1])
 
+    try:
+        version_showing = current_app.config['VERSION_SHOWING']
+    except KeyError:
+        version_showing = CFG_OBJECT_VERSION.HALTED
+
     return dict(bwolist=bwolist, widget_list=widget_list,
-                type_list=DATA_TYPES)
+                type_list=DATA_TYPES, version_showing=version_showing)
 
 
 @blueprint.route('/refresh', methods=['GET', 'POST'])
@@ -301,6 +306,15 @@ def load_table(version_showing):
     table_data['iTotalRecords'] = len(bwolist)
     table_data['iTotalDisplayRecords'] = len(bwolist)
     return jsonify(table_data)
+
+
+@blueprint.route('/get_version_showing', methods=['GET', 'POST'])
+@login_required
+def get_version_showing():
+    try:
+        return current_app.config['VERSION_SHOWING']
+    except KeyError:
+        return None
 
 
 @blueprint.route('/details/<objectid>', methods=['GET', 'POST'])
