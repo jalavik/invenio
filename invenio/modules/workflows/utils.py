@@ -50,6 +50,14 @@ class BibWorkflowObjectIdContainer(object):
         else:
             return None
 
+    def from_dict(self, dict_to_process):
+        self.id = dict_to_process[str(self.__class__)]["id"]
+        return self
+
+    def to_dict(self):
+        return {str(self.__class__): self.__dict__}
+
+
     def __str__(self):
         return "BibWorkflowObject(%s)" % (str(self.id),)
 
@@ -68,6 +76,7 @@ class WorkflowsTaskResult(object):
 def get_workflow_definition(name):
     """ Tries to load the given workflow from the system. """
     from .loader import workflows
+
     try:
         return workflows[name]
     except Exception as e:
@@ -90,19 +99,19 @@ def determineDataType(data):
         # by using magic library
         try:
             from magic import Magic
+
             mime_checker = Magic(mime=True)
             data_type = mime_checker.from_buffer(data)  # noqa
         except:
             register_exception(stream="warning", prefix=
-                               "BibWorkflowObject.determineDataType:" +
-                               " Impossible to resolve data type.")
+            "BibWorkflowObject.determineDataType:" +
+            " Impossible to resolve data type.")
             data_type = ""
     return data_type
 
 
 ## TODO special thanks to http://code.activestate.com/recipes/440514-dictproperty-properties-for-dictionary-attributes/
 class dictproperty(object):
-
     class _proxy(object):
 
         def __init__(self, obj, fget, fset, fdel):
@@ -158,7 +167,7 @@ def redis_create_search_entry(bwobject):
     redis_server.sadd("holdingpen_sort:owner:%s" % (extra_data['owner'],),
                       bwobject.id)
     redis_server.sadd("holdingpen_sort:last_task_name:%s" %
-                     (extra_data['last_task_name'],), bwobject.id)
+                      (extra_data['last_task_name'],), bwobject.id)
 
 
 def filter_holdingpen_results(key, *args):
@@ -167,8 +176,8 @@ def filter_holdingpen_results(key, *args):
     redis_server = set_up_redis()
     new_args = []
     for a in args:
-        new_args.append("holdingpen_sort:"+a)
-    return redis_server.sinter("holdingpen_sort:"+key, *new_args)
+        new_args.append("holdingpen_sort:" + a)
+    return redis_server.sinter("holdingpen_sort:" + key, *new_args)
 
 
 def get_redis_keys(key=None):
@@ -191,6 +200,7 @@ def set_up_redis():
     @return: Redis server object.
     """
     from flask import current_app
+
     redis_server = redis.Redis.from_url(
         current_app.config.get('CACHE_REDIS_URL', 'redis://localhost:6379')
     )
@@ -262,4 +272,5 @@ def sort_bwolist(bwolist, iSortCol_0, sSortDir_0):
 
 def parse_bwids(bwolist):
     import ast
+
     return list(ast.literal_eval(bwolist))

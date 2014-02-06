@@ -340,11 +340,11 @@ BibWorkflowObject
         Adds given task results to extra_data in order to be accessed
         and displayed later on by Holding Pen templates.
         """
-        self.log.info("adding task result %r, %r" % (name, result))
+        #self.log.info("adding task result %r, %r" % (name, result))
         task_name = self.extra_data["last_task_name"]
         res_obj = WorkflowsTaskResult(task_name, name, result)
         self.extra_data["tasks_results"].append(res_obj)
-        self.log.info("added")
+        #self.log.info("added")
 
     def add_widget(self, widget, message):
         """
