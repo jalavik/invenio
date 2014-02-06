@@ -1,4 +1,4 @@
-def foreach(get_list_function=None, savename=None, order="ASC"):
+def foreach(get_list_function=None, savename=None, cache_data=False, order="ASC"):
     if order not in ["ASC", "DSC"]:
         order = "ASC"
 
@@ -11,27 +11,39 @@ def foreach(get_list_function=None, savename=None, order="ASC"):
         except KeyError:
             eng.extra_data["Iterators"] = {}
 
+        if not step in eng.extra_data["Iterators"]:
+            eng.extra_data["Iterators"][step] = {}
+            if cache_data:
+                eng.extra_data["Iterators"][step]["cache"] = get_list_function(obj, eng)
+                my_list_to_process = eng.extra_data["Iterators"][step]["cache"]
+            if order == "ASC":
+                eng.extra_data["Iterators"][step].update({"value": 0})
+            elif order == "DSC":
+                eng.extra_data["Iterators"][step].update({"value": len(my_list_to_process) - 1})
+            eng.extra_data["Iterators"][step]["previous_data"] = obj.data
+
         if callable(get_list_function):
-            my_list_to_process = get_list_function(obj, eng)
+            if cache_data:
+                my_list_to_process = eng.extra_data["Iterators"][step]["cache"]
+            else:
+                my_list_to_process = get_list_function(obj, eng)
+        elif isinstance(get_list_function, list):
+            my_list_to_process = get_list_function
         else:
             my_list_to_process = []
-        if step not in eng.extra_data["Iterators"] and order == "ASC":
-            eng.extra_data["Iterators"].update({step: 0})
 
-        if step not in eng.extra_data["Iterators"] and order == "DSC":
-            eng.extra_data["Iterators"].update({step: len(my_list_to_process) - 1})
-
-        if order == "ASC" and eng.extra_data["Iterators"][step] < len(my_list_to_process):
-            obj.data = my_list_to_process[eng.extra_data["Iterators"][step]]
+        if order == "ASC" and eng.extra_data["Iterators"][step]["value"] < len(my_list_to_process):
+            obj.data = my_list_to_process[eng.extra_data["Iterators"][step]["value"]]
             if savename is not None:
                 obj.extra_data[savename] = obj.data
-            eng.extra_data["Iterators"][step] += 1
-        elif order == "DSC" and eng.extra_data["Iterators"][step] > -1:
-            obj.data = my_list_to_process[eng.extra_data["Iterators"][step]]
+            eng.extra_data["Iterators"][step]["value"] += 1
+        elif order == "DSC" and eng.extra_data["Iterators"][step]["value"] > -1:
+            obj.data = my_list_to_process[eng.extra_data["Iterators"][step]["value"]]
             if savename is not None:
                 obj.extra_data[savename] = obj.data
-            eng.extra_data["Iterators"][step] -= 1
+            eng.extra_data["Iterators"][step]["value"] -= 1
         else:
+            obj.data = eng.extra_data["Iterators"][step]["previous_data"]
             del eng.extra_data["Iterators"][step]
             coordonatex = len(eng.getCurrTaskId()) - 1
             coordonatey = eng.getCurrTaskId()[coordonatex]
@@ -42,12 +54,12 @@ def foreach(get_list_function=None, savename=None, order="ASC"):
     return _foreach
 
 
-def simple_for(initA, endA, incrementA, variable_name=None):
+def simple_for(inita, enda, incrementa, variable_name=None):
     def _simple_for(obj, eng):
 
-        init = initA
-        end = endA
-        increment = incrementA
+        init = inita
+        end = enda
+        increment = incrementa
         while callable(init):
             init = init(obj, eng)
         while callable(end):
@@ -64,15 +76,16 @@ def simple_for(initA, endA, incrementA, variable_name=None):
             eng.extra_data["Iterators"] = {}
 
         if step not in eng.extra_data["Iterators"]:
-            eng.extra_data["Iterators"].update({step: init})
+            eng.extra_data["Iterators"][step] = {}
+            eng.extra_data["Iterators"][step].update({"value": init})
 
-        if (increment > 0 and eng.extra_data["Iterators"][step] > end) or \
-                (increment < 0 and eng.extra_data["Iterators"][step] < end):
+        if (increment > 0 and eng.extra_data["Iterators"][step]["value"] > end) or \
+                (increment < 0 and eng.extra_data["Iterators"][step]["value"] < end):
             finish = True
         if not finish:
             if variable_name is not None:
-                eng.extra_data["Iterators"][variable_name] = eng.extra_data["Iterators"][step]
-            eng.extra_data["Iterators"][step] += increment
+                eng.extra_data["Iterators"][variable_name] = eng.extra_data["Iterators"][step]["value"]
+            eng.extra_data["Iterators"][step]["value"] += increment
         else:
             del eng.extra_data["Iterators"][step]
             coordonatex = len(eng.getCurrTaskId()) - 1

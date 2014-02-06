@@ -1,4 +1,3 @@
-
 from invenio.modules.workflows.models import (BibWorkflowObject,
                                               BibWorkflowEngineLog,
                                               DATA_TYPES)
@@ -72,6 +71,7 @@ def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
             eng.extra_data["nb_workflow_finish"] = 0
         if "uuid_workflow_crashed" not in eng.extra_data:
             eng.extra_data["uuid_workflow_crashed"] = []
+
     return _start_workflow
 
 
@@ -239,7 +239,7 @@ def get_status_async_result_obj_data(obj, eng):
 
 def get_workflows_progress(obj, eng):
     try:
-        return (eng.extra_data["nb_workflow_finish"]*100.0)/(eng.extra_data["nb_workflow"])
+        return (eng.extra_data["nb_workflow_finish"] * 100.0) / (eng.extra_data["nb_workflow"])
     except KeyError:
         return "No progress (key missing)"
     except ZeroDivisionError:
@@ -253,12 +253,16 @@ def workflows_reviews(stop_if_error=False):
          asynchronous workflows in this main workflow
          Raise an exception if a workflow is gone rogue
          """
+        if eng.extra_data["nb_workflow"] == 0:
+            raise WorkflowError("Nothing has been harvested ! Look into logs for errors !", eng.uuid, obj.id)
         eng.log.info("last task name: workflows_reviews")
         eng.log.info("%s / %s failed" % (eng.extra_data["nb_workflow_failed"], eng.extra_data["nb_workflow"]))
 
         if eng.extra_data["nb_workflow_failed"] and stop_if_error:
-            raise WorkflowError("%s / %s failed" % (eng.extra_data["nb_workflow_failed"], eng.extra_data["nb_workflow"]),
-                                eng.uuid, obj.id, payload=eng.extra_data["uuid_workflow_crashed"])
+            raise WorkflowError(
+                "%s / %s failed" % (eng.extra_data["nb_workflow_failed"], eng.extra_data["nb_workflow"]),
+                eng.uuid, obj.id, payload=eng.extra_data["uuid_workflow_crashed"])
+
     return _workflows_reviews
 
 
