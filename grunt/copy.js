@@ -27,7 +27,8 @@ module.exports = {
                ,'jquery-tokeninput/styles/token-input.css'
                ,'jquery.bookmark/jquery.bookmark.css'
                ,'datatables-colvis/media/css/ColVis.css'
-               ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.css'],
+               ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.css'
+               ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.css'],
         dest: '<%= globalConfig.installation_path %>/css/'
     },
     img: {
@@ -59,7 +60,9 @@ module.exports = {
              ,'uploadify/jquery.uploadify.min.js'
              ,'json2/json2.js'
              ,'datatables-colvis/media/js/ColVis.js'
-             ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.js'],
+             ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.js'
+             ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js'
+             ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js.map'],
         dest: '<%= globalConfig.installation_path %>/js/'
     },
     fonts: {
