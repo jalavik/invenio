@@ -55,7 +55,8 @@ module.exports = function (grunt) {
                        ,'jquery-tokeninput/styles/token-input.css'
                        ,'jquery.bookmark/jquery.bookmark.css'
                        ,'datatables-colvis/media/css/ColVis.css'
-                       ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.css'],
+                       ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.css'
+                       ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.css'],
                 dest: '<%= grunt.option(\'target\') %>/css/'
             },
 
@@ -89,7 +90,9 @@ module.exports = function (grunt) {
                      ,'uploadify/jquery.uploadify.min.js'
                      ,'json2/json2.js'
                      ,'datatables-colvis/media/js/ColVis.js'
-                     ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.js'],
+                     ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.js'
+                     ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js'
+                     ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js.map'],
                 dest: '<%= grunt.option(\'target\') %>/js/'
             },
 
@@ -286,7 +289,6 @@ module.exports = function (grunt) {
                 src: ['**'],
                 dest: '<%= grunt.option(\'target\') %>/plupload/'
             }
-
         },
 
         // minification of the JS files
@@ -393,6 +395,7 @@ module.exports = function (grunt) {
                      ,'ColVis.js'
                      ,'dataTables.bootstrap.js'
                      ,'jquery.min.map'
+                     ,'bootstrap-tagsinput.min.js'
                      ]
             },
 
