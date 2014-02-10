@@ -68,7 +68,6 @@ import invenio.legacy.template
 from invenio.utils.plotextractor.converter import (untar,
                                                    convert_images
                                                    )
-from legacy.bibfield import create_record
 
 oaiharvest_templates = invenio.legacy.template.load('oaiharvest')
 
