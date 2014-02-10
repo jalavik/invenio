@@ -56,7 +56,8 @@ module.exports = function (grunt) {
                        ,'jquery.bookmark/jquery.bookmark.css'
                        ,'datatables-colvis/media/css/ColVis.css'
                        ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.css'
-                       ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.css'],
+                       ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.css'
+                       ,'prism/prism.css'],
                 dest: '<%= grunt.option(\'target\') %>/css/'
             },
 
@@ -92,7 +93,8 @@ module.exports = function (grunt) {
                      ,'datatables-colvis/media/js/ColVis.js'
                      ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.js'
                      ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js'
-                     ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js.map'],
+                     ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js.map'
+                     ,'prism/prism.js'],
                 dest: '<%= grunt.option(\'target\') %>/js/'
             },
 
@@ -198,18 +200,6 @@ module.exports = function (grunt) {
                 rename: function(dest, src) {
                     var res = src.replace(src.substring(0),
                                           'jquery.form.js');
-                    return dest + res;
-                }
-            },
-
-            prism: {
-                expand: true,
-                flatten: true,
-                cwd: '<%= globalConfig.bower_path %>/',
-                src: ['prism/index.js'],
-                dest: '<%= grunt.option(\'target\') %>/js/',
-                rename: function(dest, src) {
-                    var res = src.replace(src.substring(0), 'prism.js');
                     return dest + res;
                 }
             },
