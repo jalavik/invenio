@@ -28,7 +28,8 @@ module.exports = {
                ,'jquery.bookmark/jquery.bookmark.css'
                ,'datatables-colvis/media/css/ColVis.css'
                ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.css'
-               ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.css'],
+               ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.css'
+               ,'prism/prism.css'],
         dest: '<%= globalConfig.installation_path %>/css/'
     },
     img: {
@@ -62,7 +63,8 @@ module.exports = {
              ,'datatables-colvis/media/js/ColVis.js'
              ,'DataTables-Plugins/integration/bootstrap/3/dataTables.bootstrap.js'
              ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js'
-             ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js.map'],
+             ,'bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js.map'
+             ,'prism/prism.js'],
         dest: '<%= globalConfig.installation_path %>/js/'
     },
     fonts: {
@@ -156,17 +158,6 @@ module.exports = {
         rename: function(dest, src) {
             var res = src.replace(src.substring(0),
                                   'jquery.form.js');
-            return dest + res;
-        }
-    },
-    prism: {
-        expand: true,
-        flatten: true,
-        cwd: '<%= globalConfig.bower_path %>/',
-        src: ['prism/index.js'],
-        dest: '<%= globalConfig.installation_path %>/js/',
-        rename: function(dest, src) {
-            var res = src.replace(src.substring(0), 'prism.js');
             return dest + res;
         }
     },
