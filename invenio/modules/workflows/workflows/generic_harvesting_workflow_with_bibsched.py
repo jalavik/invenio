@@ -20,7 +20,7 @@
 from ..tasks.marcxml_tasks import (get_repositories_list,
                                    init_harvesting,
                                    harvest_records,
-                                   get_extra_data,
+                                   get_obj_extra_data_key,
                                    get_records_from_file,
                                    update_last_update,
                                    filtering_oai_pmh_identifier
@@ -31,14 +31,16 @@ from ..tasks.workflows_tasks import (start_workflow,
                                      workflows_reviews,
                                      get_nb_workflow_created,
                                      get_workflows_progress,
-                                     write_something_generic
+                                     write_something_generic,
+                                     num_workflow_running_greater
                                      )
 
 from ..tasks.logic_tasks import (foreach,
                                  end_for,
                                  simple_for,
-                                 workflow_if)
-
+                                 workflow_if,
+                                 workflow_else
+                                 )
 
 from invenio.legacy.bibsched.bibtask import task_update_progress, write_message
 
@@ -48,22 +50,34 @@ class generic_harvesting_workflow_with_bibsched(object):
     workflow = [write_something_generic("Initialisation", [task_update_progress, write_message]),
                 init_harvesting,
                 write_something_generic("Starting", [task_update_progress, write_message]),
-                foreach(get_repositories_list([repository]), "repository"),
+                foreach(get_repositories_list([repository]), "_repository"),
                 [
                     write_something_generic("Harvesting", [task_update_progress, write_message]),
                     harvest_records,
                     write_something_generic("Reading Files", [task_update_progress, write_message]),
-                    foreach(get_extra_data("harvested_files_list")),
+                    foreach(get_obj_extra_data_key("harvested_files_list")),
                     [
                         write_something_generic("Creating Workflows", [task_update_progress, write_message]),
                         foreach(get_records_from_file()),
                         [
                             workflow_if(filtering_oai_pmh_identifier),
                             [
-                                write_something_generic(get_records_from_file(), write_message),
-                                start_workflow("full_doc_process", None),
-                                write_something_generic(["Workflow started : ", get_nb_workflow_created, " "],
-                                                        [task_update_progress, write_message]),
+                                workflow_if(num_workflow_running_greater(10), neg=True),
+                                [
+                                    start_workflow("full_doc_process", None),
+
+                                    write_something_generic(["Workflow started : ", get_nb_workflow_created, " "],
+                                                            [task_update_progress, write_message]),
+                                ],
+                                workflow_else,
+                                [
+                                    write_something_generic(["Max Simultaneous Workflow, Wait for one to finish"],
+                                                            [task_update_progress, write_message]),
+                                    wait_for_a_workflow_to_complete,
+                                    start_workflow("full_doc_process", None),
+                                    write_something_generic(["Workflow started : ", get_nb_workflow_created, " "],
+                                                            [task_update_progress, write_message]),
+                                ],
                             ],
                         ],
                         end_for
@@ -83,5 +97,4 @@ class generic_harvesting_workflow_with_bibsched(object):
                 write_something_generic("Finishing", [task_update_progress, write_message]),
                 workflows_reviews(stop_if_error=True),
                 update_last_update(get_repositories_list([repository]))
-    ]
-
+                ]

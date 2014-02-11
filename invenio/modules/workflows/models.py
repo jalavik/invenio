@@ -49,11 +49,11 @@ def get_default_data():
 
 def get_default_extra_data():
     """ Returns the base64 representation of the extra_data default value """
-    extra_data_default = {"tasks_results": [],
+    extra_data_default = {"_tasks_results": [],
                           "owner": {},
                           "task_counter": {},
                           "error_msg": "",
-                          "last_task_name": "",
+                          "_last_task_name": "",
                           "latest_object": -1,
                           "widget": None,
                           "redis_search": {},
@@ -224,7 +224,7 @@ class BibWorkflowObject(db.Model):
     modified = db.Column(db.DateTime, default=datetime.now,
                          onupdate=datetime.now, nullable=False)
     status = db.Column(db.String(255), default="", nullable=False)
-
+    persistent_ids = db.Column(db.JSON, default= {} ,nullable=True)
     data_type = db.Column(db.String(150), default=DATA_TYPES.ANY,
                           nullable=True)
 
@@ -341,9 +341,9 @@ BibWorkflowObject
         and displayed later on by Holding Pen templates.
         """
         #self.log.info("adding task result %r, %r" % (name, result))
-        task_name = self.extra_data["last_task_name"]
+        task_name = self.extra_data["_last_task_name"]
         res_obj = WorkflowsTaskResult(task_name, name, result)
-        self.extra_data["tasks_results"].append(res_obj)
+        self.extra_data["_tasks_results"].append(res_obj)
         #self.log.info("added")
 
     def add_widget(self, widget, message):
@@ -356,8 +356,8 @@ BibWorkflowObject
         required.
         """
         extra_data = self.get_extra_data()
-        extra_data["widget"] = widget
-        extra_data["message"] = message
+        extra_data["_widget"] = widget
+        extra_data["_message"] = message
         self.set_extra_data(extra_data)
 
     def get_widget(self):
@@ -371,8 +371,8 @@ BibWorkflowObject
         Removes the currently assigned widget.
         """
         extra_data = self.get_extra_data()
-        extra_data["widget"] = None
-        extra_data["message"] = ""
+        extra_data["_widget"] = None
+        extra_data["_message"] = ""
         self.set_extra_data(extra_data)
 
     def change_status(self, message):
@@ -412,7 +412,7 @@ BibWorkflowObject
             db.session.commit()
 
         extra_data = self.get_extra_data()
-        extra_data["task_counter"] = task_counter
+        extra_data["_task_counter"] = task_counter
         self.set_extra_data(extra_data)
 
         if not id_workflow:
