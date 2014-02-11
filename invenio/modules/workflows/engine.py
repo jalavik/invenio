@@ -383,10 +383,10 @@ BibWorkflowEngine
         """Executes the callback - override this method to implement logging"""
         obj.data = obj.get_data()
         obj.extra_data = obj.get_extra_data()
-        obj.extra_data["last_task_name"] = self.get_current_taskname()
+        obj.extra_data["_last_task_name"] = self.get_current_taskname()
+        self.log.info(obj.extra_data["_last_task_name"])
         self.extra_data = self.get_extra_data()
         try:
-
             callback(obj, self)
         finally:
             self.set_extra_data(self.extra_data)

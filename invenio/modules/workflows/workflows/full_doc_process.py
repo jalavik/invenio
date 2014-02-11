@@ -23,7 +23,7 @@ from ..tasks.marcxml_tasks import (convert_record_with_repository,
                                    author_list,
                                    upload_step,
                                    quick_match_record,
-                                   inspire_filter_category,
+                                   inspire_filter_custom,
                                    bibclassify
                                    )
 
@@ -34,9 +34,7 @@ from ..tasks.logic_tasks import (workflow_if,
                                  )
 from ..models import DATA_TYPES
 
-
 from invenio.config import CFG_PREFIX
-
 
 
 class full_doc_process(object):
@@ -46,16 +44,15 @@ class full_doc_process(object):
                 [
                     plot_extract(["latex"]),
                     fulltext_download,
-                    inspire_filter_category(category_widgeted_param=[], category_accepted_param=["*"],
-                                            widget_param="approval_widget"),
+                    inspire_filter_custom(fields=["report_number", "arxiv_category"], custom_accepted=["*"],
+                                          widget="approval_widget"),
                     bibclassify(taxonomy=CFG_PREFIX + "/etc/bibclassify/HEP.rdf",
                                 output_mode="dict", match_mode="partial"),
                     refextract, author_list,
-                    #upload_step,
+                    upload_step,
                 ],
                 workflow_else,
                 [
                     log_info("Record already into database"),
                 ],
-    ]
-
+                ]

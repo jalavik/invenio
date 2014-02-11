@@ -167,7 +167,7 @@ def redis_create_search_entry(bwobject):
     redis_server.sadd("holdingpen_sort:owner:%s" % (extra_data['owner'],),
                       bwobject.id)
     redis_server.sadd("holdingpen_sort:last_task_name:%s" %
-                      (extra_data['last_task_name'],), bwobject.id)
+                      (extra_data['_last_task_name'],), bwobject.id)
 
 
 def filter_holdingpen_results(key, *args):

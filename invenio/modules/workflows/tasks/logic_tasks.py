@@ -1,30 +1,31 @@
+
 def foreach(get_list_function=None, savename=None, cache_data=False, order="ASC"):
     if order not in ["ASC", "DSC"]:
         order = "ASC"
 
     def _foreach(obj, eng):
-
+        my_list_to_process = []
         step = str(eng.getCurrTaskId())
         try:
-            if "Iterators" not in eng.extra_data:
-                eng.extra_data["Iterators"] = {}
+            if "_Iterators" not in eng.extra_data:
+                eng.extra_data["_Iterators"] = {}
         except KeyError:
-            eng.extra_data["Iterators"] = {}
+            eng.extra_data["_Iterators"] = {}
 
-        if not step in eng.extra_data["Iterators"]:
-            eng.extra_data["Iterators"][step] = {}
+        if not step in eng.extra_data["_Iterators"]:
+            eng.extra_data["_Iterators"][step] = {}
             if cache_data:
-                eng.extra_data["Iterators"][step]["cache"] = get_list_function(obj, eng)
-                my_list_to_process = eng.extra_data["Iterators"][step]["cache"]
+                eng.extra_data["_Iterators"][step]["cache"] = get_list_function(obj, eng)
+                my_list_to_process = eng.extra_data["_Iterators"][step]["cache"]
             if order == "ASC":
-                eng.extra_data["Iterators"][step].update({"value": 0})
+                eng.extra_data["_Iterators"][step].update({"value": 0})
             elif order == "DSC":
-                eng.extra_data["Iterators"][step].update({"value": len(my_list_to_process) - 1})
-            eng.extra_data["Iterators"][step]["previous_data"] = obj.data
+                eng.extra_data["_Iterators"][step].update({"value": len(my_list_to_process) - 1})
+            eng.extra_data["_Iterators"][step]["previous_data"] = obj.data
 
         if callable(get_list_function):
             if cache_data:
-                my_list_to_process = eng.extra_data["Iterators"][step]["cache"]
+                my_list_to_process = eng.extra_data["_Iterators"][step]["cache"]
             else:
                 my_list_to_process = get_list_function(obj, eng)
         elif isinstance(get_list_function, list):
@@ -32,19 +33,19 @@ def foreach(get_list_function=None, savename=None, cache_data=False, order="ASC"
         else:
             my_list_to_process = []
 
-        if order == "ASC" and eng.extra_data["Iterators"][step]["value"] < len(my_list_to_process):
-            obj.data = my_list_to_process[eng.extra_data["Iterators"][step]["value"]]
+        if order == "ASC" and eng.extra_data["_Iterators"][step]["value"] < len(my_list_to_process):
+            obj.data = my_list_to_process[eng.extra_data["_Iterators"][step]["value"]]
             if savename is not None:
                 obj.extra_data[savename] = obj.data
-            eng.extra_data["Iterators"][step]["value"] += 1
-        elif order == "DSC" and eng.extra_data["Iterators"][step]["value"] > -1:
-            obj.data = my_list_to_process[eng.extra_data["Iterators"][step]["value"]]
+            eng.extra_data["_Iterators"][step]["value"] += 1
+        elif order == "DSC" and eng.extra_data["_Iterators"][step]["value"] > -1:
+            obj.data = my_list_to_process[eng.extra_data["_Iterators"][step]["value"]]
             if savename is not None:
                 obj.extra_data[savename] = obj.data
-            eng.extra_data["Iterators"][step]["value"] -= 1
+            eng.extra_data["_Iterators"][step]["value"] -= 1
         else:
-            obj.data = eng.extra_data["Iterators"][step]["previous_data"]
-            del eng.extra_data["Iterators"][step]
+            obj.data = eng.extra_data["_Iterators"][step]["previous_data"]
+            del eng.extra_data["_Iterators"][step]
             coordonatex = len(eng.getCurrTaskId()) - 1
             coordonatey = eng.getCurrTaskId()[coordonatex]
             new_vector = eng.getCurrTaskId()
@@ -70,24 +71,24 @@ def simple_for(inita, enda, incrementa, variable_name=None):
         finish = False
         step = str(eng.getCurrTaskId())
         try:
-            if "Iterators" not in eng.extra_data:
-                eng.extra_data["Iterators"] = {}
+            if "_Iterators" not in eng.extra_data:
+                eng.extra_data["_Iterators"] = {}
         except KeyError:
-            eng.extra_data["Iterators"] = {}
+            eng.extra_data["_Iterators"] = {}
 
-        if step not in eng.extra_data["Iterators"]:
-            eng.extra_data["Iterators"][step] = {}
-            eng.extra_data["Iterators"][step].update({"value": init})
+        if step not in eng.extra_data["_Iterators"]:
+            eng.extra_data["_Iterators"][step] = {}
+            eng.extra_data["_Iterators"][step].update({"value": init})
 
-        if (increment > 0 and eng.extra_data["Iterators"][step]["value"] > end) or \
-                (increment < 0 and eng.extra_data["Iterators"][step]["value"] < end):
+        if (increment > 0 and eng.extra_data["_Iterators"][step]["value"] > end) or \
+                (increment < 0 and eng.extra_data["_Iterators"][step]["value"] < end):
             finish = True
         if not finish:
             if variable_name is not None:
-                eng.extra_data["Iterators"][variable_name] = eng.extra_data["Iterators"][step]["value"]
-            eng.extra_data["Iterators"][step]["value"] += increment
+                eng.extra_data["_Iterators"][variable_name] = eng.extra_data["_Iterators"][step]["value"]
+            eng.extra_data["_Iterators"][step]["value"] += increment
         else:
-            del eng.extra_data["Iterators"][step]
+            del eng.extra_data["_Iterators"][step]
             coordonatex = len(eng.getCurrTaskId()) - 1
             coordonatey = eng.getCurrTaskId()[coordonatex]
             new_vector = eng.getCurrTaskId()
@@ -106,7 +107,6 @@ def end_for(obj, eng):
 
 
 def get_obj_data(obj, eng):
-    eng.log.info("last task name: get_obj_data")
     return obj.data
 
 
@@ -126,14 +126,16 @@ def workflow_if(cond, neg=False):
         conda = cond
         while callable(conda):
             conda = conda(obj, eng)
-        if "state" not in eng.extra_data:
-            eng.extra_data["state"] = {}
+        if "_state" not in eng.extra_data:
+            eng.extra_data["_state"] = {}
         step = str(eng.getCurrTaskId())
 
         if neg:
             conda = not conda
-        if step not in eng.extra_data["state"]:
-            eng.extra_data["state"].update({step: conda})
+        if step not in eng.extra_data["_state"]:
+            eng.extra_data["_state"].update({step: conda})
+        else:
+            eng.extra_data["_state"][step] = conda
         if conda:
             eng.jumpCallForward(1)
         else:
@@ -151,7 +153,9 @@ def workflow_else(obj, eng):
     coordonatey = eng.getCurrTaskId()[coordonatex]
     new_vector = eng.getCurrTaskId()[:]
     new_vector[coordonatex] = coordonatey - 2
-    if not eng.extra_data["state"][str(new_vector)]:
+    eng.log.error(str(eng.getCurrTaskId()))
+    eng.log.error(str(eng.extra_data["_state"][str(new_vector)]))
+    if not eng.extra_data["_state"][str(new_vector)]:
         eng.jumpCallForward(1)
     else:
         coordonatex = len(eng.getCurrTaskId()) - 1

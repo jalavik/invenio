@@ -1,7 +1,8 @@
 from invenio.modules.workflows.models import (BibWorkflowObject,
                                               BibWorkflowEngineLog,
-                                              DATA_TYPES)
-from invenio.modules.workflows.api import (start_delayed)
+                                              DATA_TYPES
+                                              )
+from invenio.modules.workflows.api import start_delayed
 
 from invenio.modules.workflows.errors import WorkflowError
 
@@ -9,9 +10,29 @@ from time import sleep
 
 
 def get_nb_workflow_created(obj, eng):
-    eng.log.info("last task name: get_nb_workflow_created")
     try:
-        return eng.extra_data["nb_workflow"]
+        return eng.extra_data["_nb_workflow"]
+    except KeyError:
+        return "0"
+
+
+def num_workflow_running_greater(num):
+    def _num_workflow_running_greater(obj, eng):
+        try:
+            if (eng.extra_data["_nb_workflow"] - eng.extra_data["_nb_workflow_finish"]) > num:
+                return True
+            else:
+                return False
+        except KeyError:
+            return False
+    return _num_workflow_running_greater
+
+
+def get_nb_workflow_running(obj, eng):
+
+    try:
+        eng.log.error(str())
+        return eng.extra_data["_nb_workflow"] - eng.extra_data["_nb_workflow_finish"]
     except KeyError:
         return "0"
 
@@ -35,19 +56,13 @@ def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
 
     def _start_workflow(obj, eng):
 
-        eng.log.info("last task name: start_workflow")
-
-        eng.log.info("Workflow object in creation")
         myobject = BibWorkflowObject()
 
         if copy is True:
             myobject.copy(obj)
         if data is not None:
             myobject.data = data
-        eng.log.info("Workflow object ready")
-
         extra = myobject.get_extra_data()
-        extra['source'] = obj.extra_data['repository']['name']
         myobject.set_extra_data(extra)
         myobject.data_type = DATA_TYPES.RECORD
         myobject.save()
@@ -56,21 +71,21 @@ def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
 
         eng.log.info("Workflow launched")
         try:
-            eng.extra_data["workflow_ids"].append(workflow_id)
+            eng.extra_data["_workflow_ids"].append(workflow_id)
         except KeyError:
-            eng.extra_data["workflow_ids"] = [workflow_id]
+            eng.extra_data["_workflow_ids"] = [workflow_id]
 
         try:
-            eng.extra_data["nb_workflow"] += 1
+            eng.extra_data["_nb_workflow"] += 1
         except KeyError:
-            eng.extra_data["nb_workflow"] = 1
+            eng.extra_data["_nb_workflow"] = 1
 
-        if "nb_workflow_failed" not in eng.extra_data:
-            eng.extra_data["nb_workflow_failed"] = 0
-        if "nb_workflow_finish" not in eng.extra_data:
-            eng.extra_data["nb_workflow_finish"] = 0
-        if "uuid_workflow_crashed" not in eng.extra_data:
-            eng.extra_data["uuid_workflow_crashed"] = []
+        if "_nb_workflow_failed" not in eng.extra_data:
+            eng.extra_data["_nb_workflow_failed"] = 0
+        if "_nb_workflow_finish" not in eng.extra_data:
+            eng.extra_data["_nb_workflow_finish"] = 0
+        if "_uuid_workflow_crashed" not in eng.extra_data:
+            eng.extra_data["_uuid_workflow_crashed"] = []
 
     return _start_workflow
 
@@ -80,13 +95,11 @@ def wait_for_workflows_to_complete(obj, eng):
      This function wait all the asynchronous workflow launched.
      It acts like a barrier
      """
-    eng.log.info("last task name: wait_for_workflows_to_complete")
-
-    if 'workflow_ids' in eng.extra_data:
-        for workflow_id in eng.extra_data['workflow_ids']:
+    if '_workflow_ids' in eng.extra_data:
+        for workflow_id in eng.extra_data['_workflow_ids']:
             try:
                 workflow_id.get()
-                eng.extra_data["nb_workflow_finish"] += 1
+                eng.extra_data["_nb_workflow_finish"] += 1
             except WorkflowError as e:
                 eng.log.error(str(e))
                 workflowlog = BibWorkflowEngineLog.query.filter(
@@ -95,16 +108,16 @@ def wait_for_workflows_to_complete(obj, eng):
                 for log in workflowlog:
                     eng.log.error(log.message)
 
-                eng.extra_data["nb_workflow_failed"] += 1
-                eng.extra_data["nb_workflow_finish"] += 1
+                eng.extra_data["_nb_workflow_failed"] += 1
+                eng.extra_data["_nb_workflow_finish"] += 1
             except Exception as e:
                 eng.log.error("Error: Workflow failed %s" % str(e))
-                eng.extra_data["nb_workflow_failed"] += 1
-                eng.extra_data["nb_workflow_finish"] += 1
+                eng.extra_data["_nb_workflow_failed"] += 1
+                eng.extra_data["_nb_workflow_finish"] += 1
     else:
-        eng.extra_data["nb_workflow"] = 0
-        eng.extra_data["nb_workflow_failed"] = 0
-        eng.extra_data["nb_workflow_finish"] = 0
+        eng.extra_data["_nb_workflow"] = 0
+        eng.extra_data["_nb_workflow_failed"] = 0
+        eng.extra_data["_nb_workflow_finish"] = 0
 
 
 def wait_for_a_workflow_to_complete_obj(obj, eng):
@@ -114,14 +127,13 @@ def wait_for_a_workflow_to_complete_obj(obj, eng):
      It acts like a barrier
      """
     if not obj.data:
-        eng.extra_data["nb_workflow"] = 0
-        eng.extra_data["nb_workflow_failed"] = 0
-        eng.extra_data["nb_workflow_finish"] = 0
+        eng.extra_data["_nb_workflow"] = 0
+        eng.extra_data["_nb_workflow_failed"] = 0
+        eng.extra_data["_nb_workflow_finish"] = 0
         return None
-    eng.log.info("last task name: wait_for_workflow_to_complete")
     try:
         obj.data.get()
-        eng.extra_data["nb_workflow_finish"] += 1
+        eng.extra_data["_nb_workflow_finish"] += 1
     except WorkflowError as e:
         eng.log.error("Error: Workflow failed %s" % str(e))
         workflowlog = BibWorkflowEngineLog.query.filter(
@@ -130,12 +142,12 @@ def wait_for_a_workflow_to_complete_obj(obj, eng):
 
         for log in workflowlog:
             eng.log.error(log.message)
-        eng.extra_data["nb_workflow_failed"] += 1
-        eng.extra_data["nb_workflow_finish"] += 1
+        eng.extra_data["_nb_workflow_failed"] += 1
+        eng.extra_data["_nb_workflow_finish"] += 1
     except Exception as e:
         eng.log.error("Error: Workflow failed %s" % str(e))
-        eng.extra_data["nb_workflow_failed"] += 1
-        eng.extra_data["nb_workflow_finish"] += 1
+        eng.extra_data["_nb_workflow_failed"] += 1
+        eng.extra_data["_nb_workflow_finish"] += 1
 
 
 def wait_for_a_workflow_to_complete(obj, eng):
@@ -144,37 +156,37 @@ def wait_for_a_workflow_to_complete(obj, eng):
      in obj.data ( asyncresult )
      It acts like a barrier
      """
-    if 'workflow_ids' in eng.extra_data:
-        eng.log.info("last task name: wait_for_workflow_to_complete")
+    if '_workflow_ids' in eng.extra_data:
         to_wait = None
-        while not to_wait and len(eng.extra_data["workflow_ids"]) > 0:
-            for i in range(0, len(eng.extra_data["workflow_ids"])):
-                if eng.extra_data["workflow_ids"][i].status == "SUCCESS":
-                    to_wait = eng.extra_data["workflow_ids"][i]
+        i = 0
+        while not to_wait and len(eng.extra_data["_workflow_ids"]) > 0:
+            for i in range(0, len(eng.extra_data["_workflow_ids"])):
+                if eng.extra_data["_workflow_ids"][i].status == "SUCCESS":
+                    to_wait = eng.extra_data["_workflow_ids"][i]
                     break
-                if eng.extra_data["workflow_ids"][i].status == "FAILURE":
-                    to_wait = eng.extra_data["workflow_ids"][i]
+                if eng.extra_data["_workflow_ids"][i].status == "FAILURE":
+                    to_wait = eng.extra_data["_workflow_ids"][i]
                     break
             sleep(1)
         if not to_wait:
             return None
         try:
             to_wait.get()
-            eng.extra_data["nb_workflow_finish"] += 1
+            eng.extra_data["_nb_workflow_finish"] += 1
         except WorkflowError as e:
-            eng.extra_data["uuid_workflow_crashed"].append(e.id_workflow)
-            eng.extra_data["nb_workflow_failed"] += 1
-            eng.extra_data["nb_workflow_finish"] += 1
-        except Exception as e:
-            eng.extra_data["nb_workflow_failed"] += 1
-            eng.extra_data["nb_workflow_finish"] += 1
+            eng.extra_data["_uuid_workflow_crashed"].append(e.id_workflow)
+            eng.extra_data["_nb_workflow_failed"] += 1
+            eng.extra_data["_nb_workflow_finish"] += 1
+        except:
+            eng.extra_data["_nb_workflow_failed"] += 1
+            eng.extra_data["_nb_workflow_finish"] += 1
 
-        del eng.extra_data["workflow_ids"][i]
+        del eng.extra_data["_workflow_ids"][i]
 
     else:
-        eng.extra_data["nb_workflow"] = 0
-        eng.extra_data["nb_workflow_failed"] = 0
-        eng.extra_data["nb_workflow_finish"] = 0
+        eng.extra_data["_nb_workflow"] = 0
+        eng.extra_data["_nb_workflow_failed"] = 0
+        eng.extra_data["_nb_workflow_finish"] = 0
 
 
 def write_something_generic(messagea, func):
@@ -194,25 +206,25 @@ def write_something_generic(messagea, func):
 
         if not isinstance(messagea, list):
             if callable(messagea):
-                I = messagea
-                while callable(I):
-                    I = I(obj, eng)
+                func_messagea = messagea
+                while callable(func_messagea):
+                    func_messagea = func_messagea(obj, eng)
                 if isinstance(func, list):
                     for function in func:
-                        function(I)
+                        function(func_messagea)
                 else:
-                    func(I)
+                    func(func_messagea)
             return None
 
         if len(messagea) > 0:
             temp = ""
-            for I in messagea:
-                if callable(I):
-                    while callable(I):
-                        I = I(obj, eng)
-                    temp += str(I)
-                elif isinstance(I, basestring):
-                    temp += I
+            for func_messagea in messagea:
+                if callable(func_messagea):
+                    while callable(func_messagea):
+                        func_messagea = func_messagea(obj, eng)
+                    temp += str(func_messagea)
+                elif isinstance(func_messagea, basestring):
+                    temp += func_messagea
             if isinstance(func, list):
                 for function in func:
                     function(temp)
@@ -228,18 +240,16 @@ def get_list_of_workflows_to_wait(obj, eng):
      Return a list of asyncresult corresponding to running
      asynchrnous workflow
      """
-    eng.log.info("last task name: get_list_of_workflows_to_wait")
-    return eng.extra_data["workflow_ids"]
+    return eng.extra_data["_workflow_ids"]
 
 
 def get_status_async_result_obj_data(obj, eng):
-    eng.log.info("last task name: get_status_async_result_obj_data")
     return obj.data.state
 
 
 def get_workflows_progress(obj, eng):
     try:
-        return (eng.extra_data["nb_workflow_finish"] * 100.0) / (eng.extra_data["nb_workflow"])
+        return (eng.extra_data["_nb_workflow_finish"] * 100.0) / (eng.extra_data["_nb_workflow"])
     except KeyError:
         return "No progress (key missing)"
     except ZeroDivisionError:
@@ -253,15 +263,14 @@ def workflows_reviews(stop_if_error=False):
          asynchronous workflows in this main workflow
          Raise an exception if a workflow is gone rogue
          """
-        if eng.extra_data["nb_workflow"] == 0:
+        if eng.extra_data["_nb_workflow"] == 0:
             raise WorkflowError("Nothing has been harvested ! Look into logs for errors !", eng.uuid, obj.id)
-        eng.log.info("last task name: workflows_reviews")
-        eng.log.info("%s / %s failed" % (eng.extra_data["nb_workflow_failed"], eng.extra_data["nb_workflow"]))
+        eng.log.info("%s / %s failed" % (eng.extra_data["_nb_workflow_failed"], eng.extra_data["_nb_workflow"]))
 
-        if eng.extra_data["nb_workflow_failed"] and stop_if_error:
+        if eng.extra_data["_nb_workflow_failed"] and stop_if_error:
             raise WorkflowError(
-                "%s / %s failed" % (eng.extra_data["nb_workflow_failed"], eng.extra_data["nb_workflow"]),
-                eng.uuid, obj.id, payload=eng.extra_data["uuid_workflow_crashed"])
+                "%s / %s failed" % (eng.extra_data["_nb_workflow_failed"], eng.extra_data["_nb_workflow"]),
+                eng.uuid, obj.id, payload=eng.extra_data["_uuid_workflow_crashed"])
 
     return _workflows_reviews
 
@@ -271,5 +280,3 @@ def log_info(message):
         eng.log.info(message)
 
     return _log_info
-
-

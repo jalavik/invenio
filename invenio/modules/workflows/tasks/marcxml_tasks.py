@@ -21,6 +21,7 @@ import time
 import glob
 import re
 import traceback
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 from invenio.legacy.bibupload.engine import (find_record_from_recid,
                                              find_record_from_sysno,
@@ -69,6 +70,7 @@ from invenio.utils.plotextractor.converter import (untar,
                                                    convert_images
                                                    )
 
+
 oaiharvest_templates = invenio.legacy.template.load('oaiharvest')
 
 REGEXP_REFS = re.compile("<record.*?>.*?<controlfield .*?>.*?</controlfield>(.*?)</record>", re.DOTALL)
@@ -79,8 +81,10 @@ def add_metadata_to_extra_data(obj, eng):
     """
     Creates bibrecord from object data and
     populates extra_data with metadata
+    @param obj:
+    @param eng:
     """
-    obj.extra_data["last_task_name"] = "add_metadata_to_extra_data"
+    obj.extra_data["_last_task_name"] = "add_metadata_to_extra_data"
     from invenio.legacy.bibrecord import create_record as old_create_record, record_get_field_value
 
     record = old_create_record(obj.data)
@@ -101,64 +105,139 @@ def approve_record(obj, eng):
     """
     Will add the approval widget to the record
     """
-    obj.extra_data["last_task_name"] = 'Record Approval'
     try:
         eng.halt(widget="approval_widget",
                  msg='Record needs approval')
     except KeyError:
         # Log the error
-        obj.extra_data["error_msg"] = 'Could not assign widget'
+        obj.extra_data["_error_msg"] = 'Could not assign widget'
 
 
 approve_record.__title__ = "Record Approval"
 approve_record.__description__ = "This task assigns the approval widget to a record."
 
 
-
 def filtering_oai_pmh_identifier(obj, eng):
-
-    if not "_function_reserved" in eng.extra_data:
-        eng.extra_data["_function_reserved"] = {}
-    if not "identifiers" in eng.extra_data["_function_reserved"]:
-        eng.extra_data["_function_reserved"]["identifiers"]= []
+    if not "_function_reserved_filtering_oai_pmh_identifier" in eng.extra_data:
+        eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"] = {}
+    if not "identifiers" in eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"]:
+        eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"]["identifiers"] = []
     try:
         if not isinstance(obj.data, list):
             obj_data_list = [obj.data]
         else:
             obj_data_list = obj.data
         for record in obj_data_list:
-
             substring = record[record.index("<identifier>") + 12:record.index("</identifier>")]
-            if substring in eng.extra_data["_function_reserved"]["identifiers"]:
+            if substring in eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"]["identifiers"]:
                 return False
             else:
-                eng.extra_data["_function_reserved"]["identifiers"].append(substring)
+                eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"]["identifiers"].append(substring)
                 return True
     except TypeError:
         eng.log.error("object data type invalid. Ignoring this step!")
         return True
 
 
+def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
+                          custom_widgeted=(), widget=None):
+    def _inspire_filter_custom(obj, eng):
+
+        custom_to_process_current = []
+        custom_to_process_next = []
+        action_to_take = [0, 0, 0]
+
+        fields_to_process = fields
+        if not isinstance(fields_to_process, list):
+            fields_to_process = [fields_to_process]
+
+        for field in fields_to_process:
+            if len(custom_to_process_current) == 0:
+                custom_to_process_current.append(obj.data[field])
+            else:
+                while len(custom_to_process_current) > 0:
+                    one_custom = custom_to_process_current.pop()
+                    if isinstance(one_custom, list):
+                        for i in one_custom:
+                            custom_to_process_current.append(i)
+                    else:
+                        try:
+                            custom_to_process_next.append(one_custom[field])
+                        except KeyError:
+                            eng.log.error("no %s in %s", field, one_custom)
+                custom_to_process_current = custom_to_process_next[:]
+        if not custom_to_process_next:
+            eng.log.error("%s not found in the record. Human intervention needed", fields_to_process)
+            eng.halt(str(fields_to_process) + " not found in the record. Human intervention needed", widget=widget)
+
+        for i in custom_widgeted:
+            if i != '*':
+                i = re.compile('^' + re.escape(i) + '.*')
+                for y in custom_to_process_next:
+                    if i.match(y):
+                        action_to_take[0] += 1
+
+        for i in custom_accepted:
+            if i != '*':
+                i = re.compile('^' + re.escape(i) + '.*')
+                for y in custom_to_process_next:
+                    if i.match(y):
+                        action_to_take[1] += 1
+
+        for i in custom_refused:
+            if i != '*':
+                i = re.compile('^' + re.escape(i) + '.*')
+                for y in custom_to_process_next:
+                    if i.match(y):
+                        action_to_take[2] += 1
+
+        sum_action = action_to_take[0] + action_to_take[1] + action_to_take[2]
+
+        if sum_action == 0:
+            #We allow the * option which means at final case
+            if '*' in custom_widgeted:
+                return None
+            elif '*' in custom_refused:
+                eng.stopProcessing()
+            elif '*' in custom_accepted:
+                return None
+            else:
+                # We don't know what we should do, in doubt query human... they are nice!
+                msg = ("Category out of task definition. "
+                       "Human intervention needed")
+                eng.halt(msg, widget=widget)
+        else:
+            if sum_action == action_to_take[0]:
+                eng.halt("Category filtering needs human intervention",
+                         widget=widget)
+            elif sum_action == action_to_take[1]:
+                return None
+            elif sum_action == action_to_take[2]:
+                eng.stopProcessing()
+            else:
+                eng.halt("Category filtering needs human intervention, rules are incoherent !!!",
+                         widget=widget)
+
+    return _inspire_filter_custom
 
 
-
-def inspire_filter_category(category_accepted_param=[], category_refused_param=[],
-                            category_widgeted_param=[], widget_param=None):
+def inspire_filter_category(category_accepted_param=(), category_refused_param=(),
+                            category_widgeted_param=(), widget_param=None):
     def _inspire_filter_category(obj, eng):
         try:
-            category_accepted = obj.extra_data["repository"]["arguments"]["filtering"]['category_accepted']
+            category_accepted = obj.extra_data["_repository"]["arguments"]["filtering"]['category_accepted']
         except KeyError:
             category_accepted = category_accepted_param
         try:
-            category_refused = obj.extra_data["repository"]["arguments"]["filtering"]['category_refused']
+            category_refused = obj.extra_data["_repository"]["arguments"]["filtering"]['category_refused']
         except KeyError:
             category_refused = category_refused_param
         try:
-            category_widgeted = obj.extra_data["repository"]["arguments"]["filtering"]['category_widgeted']
+            category_widgeted = obj.extra_data["_repository"]["arguments"]["filtering"]['category_widgeted']
         except KeyError:
             category_widgeted = category_widgeted_param
         try:
-            widget = obj.extra_data["repository"]["arguments"]["filtering"]['widget']
+            widget = obj.extra_data["_repository"]["arguments"]["filtering"]['widget']
         except KeyError:
             widget = widget_param
 
@@ -231,7 +310,6 @@ def convert_record_to_bibfield(obj, eng):
     Convert a record in data log.errorinto a 'dictionary'
     thanks to BibField
     """
-    obj.extra_data["last_task_name"] = "last task name: convert_record_to_bibfield"
     obj.data = create_record(obj.data, master_format="marc").dumps()
     eng.log.info("Field conversion succeeded")
 
@@ -241,7 +319,6 @@ def init_harvesting(obj, eng):
     This function gets all the option linked to the task and stores them into the
     object to be used later.
     """
-    obj.extra_data["last_task_name"] = "last task name: init_harvesting"
     try:
         obj.extra_data["options"] = eng.extra_data["options"]
     except KeyError:
@@ -251,17 +328,14 @@ def init_harvesting(obj, eng):
     eng.log.info("end of init_harvesting")
 
 
-def get_repositories_list(repositories=[]):
+def get_repositories_list(repositories=()):
     """
     Here we are retrieving the oaiharvest configuration for the task.
     It will allows in the future to do all the correct operations.
     """
 
     def _get_repositories_list(obj, eng):
-
-        obj.extra_data["last_task_name"] = "last task name: _get_repositories_list"
         repositories_to_harvest = repositories
-
         reposlist_temp = []
         if obj.extra_data["options"]["repository"]:
             repositories_to_harvest = obj.extra_data["options"]["repository"]
@@ -269,7 +343,7 @@ def get_repositories_list(repositories=[]):
             for reposname in repositories_to_harvest:
                 try:
                     reposlist_temp.append(OaiHARVEST.get(OaiHARVEST.name == reposname).one())
-                except:
+                except (MultipleResultsFound, NoResultFound):
                     eng.log.error("CRITICAL: repository %s doesn't exit into our database", reposname)
         else:
             reposlist_temp = OaiHARVEST.get(OaiHARVEST.name != "").all()
@@ -291,7 +365,6 @@ def harvest_records(obj, eng):
     queue row, containing if, arguments, etc.
     Return 1 in case of success and 0 in case of failure.
     """
-    obj.extra_data["last_task_name"] = 'harvest_records'
     harvested_identifier_list = []
 
     harvestpath = "%s_%d_%s_" % ("%s/oaiharvest_%s" % (CFG_TMPSHAREDDIR, eng.uuid),
@@ -308,7 +381,7 @@ def harvest_records(obj, eng):
 
     task_sleep_now_if_required()
 
-    arguments = obj.extra_data["repository"]["arguments"]
+    arguments = obj.extra_data["_repository"]["arguments"]
     if arguments:
         eng.log.info("running with post-processes: %r" % (arguments,))
     else:
@@ -334,7 +407,8 @@ def harvest_records(obj, eng):
     if len(harvested_files_list) != len(harvested_identifier_list[0]):
         # Harvested files and its identifiers are 'out of sync', abort harvest
 
-        raise WorkflowError("Harvested files miss identifiers for %s" % (arguments,), id_workflow=eng.uuid)
+        raise WorkflowError("Harvested files miss identifiers for %s" % (arguments,), id_workflow=eng.uuid,
+                            id_object=obj.id)
     obj.extra_data['harvested_files_list'] = harvested_files_list
     eng.log.info("%d files harvested and processed \n End harvest records task" % (len(harvested_files_list),))
 
@@ -344,21 +418,20 @@ harvest_records.__id__ = "h"
 
 def get_records_from_file(path=None):
     def _get_records_from_file(obj, eng):
-        obj.extra_data["last_task_name"] = "last task name: _get_records_from_file"
-        if not "LoopData" in eng.extra_data:
-            eng.extra_data["LoopData"] = {}
-        if "get_records_from_file" not in eng.extra_data["LoopData"]:
-            eng.extra_data["LoopData"]["get_records_from_file"] = {}
+        if not "_LoopData" in eng.extra_data:
+            eng.extra_data["_LoopData"] = {}
+        if "get_records_from_file" not in eng.extra_data["_LoopData"]:
+            eng.extra_data["_LoopData"]["get_records_from_file"] = {}
             if path:
-                eng.extra_data["LoopData"]["get_records_from_file"].update({"data": record_extraction_from_file(path)})
+                eng.extra_data["_LoopData"]["get_records_from_file"].update({"data": record_extraction_from_file(path)})
             else:
-                eng.extra_data["LoopData"]["get_records_from_file"].update(
+                eng.extra_data["_LoopData"]["get_records_from_file"].update(
                     {"data": record_extraction_from_file(obj.data)})
-                eng.extra_data["LoopData"]["get_records_from_file"]["path"] = obj.data
+                eng.extra_data["_LoopData"]["get_records_from_file"]["path"] = obj.data
 
-        elif os.path.isfile(obj.data) and obj.data != eng.extra_data["LoopData"]["get_records_from_file"]["path"]:
-            eng.extra_data["LoopData"]["get_records_from_file"].update({"data": record_extraction_from_file(obj.data)})
-        return eng.extra_data["LoopData"]["get_records_from_file"]["data"]
+        elif os.path.isfile(obj.data) and obj.data != eng.extra_data["_LoopData"]["get_records_from_file"]["path"]:
+            eng.extra_data["_LoopData"]["get_records_from_file"].update({"data": record_extraction_from_file(obj.data)})
+        return eng.extra_data["_LoopData"]["get_records_from_file"]["data"]
 
     return _get_records_from_file
 
@@ -374,7 +447,6 @@ def get_eng_uuid_harvested(obj, eng):
 
 def get_files_list(path, parameter):
     def _get_files_list(obj, eng):
-        obj.extra_data["last_task_name"] = "last task name: get_files_list"
         if callable(parameter):
             unknown = parameter
             while callable(unknown):
@@ -390,11 +462,18 @@ def get_files_list(path, parameter):
     return _get_files_list
 
 
-def get_extra_data(name):
-    def _get_files_list(obj, eng):
+def get_obj_extra_data_key(name):
+    def _get_obj_extra_data_key(obj, eng):
         return obj.extra_data[name]
 
-    return _get_files_list
+    return _get_obj_extra_data_key
+
+
+def get_eng_extra_data_key(name):
+    def _get_eng_extra_data_key(obj, eng):
+        return eng.extra_data[name]
+
+    return _get_eng_extra_data_key
 
 
 def convert_record(stylesheet="oaidc2marcxml.xsl"):
@@ -402,7 +481,6 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
         """
         Will convert the object data, if XML, using the given stylesheet
         """
-        obj.extra_data["last_task_name"] = 'Convert Record'
         from invenio.legacy.bibconvert.xslt_engine import convert
 
         eng.log.info("Starting conversion using %s stylesheet" %
@@ -413,7 +491,7 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
         except Exception as e:
             msg = "Could not convert record: %s\n%s" % \
                   (str(e), traceback.format_exc())
-            obj.extra_data["error_msg"] = msg
+            obj.extra_data["_error_msg"] = msg
             raise WorkflowError("Error: %s" % (msg,),
                                 id_workflow=eng.uuid, id_object=obj.id)
 
@@ -428,10 +506,10 @@ def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
         """
         eng.log.info("my type: %s" % (obj.data_type,))
         try:
-            if not obj.extra_data["repository"]["arguments"]['c_stylesheet']:
+            if not obj.extra_data["_repository"]["arguments"]['c_stylesheet']:
                 stylesheet_to_use = stylesheet
             else:
-                stylesheet_to_use = obj.extra_data["repository"]["arguments"]['c_stylesheet']
+                stylesheet_to_use = obj.extra_data["_repository"]["arguments"]['c_stylesheet']
         except KeyError:
             eng.log.error("WARNING: HASARDOUS BEHAVIOUR EXPECTED, "
                           "You didn't specified style_sheet in argument for conversion,"
@@ -456,7 +534,6 @@ def update_last_update(repository_list):
                 for repository in repository_list_to_process:
                     update_lastrun(repository["id"])
 
-
     return _update_last_update
 
 
@@ -466,14 +543,13 @@ def fulltext_download(obj, eng):
     Only for arXiv
     """
     if "result" not in obj.extra_data:
-        obj.extra_data["result"] = {}
-    obj.extra_data["last_task_name"] = "full-text attachment step started"
+        obj.extra_data["_result"] = {}
     task_sleep_now_if_required()
-    if "pdf" not in obj.extra_data["result"]:
+    if "pdf" not in obj.extra_data["_result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"],
                                       extract_path, ["pdf"])
-        arguments = obj.extra_data["repository"]["arguments"]
+        arguments = obj.extra_data["_repository"]["arguments"]
         try:
             if not arguments['t_doctype'] == '':
                 doctype = arguments['t_doctype']
@@ -485,21 +561,21 @@ def fulltext_download(obj, eng):
                           "try to recover by using the default one!")
             doctype = 'arXiv'
         if pdf:
-            obj.extra_data["result"]["pdf"] = pdf
+            obj.extra_data["_result"]["pdf"] = pdf
             fulltext_xml = ("  <datafield tag=\"FFT\" ind1=\" \" ind2=\" \">\n"
                             "    <subfield code=\"a\">%(url)s</subfield>\n"
                             "    <subfield code=\"t\">%(doctype)s</subfield>\n"
                             "    </datafield>"
 
-                           ) % {'url': obj.extra_data["result"]["pdf"],
-                                'doctype': doctype}
+                            ) % {'url': obj.extra_data["_result"]["pdf"],
+                                 'doctype': doctype}
             updated_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n<record>\n' + fulltext_xml + \
                           '</record>\n</collection>'
 
             new_dict_representation = create_record(updated_xml, master_format="marc").dumps()
             try:
                 obj.data['fft'].append(new_dict_representation["fft"])
-            except:
+            except (KeyError, TypeError):
                 obj.data['fft'] = [new_dict_representation['fft']]
 
             obj.add_task_result("filesfft", new_dict_representation["fft"])
@@ -515,15 +591,18 @@ def quick_match_record(obj, eng):
 
     001 fields even in the insert mode
     """
-    obj.extra_data["last_task_name"] = 'Quick Match Record'
     function_dictionnary = {'recid': find_record_from_recid, 'system_number': find_record_from_sysno,
                             'oaiid': find_record_from_oaiid, 'system_number_external': find_records_from_extoaiid,
                             'doi': find_record_from_doi}
 
     my_json_reader = Record(obj.data)
+
     try:
-        #identifiers = my_json_reader.
-        identifiers = {}
+        identifiers = my_json_reader.get('_persistent_identifier')
+        if not identifiers:
+            return False
+        else:
+            obj.persistent_ids = identifiers
     except KeyError:
         identifiers = {}
 
@@ -532,6 +611,7 @@ def quick_match_record(obj, eng):
             recid = function_dictionnary[identifier](identifiers[identifier]["value"])
             if recid:
                 obj.data['recid']['value'] = recid
+                obj.persistent_ids["recid"] = recid
                 return True
         return False
     else:
@@ -540,8 +620,6 @@ def quick_match_record(obj, eng):
 
 def upload_record(mode="ir"):
     def _upload_record(obj, eng):
-        obj.extra_data["last_task_name"] = 'Upload Record'
-
         from invenio.legacy.bibsched.bibtask import task_low_level_submission
 
         eng.log_info("Saving data to temporary file for upload")
@@ -564,24 +642,23 @@ def plot_extract(plotextractor_types):
         """
         Performs the plotextraction step.
         """
-        obj.extra_data["last_task_name"] = 'plot_extract'
         # Download tarball for each harvested/converted record, then run plotextrator.
         # Update converted xml files with generated xml or add it for upload
         task_sleep_now_if_required()
-        if "result" not in obj.extra_data:
-            obj.extra_data["result"] = {}
+        if "_result" not in obj.extra_data:
+            obj.extra_data["_result"] = {}
 
-        if not 'p_extraction-source' in obj.extra_data["repository"]["arguments"]:
+        if not 'p_extraction-source' in obj.extra_data["_repository"]["arguments"]:
             p_extraction_source = plotextractor_types
         else:
-            p_extraction_source = obj.extra_data["repository"]["arguments"]['p_extraction-source']
+            p_extraction_source = obj.extra_data["_repository"]["arguments"]['p_extraction-source']
 
         if not isinstance(p_extraction_source, list):
             p_extraction_source = [p_extraction_source]
 
         if 'latex' in p_extraction_source:
             # Run LaTeX plotextractor
-            if "tarball" not in obj.extra_data["result"]:
+            if "tarball" not in obj.extra_data["_result"]:
                 # turn oaiharvest_23_1_20110214161632_converted -> oaiharvest_23_1_material
                 # to let harvested material in same folder structure
                 extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
@@ -590,11 +667,11 @@ def plot_extract(plotextractor_types):
                 if tarball is None:
                     raise WorkflowError(str("Error harvesting tarball from id: %s %s" %
                                             (obj.data["system_number_external"]["value"], extract_path)),
-                                        eng.uuid)
+                                        eng.uuid, id_object=obj.id)
 
-                obj.extra_data["result"]["tarball"] = tarball
+                obj.extra_data["_result"]["tarball"] = tarball
             else:
-                tarball = obj.extra_data["result"]["tarball"]
+                tarball = obj.extra_data["_result"]["tarball"]
 
             sub_dir, refno = get_defaults(tarball, CFG_TMPDIR, "")
 
@@ -651,26 +728,25 @@ def refextract(obj, eng):
     """
     Performs the reference extraction step.
     """
-    obj.extra_data["last_task_name"] = "refextraction step started"
 
     task_sleep_now_if_required()
-    if "result" not in obj.extra_data:
-        obj.extra_data["result"] = {}
-    if "pdf" not in obj.extra_data["result"]:
+    if "_result" not in obj.extra_data:
+        obj.extra_data["_result"] = {}
+    if "pdf" not in obj.extra_data["_result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["pdf"])
 
         if pdf is not None:
-            obj.extra_data["result"]["pdf"] = pdf
+            obj.extra_data["_result"]["pdf"] = pdf
 
-    elif not os.path.isfile(obj.extra_data["result"]["pdf"]):
+    elif not os.path.isfile(obj.extra_data["_result"]["pdf"]):
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["pdf"])
         if pdf is not None:
-            obj.extra_data["result"]["pdf"] = pdf
+            obj.extra_data["_result"]["pdf"] = pdf
 
-    if os.path.isfile(obj.extra_data["result"]["pdf"]):
-        cmd_stdout = extract_references_from_file_xml(obj.extra_data["result"]["pdf"])
+    if os.path.isfile(obj.extra_data["_result"]["pdf"]):
+        cmd_stdout = extract_references_from_file_xml(obj.extra_data["_result"]["pdf"])
         references_xml = REGEXP_REFS.search(cmd_stdout)
         if references_xml:
             updated_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n<record>' + references_xml.group(1) + \
@@ -692,27 +768,25 @@ def author_list(obj, eng):
     """
     Performs the special authorlist extraction step (Mostly INSPIRE/CERN related).
     """
-    obj.extra_data["last_task_name"] = "last task name: author_list"
-
     identifiers = obj.data["system_number_external"]["value"]
     task_sleep_now_if_required()
-    if "result" not in obj.extra_data:
-        obj.extra_data["result"] = {}
-    if "tarball" not in obj.extra_data["result"]:
+    if "_result" not in obj.extra_data:
+        obj.extra_data["_result"] = {}
+    if "tarball" not in obj.extra_data["_result"]:
         extract_path = make_single_directory(CFG_TMPSHAREDDIR, eng.uuid)
         tarball, pdf = harvest_single(obj.data["system_number_external"]["value"], extract_path, ["tarball"])
         tarball = str(tarball)
         if tarball is None:
             raise WorkflowError(str("Error harvesting tarball from id: %s %s" % (identifiers, extract_path)),
-                                eng.uuid)
-        obj.extra_data["result"]["tarball"] = tarball
+                                eng.uuid, id_object=obj.id)
+        obj.extra_data["_result"]["tarball"] = tarball
 
-    sub_dir, dummy = get_defaults(obj.extra_data["result"]["tarball"], CFG_TMPDIR, "")
+    sub_dir, dummy = get_defaults(obj.extra_data["_result"]["tarball"], CFG_TMPDIR, "")
 
     try:
-        untar(obj.extra_data["result"]["tarball"], sub_dir)
+        untar(obj.extra_data["_result"]["tarball"], sub_dir)
     except Timeout:
-        eng.log.error('Timeout during tarball extraction on %s' % (obj.extra_data["result"]["tarball"]))
+        eng.log.error('Timeout during tarball extraction on %s' % (obj.extra_data["_result"]["tarball"]))
 
     xml_files_list = find_matching_files(sub_dir, ["xml"])
 
@@ -772,14 +846,12 @@ def upload_step(obj, eng):
     """
     Perform the upload step.
     """
-    obj.extra_data["last_task_name"] = "upload step started"
     uploaded_task_ids = []
     #Work comment:
     #
     #Prepare in case of filtering the files to up,
     #no filtering, no other things to do
-    new_dict_representation = JsonReader()
-    new_dict_representation.rec_json = obj.data
+    new_dict_representation = Record(obj.data)
     marcxml_value = new_dict_representation.legacy_export_as_marc()
     task_id = None
     # Get a random sequence ID that will allow for the tasks to be
@@ -794,7 +866,7 @@ def upload_step(obj, eng):
     file_fd.close()
     mode = ["-r", "-i"]
 
-    arguments = obj.extra_data["repository"]["arguments"]
+    arguments = obj.extra_data["_repository"]["arguments"]
 
     if os.path.exists(filepath):
         try:
@@ -807,7 +879,7 @@ def upload_step(obj, eng):
                 args.extend(['-P', str(arguments.get('u_priority', 5))])
             args.append(filepath)
             task_id = task_low_level_submission("bibupload", "oaiharvest", *tuple(args))
-            create_oaiharvest_log_str(task_id, obj.extra_data["repository"]["id"], marcxml_value)
+            create_oaiharvest_log_str(task_id, obj.extra_data["_repository"]["id"], marcxml_value)
         except Exception, msg:
             eng.log.error("An exception during submitting oaiharvest task occured : %s " % (str(msg)))
             return None
@@ -815,11 +887,11 @@ def upload_step(obj, eng):
         eng.log.error("marcxmlfile %s does not exist" % (filepath,))
     if task_id is None:
         eng.log.error("an error occurred while uploading %s from %s" %
-                      (filepath, obj.extra_data["repository"]["name"]))
+                      (filepath, obj.extra_data["_repository"]["name"]))
     else:
         uploaded_task_ids.append(task_id)
         eng.log.info("material harvested from source %s was successfully uploaded" %
-                     (obj.extra_data["repository"]["name"],))
+                     (obj.extra_data["_repository"]["name"],))
 
     if CFG_INSPIRE_SITE:
         # Launch BibIndex,Webcoll update task to show uploaded content quickly
@@ -844,18 +916,21 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False, output_mode='text
 
         from invenio.legacy.bibclassify import api
 
-        if "result" not in obj.extra_data:
-            obj.extra_data["result"] = {}
+        if "_result" not in obj.extra_data:
+            obj.extra_data["_result"] = {}
 
-        if "pdf" in obj.extra_data["result"]:
-            obj.extra_data["result"]["bibclassify"] = api.bibclassify_exhaustive_call(obj.extra_data["result"]["pdf"],
-                                                                                      taxonomy, rebuild_cache, no_cache,
-                                                                                      output_mode, output_limit, spires,
-                                                                                      match_mode, with_author_keywords,
-                                                                                      extract_acronyms, only_core_tags
-            )
-            obj.add_task_result("bibclassify", obj.extra_data["result"]["bibclassify"])
+        if "pdf" in obj.extra_data["_result"]:
+            obj.extra_data["_result"]["bibclassify"] = api.bibclassify_exhaustive_call(obj.extra_data["_result"]["pdf"],
+                                                                                       taxonomy, rebuild_cache,
+                                                                                       no_cache,
+                                                                                       output_mode, output_limit,
+                                                                                       spires,
+                                                                                       match_mode, with_author_keywords,
+                                                                                       extract_acronyms, only_core_tags
+                                                                                       )
+            obj.add_task_result("bibclassify", obj.extra_data["_result"]["bibclassify"])
         else:
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
+
     return _bibclassify
