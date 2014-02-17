@@ -76,6 +76,8 @@ def continue_worker(oid, restart_point="continue_next", **kwargs):
     """
     data = [BibWorkflowObject.query.filter(BibWorkflowObject.id ==
                                            oid).first()]
+    data[0].version = CFG_OBJECT_VERSION.RUNNING
+    data[0].save()
 
     workflow = Workflow.query.filter(Workflow.uuid ==
                                      data[0].id_workflow).first()

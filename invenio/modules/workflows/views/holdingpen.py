@@ -177,14 +177,14 @@ def load_table(version_showing):
     """
     from ..containers import create_hp_containers
     VERSION_SHOWING = []
-    version_showing = request.get_json()
+    req = request.get_json()
 
-    if version_showing:
-        if version_showing['final'] == True:
+    if req:
+        if req.get('final', None):
             VERSION_SHOWING.append(CFG_OBJECT_VERSION.FINAL)
-        if version_showing['halted'] == True:
+        if req.get('halted', None):
             VERSION_SHOWING.append(CFG_OBJECT_VERSION.HALTED)
-        if version_showing['running'] == True:
+        if req.get('running', None):
             VERSION_SHOWING.append(CFG_OBJECT_VERSION.RUNNING)
     else:
         VERSION_SHOWING = [CFG_OBJECT_VERSION.HALTED]
@@ -406,17 +406,17 @@ def show_widget(objectid):
     return render_template(url, **parameters)
 
 
-@blueprint.route('/resolve_widget', methods=['POST'])
+@blueprint.route('/resolve', methods=['GET', 'POST'])
 @login_required
-@wash_arguments({'bwobject_id': (unicode, '0'),
-                                 'widget': (unicode, 'default')})
-def resolve_widget(bwobject_id, widget):
+@wash_arguments({'objectid': (unicode, '-1'),
+                 'widget': (unicode, 'default')})
+def resolve_widget(objectid, widget):
     """
     Resolves the action taken in a widget.
     Calls the run_widget function of the specific widget.
     """
     widget_form = widgets[widget]
-    widget_form().run_widget(bwobject_id, request)
+    widget_form().run_widget(objectid, request)
     return "Done"
 
 

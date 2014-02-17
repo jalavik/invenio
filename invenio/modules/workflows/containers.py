@@ -39,6 +39,8 @@ def create_hp_containers(iSortCol_0=None, sSortDir_0=None,
         BibWorkflowObject.version.in_(version_showing)
     ).all()
 
+    print "VERSION:", version_showing
+    print "BEFORE:", len(bwobject_list)
     #bwobject_list = [o for o in bwobject_list if o.data_type in type_showing]
 
     if sSearch:
@@ -77,5 +79,7 @@ def create_hp_containers(iSortCol_0=None, sSortDir_0=None,
     if iSortCol_0 == -6:
         if sSortDir_0 == 'desc':
             bwobject_list.reverse()
+
+    print "AFTER:", len(bwobject_list)
     
     return bwobject_list
