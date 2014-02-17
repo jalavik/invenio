@@ -43,8 +43,8 @@ class full_doc_process(object):
                 [
                     plot_extract(["latex"]),
                     fulltext_download,
-                    #bibclassify(taxonomy="/home/jlavik/envs/pu/src/invenio/HEP.rdf",
-                    #            output_mode="dict"),
+                    bibclassify(taxonomy="/home/jlavik/envs/pu/src/invenio/HEP.rdf",
+                                output_mode="dict"),
                     refextract, author_list,
                     upload_step,
                 ],
@@ -53,5 +53,4 @@ class full_doc_process(object):
                     log_info("Record already into database"),
                 ],
     ]
-    #workflow =[convert_record("oaiarxiv2marcxml.xsl"), convert_record_to_bibfield, author_list, upload_step]
 
