@@ -38,9 +38,9 @@ from .models import (Workflow,
                      BibWorkflowObject,
                      BibWorkflowEngineLog,
                      DATA_TYPES)
-from .utils import dictproperty, get_workflow_definition
-from .config import (CFG_WORKFLOW_STATUS,
-                     CFG_OBJECT_VERSION)
+from .utils import (dictproperty,
+                    get_workflow_definition)
+from .config import CFG_OBJECT_VERSION
 from .logger import (get_logger,
                      BibWorkflowLogHandler)
 from .errors import WorkflowHalt
@@ -48,7 +48,22 @@ from .errors import WorkflowHalt
 DEBUG = CFG_DEVEL_SITE > 0
 
 
+class WorkflowStatus:
+    NEW, RUNNING, HALTED, ERROR, FINISHED, COMPLETED = range(6)
+
+
 class BibWorkflowEngine(GenericWorkflowEngine):
+    """
+    Subclass of GenericWorkflowEngine representing a workflow in
+    the workflows module.
+
+    Adds a SQLAlchemy database model to save workflow states and
+    workflow data.
+
+    Overrides key functions in GenericWorkflowEngine to implement
+    logging and certain workarounds for storing data before/after
+    task calls (This part will be revisited in the future).
+    """
     def __init__(self, name=None, uuid=None, curr_obj=0,
                  workflow_object=None, id_user=0, module_name="Unknown",
                  **kwargs):
@@ -199,9 +214,9 @@ BibWorkflowEngine
     def after_processing(objects, self):
         self._i = [-1, [0]]
         if self.has_completed():
-            self.save(CFG_WORKFLOW_STATUS.COMPLETED)
+            self.save(WorkflowStatus.COMPLETED)
         else:
-            self.save(CFG_WORKFLOW_STATUS.FINISHED)
+            self.save(WorkflowStatus.FINISHED)
 
     def _create_db_obj(self):
         db.session.add(self.db_obj)
@@ -224,7 +239,7 @@ BibWorkflowEngine
         ).count()
         return number_of_objects == 0
 
-    def save(self, status=CFG_WORKFLOW_STATUS.NEW):
+    def save(self, status=WorkflowStatus.NEW):
         """
         Save the workflow instance to database.
         Just storing the necessary data.
@@ -238,8 +253,8 @@ BibWorkflowEngine
             self._create_db_obj()
         else:
             # This workflow continues a previous execution.
-            if status in (CFG_WORKFLOW_STATUS.FINISHED,
-                          CFG_WORKFLOW_STATUS.HALTED):
+            if status in (WorkflowStatus.FINISHED,
+                          WorkflowStatus.HALTED):
                 self.db_obj.current_object = 0
             self.db_obj.modified = datetime.now()
             self.db_obj.status = status
