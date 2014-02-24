@@ -18,13 +18,4 @@
 
 """Invenio BibWorkflow config."""
 
-
-def enum(**enums):
-    return type('Enum', (), enums)
-
-CFG_OBJECT_VERSION = enum(INITIAL=0, FINAL=1, HALTED=2, RUNNING=3)
-CFG_OBJECT_STATUS = enum(ERROR="ERROR - Something went wrong!",
-                         RUNNING="RUNNING - Workflow in process",
-                         FINISHED="FINISHED - Workflow was finished" +
-                                  "for this object"
-                         )
+CFG_OBJECT_DATA_TYPES = ["record", "deposit", "harvest", "any"]

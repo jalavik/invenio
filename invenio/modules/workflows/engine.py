@@ -48,7 +48,7 @@ from .errors import WorkflowHalt
 DEBUG = CFG_DEVEL_SITE > 0
 
 
-class WorkflowStatus:
+class WorkflowStatus(object):
     NEW, RUNNING, HALTED, ERROR, FINISHED, COMPLETED = range(6)
 
 

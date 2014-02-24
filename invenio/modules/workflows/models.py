@@ -29,7 +29,6 @@ from sqlalchemy import desc
 from sqlalchemy.orm.exc import NoResultFound
 from invenio.ext.sqlalchemy import db
 from invenio.base.globals import cfg
-from .config import CFG_OBJECT_VERSION, enum
 from .utils import redis_create_search_entry, WorkflowsTaskResult
 from .logger import (get_logger,
                      BibWorkflowLogHandler)
@@ -39,6 +38,22 @@ DATA_TYPES = enum(RECORD="record",
                   DEPOSIT="deposit",
                   HARVEST="harvest",
                   ANY="any")
+class ObjectDataTypes:
+
+
+class ObjectDataTypes(object):
+    RECORD = "record"
+    DEPOSIT = ""
+    HARVEST
+    ANY = range(6)
+
+
+CFG_OBJECT_VERSION = enum(INITIAL=0, FINAL=1, HALTED=2, RUNNING=3)
+CFG_OBJECT_STATUS = enum(ERROR="ERROR - Something went wrong!",
+                         RUNNING="RUNNING - Workflow in process",
+                         FINISHED="FINISHED - Workflow was finished" +
+                                  "for this object"
+                         )
 
 
 def get_default_data():
