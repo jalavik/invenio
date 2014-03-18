@@ -25,12 +25,27 @@ import traceback
 
 from six import iteritems
 
-from invenio.ext.logging import register_exception
 
 from .errors import WorkflowDefinitionError
 
-
 REGEXP_RECORD = re.compile("<record.*?>(.*?)</record>", re.DOTALL)
+
+
+def session_manager(orig_func):
+    """Decorator to wrap function with the session."""
+    from invenio.ext.sqlalchemy import db
+
+    def new_func(self, *a, **k):
+        """Wrappend function to manage DB session."""
+        try:
+            resp = orig_func(self, *a, **k)
+            db.session.commit()
+            return resp
+        except:
+            db.session.rollback()
+            raise
+
+    return new_func
 
 
 class BibWorkflowObjectIdContainer(object):
@@ -64,9 +79,6 @@ class BibWorkflowObjectIdContainer(object):
     def to_dict(self):
         return {str(self.__class__): self.__dict__}
 
-    def __str__(self):
-        return "BibWorkflowObject(%s)" % (str(self.id),)
-
 
 class WorkflowsTaskResult(object):
     """
@@ -90,33 +102,34 @@ def get_workflow_definition(name):
                                       (name, str(e), traceback.format_exc()),
                                       workflow_name=name)
 
+#FIXME: Dead code ? Useless ? Still in study please wait before removing except if you have reliabily conclude
+#FIXME: that it is 100% dead and useless code
 
-def determineDataType(data):
-    # If data is a dictionary and contains type key,
-    # we can directly derive the data_type
-    if isinstance(data, dict):
-        if 'type' in data:
-            data_type = data['type']
-        else:
-            data_type = 'dict'
-    else:
-
-        # If data is not a dictionary, we try to guess MIME type
-        # by using magic library
-        try:
-            from magic import Magic
-
-            mime_checker = Magic(mime=True)
-            data_type = mime_checker.from_buffer(data)  # noqa
-        except:
-            register_exception(
-                stream="warning",
-                prefix="BibWorkflowObject.determineDataType:"
-                       " Impossible to resolve data type."
-            )
-            data_type = ""
-    return data_type
-
+# def determineDataType(data):
+#     # If data is a dictionary and contains type key,
+#     # we can directly derive the data_type
+#     if isinstance(data, dict):
+#         if 'type' in data:
+#             data_type = data['type']
+#         else:
+#             data_type = 'dict'
+#     else:
+#
+#         # If data is not a dictionary, we try to guess MIME type
+#         # by using magic library
+#         try:
+#             from magic import Magic
+#
+#             mime_checker = Magic(mime=True)
+#             data_type = mime_checker.from_buffer(data)  # noqa
+#         except:
+#             from invenio.ext.logging import register_exception
+#
+#             register_exception(stream="warning", prefix=
+#             "BibWorkflowObject.determineDataType:" +
+#             " Impossible to resolve data type.")
+#             data_type = ""
+#     return data_type
 
 ## TODO special thanks to http://code.activestate.com/recipes/440514-dictproperty-properties-for-dictionary-attributes/
 class dictproperty(object):
