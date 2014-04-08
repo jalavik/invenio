@@ -58,6 +58,7 @@ Modules
    modules/multimedia
    modules/oauthclient
    modules/redirector
+   modules/matcher
    modules/tags
    modules/upgrader
    modules/uploader
