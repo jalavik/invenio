@@ -32,6 +32,7 @@ Modules
    modules/documents
    modules/formatter
    modules/jsonalchemy
+   modules/matcher
    modules/tags
    modules/upgrader
    modules/uploader

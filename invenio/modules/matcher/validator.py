@@ -17,10 +17,10 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
-Matcher - a tool that attempts to match a record, or a batch of records,
-against existing records within Invenio; either a local instance or remote.
+    Matcher - a tool that attempts to match a record, or a batch of records,
+    against existing records within Invenio; either a local instance or remote.
 
-bibmatch_validator - module containing functions for match validation step
+    Validation functions to validate possible matches.
 """
 
 __revision__ = "$Id$"

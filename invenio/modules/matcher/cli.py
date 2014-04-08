@@ -17,11 +17,10 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
-Matcher - a tool that attempts to match a record, or a batch of records,
-against existing records within Invenio; either a local instance or remote.
+    Matcher - a tool that attempts to match a record, or a batch of records,
+    against existing records within Invenio; either a local instance or remote.
 
-BibMatch CLI, Command Line Interface. This provides the functions for the
-command line interface used by the bibmatch interface in the '/bin' directory
+    Matcher CLI, Command Line Interface.
 """
 
 # Necessary?
@@ -44,12 +43,8 @@ from invenio.legacy.search_engine import get_fieldcodes
 from invenio.utils.text import xml_entities_to_utf8
 from invenio.utils.connector import InvenioConnector
 
-from .config import (MATCHER_LOCAL_SLEEPTIME,
-                     MATCHER_REMOTE_SLEEPTIME,
-                     MATCHER_QUERY_TEMPLATES)
-
-from .engine import legacy_bibmatch_matching
-from .validator import transform_record_to_marc
+from .api import match_records
+from .utils import transform_record_to_marc
 
 
 def usage():
@@ -248,7 +243,7 @@ def main():
     textmarc_output = 0                       # output in MARC instead of MARCXML
     field = ""
     search_mode = None                        # activates a mode, uses advanced search instead of simple
-    sleeptime = MATCHER_LOCAL_SLEEPTIME  # the amount of time to sleep between queries, changes on remote queries
+    sleeptime = cfg['MATCHER_LOCAL_SLEEPTIME']  # the amount of time to sleep between queries, changes on remote queries
     clean = False                             # should queries be sanitized?
     collections = []                          # only search certain collections?
     user = ""
@@ -284,7 +279,7 @@ def main():
             #     field = opt_value
         if opt in ["-q", "--query-string"]:
             try:
-                template = MATCHER_QUERY_TEMPLATES[opt_value]
+                template = cfg['MATCHER_QUERY_TEMPLATES'][opt_value]
                 qrystrs.append((field, template))
             except KeyError:
                 qrystrs.append((field, opt_value))
@@ -303,7 +298,7 @@ def main():
             f_input = opt_value
         if opt in ["-r", "--remote"]:
             server_url = opt_value
-            sleeptime = MATCHER_REMOTE_SLEEPTIME
+            sleeptime = cfg['MATCHER_REMOTE_SLEEPTIME']
         if opt in ["-a", "--alter-recid"]:
             raise NotImplementedError("--alter-recid flag not implemented in PU")
             # modify = 1
@@ -398,7 +393,8 @@ def main():
     connector = InvenioConnector(server_url, user, password)
     # NOTE: Direct link to engine.py will be removed upon implementation of
     #       the API.
-    all_results = legacy_bibmatch_matching(records, config, connector)
+    all_results = match_records(records, config, server_url, user, handlers,
+                                lazy=False, celery=False)
 
     recs_new = []
     recs_matched = []

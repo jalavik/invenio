@@ -17,11 +17,11 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
-Matcher - a tool that attempts to match a record, or a batch of records,
-against existing records within Invenio; either a local instance or remote.
+    Matcher - a tool that attempts to match a record, or a batch of records,
+    against existing records within Invenio; either a local instance or remote.
 
-The engine code sits in here, if you want to interact with matcher, use
-the API instead.
+    The engine code sits in here, if you want to interact with matcher, use
+    the API instead.
 """
 
 __revision__ = "$Id$"

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ## This file is part of Invenio.
-## Copyright (C) 2013, 2014 CERN.
+## Copyright (C) 2010, 2011, 2013, 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -17,12 +17,10 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
-Matcher - a tool that attempts to match a record, or a batch of records,
-against existing records within Invenio; either a local instance or remote.
+    Matcher - a tool that attempts to match a record, or a batch of records,
+    against existing records within Invenio; either a local instance or remote.
 
-Matcher Configuration.
-Import cfg_matcher from this file to get access to configuration variables
-NB: it's a dictionary
+    Matcher Configuration.
 """
 
 MATCHER_DEFAULT_CONFIG = {
@@ -184,66 +182,103 @@ MATCHER_FUZZY_WORDLIMITS = {'100__a': 2, '245__a': 4}
 MATCHER_LOCAL_SLEEPTIME = 0.0
 MATCHER_MATCH_VALIDATION_RULESETS = [
     ('default',
-      [{'compare_mode': 'lazy',
-        'match_mode': 'title',
-        'result_mode': 'normal',
-        'tags': '245__%,242__%',
-        'threshold': 0.8},
-       {'compare_mode': 'lazy',
-        'match_mode': 'identifier',
-        'result_mode': 'final',
-        'tags': '037__a,088__a',
-        'threshold': 1.0},
-       {'compare_mode': 'normal',
-        'match_mode': 'author',
-        'result_mode': 'normal',
-        'tags': '100__a,700__a',
-        'threshold': 0.8},
-       {'compare_mode': 'lazy',
-        'match_mode': 'title',
-        'result_mode': 'normal',
-        'tags': '773__a',
-        'threshold': 1.0}]),
-     ('980__ \\$\\$a(THESIS|Thesis)',
-      [{'compare_mode': 'strict',
-        'match_mode': 'author',
-        'result_mode': 'normal',
-        'tags': '100__a',
-        'threshold': 0.8},
-       {'compare_mode': 'lazy',
-        'match_mode': 'author',
-        'result_mode': 'normal',
-        'tags': '700__a,701__a',
-        'threshold': 1.0},
-       {'compare_mode': 'ignored',
-        'match_mode': 'author',
-        'result_mode': 'normal',
-        'tags': '100__a,700__a',
-        'threshold': 0.8}]),
-     ('260__',
-      [{'compare_mode': 'lazy',
-        'match_mode': 'date',
-        'result_mode': 'fuzzy',
-        'tags': '260__c',
-        'threshold': 1.0}]),
-     ('0247_',
-      [{'compare_mode': 'lazy',
-        'match_mode': 'identifier',
-        'result_mode': 'final',
-        'tags': '0247_a',
-        'threshold': 1.0}]),
-     ('020__',
-      [{'compare_mode': 'lazy',
-        'match_mode': 'identifier',
-        'result_mode': 'joker',
-        'tags': '020__a',
-        'threshold': 1.0}])
+        [
+            {
+                'compare_mode': 'lazy',
+                'match_mode': 'title',
+                'result_mode': 'normal',
+                'tags': '245__%,242__%',
+                'threshold': 0.8
+            },
+            {
+                'compare_mode': 'lazy',
+                'match_mode': 'identifier',
+                'result_mode': 'final',
+                'tags': '037__a,088__a',
+                'threshold': 1.0
+            },
+            {
+                'compare_mode': 'normal',
+                'match_mode': 'author',
+                'result_mode': 'normal',
+                'tags': '100__a,700__a',
+                'threshold': 0.8
+            },
+            {
+                'compare_mode': 'lazy',
+                'match_mode': 'title',
+                'result_mode': 'normal',
+                'tags': '773__a',
+                'threshold': 1.0
+            }
+        ]
+    ),
+    ('980__ \\$\\$a(THESIS|Thesis)',
+        [
+            {
+                'compare_mode': 'strict',
+                'match_mode': 'author',
+                'result_mode': 'normal',
+                'tags': '100__a',
+                'threshold': 0.8
+            },
+            {
+                'compare_mode': 'lazy',
+                'match_mode': 'author',
+                'result_mode': 'normal',
+                'tags': '700__a,701__a',
+                'threshold': 1.0
+            },
+            {
+                'compare_mode': 'ignored',
+                'match_mode': 'author',
+                'result_mode': 'normal',
+                'tags': '100__a,700__a',
+                'threshold': 0.8
+            }
+        ]
+    ),
+    ('260__',
+        [
+            {
+                'compare_mode': 'lazy',
+                'match_mode': 'date',
+                'result_mode': 'fuzzy',
+                'tags': '260__c',
+                'threshold': 1.0
+            }
+        ]
+    ),
+    ('0247_',
+        [
+            {
+                'compare_mode': 'lazy',
+                'match_mode': 'identifier',
+                'result_mode': 'final',
+                'tags': '0247_a',
+                'threshold': 1.0
+            }
+        ]
+    ),
+    ('020__',
+        [
+            {
+                'compare_mode': 'lazy',
+                'match_mode': 'identifier',
+                'result_mode': 'joker',
+                'tags': '020__a',
+                'threshold': 1.0
+            }
+        ]
+    )
 ]
 
-MATCHER_QUERY_TEMPLATES = {'title': '[title]',
-                           'title-author': '[title] [author]',
-                           'reportnumber': 'reportnumber:[reportnumber]'
-                           }
+MATCHER_QUERY_TEMPLATES = {
+    'title': '[title]',
+    'title-author': '[title] [author]',
+    'reportnumber': 'reportnumber:[reportnumber]'
+}
+
 MATCHER_REMOTE_SLEEPTIME = 2.0
 MATCHER_SEARCH_RESULT_MATCH_LIMIT = 15
 
