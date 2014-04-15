@@ -18,11 +18,8 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 import redis
-import traceback
 
 from six import iteritems
-
-from .errors import WorkflowDefinitionError
 
 
 def session_manager(orig_func):
@@ -138,12 +135,10 @@ def get_workflow_definition(name):
     """ Tries to load the given workflow from the system. """
     from .registry import workflows
 
-    try:
-        return workflows[name]
-    except Exception as e:
-        raise WorkflowDefinitionError("Error with workflow '%s': %s\n%s" %
-                                      (name, str(e), traceback.format_exc()),
-                                      workflow_name=name)
+    if name in workflows:
+        return getattr(workflows[name], "workflow", None)
+    else:
+        return None
 
 
 class dictproperty(object):

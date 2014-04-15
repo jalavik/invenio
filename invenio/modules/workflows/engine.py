@@ -24,8 +24,6 @@ from uuid import uuid1 as new_uuid
 import base64
 
 from six import iteritems, reraise
-from six.moves import cPickle
-
 from workflow.engine import (GenericWorkflowEngine,
                              ContinueNextToken,
                              HaltProcessing,
@@ -35,21 +33,20 @@ from workflow.engine import (GenericWorkflowEngine,
                              WorkflowError,
                              )
 
-from .errors import WorkflowError as WorkflowErrorClient
+from six.moves import cPickle
 from .models import (Workflow,
                      BibWorkflowObject,
                      BibWorkflowEngineLog,
                      ObjectVersion,
                      )
-from .utils import (dictproperty,
-                    get_workflow_definition,
-                    )
+from .utils import dictproperty
 from .logger import (get_logger,
-                     BibWorkflowLogHandler,
-                     )
-from .errors import WorkflowHalt
-
+                     BibWorkflowLogHandler)
+from .errors import (WorkflowHalt,
+                     WorkflowDefinitionError,
+                     WorkflowError as WorkflowErrorClient)
 from invenio.config import CFG_DEVEL_SITE
+
 
 DEBUG = CFG_DEVEL_SITE > 0
 
@@ -469,8 +466,13 @@ BibWorkflowEngine
 
         :param workflow_name:
         """
-        workflow = get_workflow_definition(workflow_name)
-        self.workflow_definition = workflow
+        from .registry import workflows
+        if workflow_name not in workflows:
+            # No workflow with that name exists
+            raise WorkflowDefinitionError("Workflow '%s' does not exist"
+                                          % (workflow_name,),
+                                          workflow_name=workflow_name)
+        self.workflow_definition = workflows[workflow_name]
         self.setWorkflow(self.workflow_definition.workflow)
 
     def set_extra_data_params(self, **kwargs):
