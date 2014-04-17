@@ -21,18 +21,22 @@
 
 from invenio.testsuite import (InvenioTestCase,
                                make_test_suite,
-                               run_test_suite,)
+                               run_test_suite, )
 
 
 class WorkflowDelayedTest(InvenioTestCase):
     def tearDown(self):
         """ Clean up created objects """
         from invenio.modules.workflows.utils import tearDown as mtearDown
+
         mtearDown(self)
 
     def test_workflow_delay(self):
         from invenio.modules.workflows.models import BibWorkflowObject
-        from invenio.modules.workflows.api import start_delayed, continue_oid_delayed, start_by_wid_delayed
+        from invenio.modules.workflows.api import (start_delayed,
+                                                   continue_oid_delayed,
+                                                   start_by_wid_delayed,
+                                                   )
         from invenio.modules.workflows.engine import WorkflowStatus
 
         test_objectb = BibWorkflowObject()
@@ -40,7 +44,8 @@ class WorkflowDelayedTest(InvenioTestCase):
         test_objectb.save()
         from invenio.modules.workflows.worker_result import uui_to_workflow
 
-        asyncr = start_delayed('test_workflow', [test_objectb], module_name="unit_tests")
+        asyncr = start_delayed('test_workflow', [test_objectb],
+                               module_name="unit_tests")
         engineb = asyncr.get(uui_to_workflow)
 
         self.assertEqual(test_objectb.get_data(), 38)
@@ -51,7 +56,8 @@ class WorkflowDelayedTest(InvenioTestCase):
         test_objecte = BibWorkflowObject()
         test_objecte.set_data(2)
         test_objecte.save()
-        asyncr = start_delayed('test_workflow', [test_objecte], module_name="unit_tests")
+        asyncr = start_delayed('test_workflow', [test_objecte],
+                               module_name="unit_tests")
         engineb = asyncr.get(uui_to_workflow)
         while engineb.status != WorkflowStatus.COMPLETED:
             asyncr = continue_oid_delayed(test_objecte.id)
@@ -66,7 +72,8 @@ class WorkflowDelayedTest(InvenioTestCase):
         test_object = BibWorkflowObject()
         test_object.set_data(10)
         test_object.save()
-        async = start_delayed("test_workflow_workflows", [test_object], module_name="unit_tests")
+        async = start_delayed("test_workflow_workflows", [test_object],
+                              module_name="unit_tests")
         engine = async.get()
         from invenio.modules.workflows.engine import WorkflowStatus
 
@@ -75,7 +82,10 @@ class WorkflowDelayedTest(InvenioTestCase):
         self.assertEqual(engine.status, WorkflowStatus.COMPLETED)
 
     def test_dirty_worker(self):
-        from invenio.modules.workflows.workers.worker_celery import celery_run, celery_restart, celery_continue
+        from ..workers.worker_celery import (celery_run,
+                                             celery_restart,
+                                             celery_continue,
+                                             )
         from invenio.modules.workflows.utils import BibWorkflowObjectIdContainer
         from invenio.modules.workflows.models import BibWorkflowObject
 
@@ -104,7 +114,9 @@ class WorkflowDelayedTest(InvenioTestCase):
         test_object.set_data(0)
         from invenio.modules.workflows.worker_result import uui_to_workflow
 
-        engine = uui_to_workflow(celery_run('test_workflow_logic', [test_object], module_name="unit_tests"))
+        engine = uui_to_workflow(
+            celery_run('test_workflow_logic', [test_object],
+                       module_name="unit_tests"))
         self.assertEqual(test_object.get_data(), 5)
         self.assertEqual(test_object.get_extra_data()["test"], "lt9")
         celery_restart(engine.uuid)
@@ -119,11 +131,12 @@ class WorkflowDelayedTest(InvenioTestCase):
         celery_continue(test_object.id, "continue_next")
         self.assertEqual(test_object.get_data(), 15)
         self.assertEqual(test_object.get_extra_data()["test"], "gte9")
-        engine = uui_to_workflow(celery_continue(test_object.id, "continue_next", module_name="unit_tests"))
+        engine = uui_to_workflow(
+            celery_continue(test_object.id, "continue_next",
+                            module_name="unit_tests"))
         from invenio.modules.workflows.engine import WorkflowStatus
 
-        while engine.status != WorkflowStatus.COMPLETED:
-            engine = uui_to_workflow(celery_continue(test_object.id, "continue_next"))
+
         self.assertEqual(engine.status, WorkflowStatus.COMPLETED)
 
     def test_workflows_tasks(self):
@@ -133,18 +146,20 @@ class WorkflowDelayedTest(InvenioTestCase):
         test_object = BibWorkflowObject()
         test_object.save()
         test_object.set_data(10)
-        engine = start("test_workflow_workflows", [test_object], module_name="unit_tests")
+        engine = start("test_workflow_workflows", [test_object],
+                       module_name="unit_tests")
         from invenio.modules.workflows.engine import WorkflowStatus
 
         self.assertEqual(engine.get_extra_data()["_nb_workflow_failed"], 0)
         self.assertEqual(engine.status, WorkflowStatus.COMPLETED)
-        self.assertEqual(test_object.get_extra_data()["_tasks_results"]["_workflows_reviews"][0].result["failed"], 0)
+        self.assertEqual(test_object.get_extra_data()["_tasks_results"][
+                             "_workflows_reviews"][0].result["failed"], 0)
         self.assertEqual(test_object.get_extra_data()["nbworkflowrunning"], 4)
         self.assertEqual(engine.get_extra_data()["_nb_workflow_finish"], 21)
 
 
 TEST_SUITE = make_test_suite(WorkflowDelayedTest,
-                             )
+)
 
 if __name__ == "__main__":
     run_test_suite(TEST_SUITE)

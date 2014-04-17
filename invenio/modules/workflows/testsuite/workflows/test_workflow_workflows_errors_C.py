@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ## This file is part of Invenio.
-## Copyright (C) 2014 CERN.
+## Copyright (C) 2012, 2013 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -18,17 +18,25 @@
 
 """ Implements a workflow for testing """
 
-from ...tasks.sample_tasks import (task_reduce_and_halt,
-                                   sleep_task,
-                                   )
+from ...tasks.workflows_tasks import (start_workflow,
+                                      workflows_reviews,
+                                      wait_for_workflows_to_complete,
+                                      )
+
+from invenio.modules.workflows.tasks.logic_tasks import simple_for, end_for
 
 
-class test_workflow_hardcore(object):
+class test_workflow_workflows_errors_C(object):
     """
     Test workflow for unit-tests.
     """
     workflow = [
-        sleep_task(0.001),
-        task_reduce_and_halt,
-        sleep_task(1)
+
+        simple_for(0, 5, 1, "X"),
+        [
+            start_workflow("test_workflow_workflows_errors_B", 22),
+        ],
+        end_for,
+        wait_for_workflows_to_complete,
+        workflows_reviews(True, False)
     ]

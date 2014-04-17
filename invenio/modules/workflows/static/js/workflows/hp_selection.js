@@ -46,6 +46,7 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
                     current_row.cells[0].firstChild.checked = true;
             }
         }
+        console.log("finish");
     }
 
     function selectCellByTitle (row, title){
@@ -108,9 +109,9 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
                     if(widget_name === 'Approve Record'){
                         holdingpen.recordsToApprove.push(row.row_id);
                     }
-                }   
+                }
                 row.checkbox.checked = true;
-            }   
+            }
             else{
                 $('#select-all')[0].checked = false;
                 // De-Select
@@ -144,7 +145,7 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
         holdingpen.rowIndexList = [];
         holdingpen.oTable.fnDraw(false);
         window.getSelection().removeAllRanges();
-    } 
+    }
 
     function hoverRow (row) {
         row.style.background = "#FFFFEE";
@@ -244,7 +245,7 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
     });
 
     $(document).keyup(function(e){
-        if (e.keyCode == 27) {  // esc           
+        if (e.keyCode == 27) {  // esc
             deselectAll();
         }
     });

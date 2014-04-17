@@ -17,15 +17,14 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
+# OAI Harvest daemon - harvest records from OAI repositories.
+#
+# If started via CLI with --verb parameters, starts a manual single-shot
+# harvesting. Otherwise starts a BibSched task for periodical harvesting
+# of repositories defined in the OAI Harvest admin interface
+
 from __future__ import print_function
 
-"""
-OAI Harvest daemon - harvest records from OAI repositories.
-
-If started via CLI with --verb parameters, starts a manual single-shot
-harvesting. Otherwise starts a BibSched task for periodical harvesting
-of repositories defined in the OAI Harvest admin interface
-"""
 
 __revision__ = "$Id$"
 
@@ -33,7 +32,7 @@ import sys
 import getopt
 import getpass
 import time
-import urlparse
+import six.moves.urllib
 
 from sqlalchemy import orm
 from invenio.config import (CFG_OAI_FAILED_HARVESTING_STOP_QUEUE,
@@ -157,7 +156,7 @@ def task_run_core():
         workflow_id_preservation = e.id_workflow
         workflowlog = BibWorkflowEngineLog.query.filter(
             BibWorkflowEngineLog.id_object == e.id_workflow
-        ).filter(BibWorkflowEngineLog.log_type > 40).all()
+        ).filter(BibWorkflowEngineLog.log_type >= 40).all()
 
         for log in workflowlog:
             write_message(log.message)
@@ -166,7 +165,7 @@ def task_run_core():
             write_message("\n\n____________Workflow " + i + " log output____________")
             workflowlog = BibWorkflowEngineLog.query.filter(
                 BibWorkflowEngineLog.id_object == i
-            ).filter(BibWorkflowEngineLog.log_type > 40).all()
+            ).filter(BibWorkflowEngineLog.log_type >= 40).all()
             for log in workflowlog:
                 write_message(log.message)
 
@@ -175,13 +174,12 @@ def task_run_core():
 
         objectlog = BibWorkflowObjectLog.query.filter(
             BibWorkflowObjectLog.id_object == e.id_object
-        ).filter(BibWorkflowEngineLog.log_type > 40).all()
+        ).filter(BibWorkflowEngineLog.log_type >= 40).all()
 
         for log in objectlog:
             write_message(log.message)
 
         execution_time = round(time.time() - start_time, 2)
-
         write_message("Execution time :" + str(execution_time))
 
     # Generate reports
@@ -407,7 +405,7 @@ def main():
                 if not base_url.lower().startswith('http'):
                     base_url = 'http://' + base_url
                 (addressing_scheme, network_location, path, dummy1,
-                 dummy2, dummy3) = urlparse.urlparse(base_url)
+                 dummy2, dummy3) = urllib.parse(base_url)
                 secure = (addressing_scheme == "https")
 
                 if (cert_file and not key_file) or \
