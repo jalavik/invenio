@@ -19,10 +19,10 @@
 
 import os
 import tempfile
-from six.moves import cPickle
-from invenio.modules.workflows.utils import session_manager
 import base64
 import logging
+
+from six.moves import cPickle
 from six import (string_types,
                  iteritems,
                  )
@@ -35,6 +35,7 @@ from invenio.base.globals import cfg
 
 from .utils import (redis_create_search_entry,
                     WorkflowsTaskResult,
+                    session_manager,
                     )
 from .logger import (get_logger,
                      BibWorkflowLogHandler,
@@ -90,9 +91,6 @@ class Workflow(db.Model):
     counter_error = db.Column(db.Integer, default=0, nullable=False)
     counter_finished = db.Column(db.Integer, default=0, nullable=False)
     module_name = db.Column(db.String(64), nullable=False)
-
-
-
 
     def __repr__(self):
         return "<Workflow(name: %s, module: %s, cre: %s, mod: %s," \
@@ -313,12 +311,12 @@ class BibWorkflowObject(db.Model):
     def __eq__(self, other):
         if isinstance(other, BibWorkflowObject):
             if self._data == other._data and \
-               self._extra_data == other._extra_data and \
-               self.id_workflow == other.id_workflow and \
-               self.version == other.version and \
-               self.id_parent == other.id_parent and \
-               isinstance(self.created, datetime) and \
-               isinstance(self.modified, datetime):
+                            self._extra_data == other._extra_data and \
+                            self.id_workflow == other.id_workflow and \
+                            self.version == other.version and \
+                            self.id_parent == other.id_parent and \
+                    isinstance(self.created, datetime) and \
+                    isinstance(self.modified, datetime):
                 return True
             else:
                 return False
@@ -339,8 +337,6 @@ class BibWorkflowObject(db.Model):
         else:
             self.extra_data["_tasks_results"][task_name] = [res_obj]
 
-
-
     def add_widget(self, widget, message):
         """
         Assign a widget to this object for an action to be taken
@@ -354,6 +350,16 @@ class BibWorkflowObject(db.Model):
         extra_data["_widget"] = widget
         extra_data["_message"] = message
         self.set_extra_data(extra_data)
+
+    def get_widget_message(self):
+        """
+        Retrive the currently assigned widget, if any.
+        """
+        try:
+            return self.get_extra_data()["_message"]
+        except KeyError:
+            # No widget
+            return ""
 
     def get_widget(self):
         """
@@ -385,6 +391,7 @@ class BibWorkflowObject(db.Model):
         :type str
         """
         from .api import start
+
         self.save()
         return start(workflow_name, data=[self], **kwargs)
 
@@ -402,6 +409,7 @@ class BibWorkflowObject(db.Model):
         """
         from .api import continue_oid
         from .errors import WorkflowAPIError
+
         self.save()
         if not self.id_workflow:
             raise WorkflowAPIError("No workflow associated with object: %r"
@@ -472,11 +480,10 @@ class BibWorkflowObject(db.Model):
             # A seperate formatter is supplied
             return formatter(data)
 
-        if isinstance(data, dict):
+        if hasattr(data, "get"):
             # Dicts are cool on its own, but maybe its SmartJson (record)
             try:
-                new_dict_representation = Record(data)
-                data = new_dict_representation.legacy_export_as_marc()
+                data = data.legacy_export_as_marc()
             except (TypeError, KeyError):
                 # Maybe not, submission?
                 return data
@@ -507,9 +514,11 @@ class BibWorkflowObject(db.Model):
                     except Exception:
                         # Some other parsing error
                         pass
-                        # Just return raw string
+
+            # Just return raw string
             return data
-            # Not any of the above types. How juicy!
+
+        # Not any of the above types. How juicy!
         return data
 
     @session_manager

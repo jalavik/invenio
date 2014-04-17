@@ -46,7 +46,7 @@ class approval_widget(Form):
         return ('workflows/hp_approval_widget.html',
                 {'bwobject_list': bwobject_list,
                  'bwparent_list': bwparent_list,
-                 'widget': approval_widget(),
+                 'widget': self,
                  'data_preview_list': data_preview_list,
                  'obj_number': len(bwobject_list),
                  'info_list': info_list,

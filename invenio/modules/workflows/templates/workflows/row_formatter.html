@@ -23,7 +23,9 @@
 <input type="checkbox" class="hp-check">
 </td>
 <td title="title">
-{{ record.get('title', {}) }}
+{% for i in title %}
+    <p>{{i}}<p>
+{% endfor %}
 </td>
 <td title="source">
 {{ extra_data.get('source', "No source") }}
@@ -54,8 +56,9 @@
 </td>
 <td title="widget">
 {% if widget != None %}
-    {% set widget = widget() %}
+    {% set widget = widget %}
     {% if mini_widget != None %}
+        <p> {{widget_message}} </p>
         {% set mini_widget = mini_widget() %}
         {% for field in mini_widget %}
             {{ field(objectid=object.id) }}

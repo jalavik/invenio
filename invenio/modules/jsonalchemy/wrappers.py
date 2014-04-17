@@ -344,7 +344,6 @@ class SmartJson(SmartDict):
             if isinstance(value, unicode):
                 value = value.encode('utf8')
             return encode_for_xml(str(value))
-
         export = '<record>'
         marc_dicts = self.produce('json_for_marc')
         for marc_dict in marc_dicts:

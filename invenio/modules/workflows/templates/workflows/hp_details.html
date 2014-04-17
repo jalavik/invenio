@@ -12,7 +12,7 @@
 
 {% block javascript %}
     {{ super() }}
-    
+
     <script type="text/javascript">
         $(document).ready(function(){
             var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
@@ -21,32 +21,32 @@
                 success: function(data) {
                     WORKFLOWS_HP_DETAILS.init(data, {{ bwobject.id }});
                 }
-            })            
+            })
         });
     </script>
 {% endblock javascript %}
 
 {% block hpbody %}
-    
+
     {% block navbar_right %}
         <ul class="nav navbar-nav pull-right">
             <li>
-                {% if bwobject.get_extra_data()['widget'] %}
-                <a href="{{ url_for('holdingpen.show_widget', objectid=bwobject.id) }}" ><i class="icon-wrenchwhite icon-wrench"></i>Action needed</a>
+                {% if bwobject.get_extra_data()['_widget'] %}
+                <a href="{{ url_for('holdingpen.show_widget', objectid=bwobject.id) }}" ><i class="icon-wrenchwhite icon-wrench">Action needed</i></a>
                 {% else %}
-                
+
                 {% endif %}
             </li>
         </ul>
     {% endblock navbar_right %}
-    
+
     {% block hp_navbar %}
         {{ super() }}
     {% endblock hp_navbar %}
 
     <div class="container" style="padding-left:0px;">
         <div class="row">
-            <div class="col-md-3"> 
+            <div class="col-md-3">
                 <div class="well">
                     <form id="edit_form" class="form-horizontal" role="form" method="POST" name="">
                         {% for field in edit_record_widget %}
@@ -62,12 +62,18 @@
             </div>
 
             <div class="col-md-9">
-               
-                {% if 'message' in bwobject.get_extra_data() and 
-                    bwobject.get_extra_data()['widget'] != None %}
+
+                {% if '_message' in bwobject.get_extra_data() and
+                    bwobject.get_extra_data()['_widget'] != None %}
                     <div id="usermessage" class="alert alert-warning alert-dismissable">
-                        {{bwobject.get_extra_data()['message']}}
+                        {{bwobject.get_extra_data()['_message']}}
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    </div>
+                {% endif %}
+                {% if bwobject.version == 1 %}
+                    <div id="successmessage" class="alert alert-success">
+                        Record ran workflow successfully.
+                        <a class="close" data-dismiss="alert">×</a>
                     </div>
                 {% endif %}
 
@@ -75,12 +81,7 @@
                     {{ super() }}
                 {% endblock %}
 
-                {% if bwobject.version == 1 %}
-                    <div id="successmessage" class="alert alert-success">
-                        Record ran workflow successfully.
-                        <a class="close" data-dismiss="alert">×</a>
-                    </div>
-                {% endif %}
+
             </div>
         </div>
     </div>
