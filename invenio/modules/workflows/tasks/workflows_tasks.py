@@ -19,8 +19,8 @@
 import six
 
 from time import sleep
-from modules.workflows.errors import WorkflowError
-from modules.workflows.models import BibWorkflowEngineLog
+from invenio.modules.workflows.errors import WorkflowError
+from invenio.modules.workflows.models import BibWorkflowEngineLog
 
 
 def interrupt_workflow(obj, eng):
@@ -84,11 +84,10 @@ def num_workflow_running_greater(num):
 
 def get_nb_workflow_running(obj, eng):
     """
-    :param obj: Bibworkflow Object to process
+    :param obj: BibworkflowObject being process
     :param eng: BibWorkflowEngine processing the object
     """
     try:
-        eng.log.error(str())
         return eng.extra_data["_nb_workflow"] - eng.extra_data["_nb_workflow_finish"]
     except KeyError:
         return "0"
@@ -150,6 +149,8 @@ def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
             eng.extra_data["_nb_workflow_finish"] = 0
         if "_uuid_workflow_crashed" not in eng.extra_data:
             eng.extra_data["_uuid_workflow_crashed"] = []
+        if "_uuid_workflow_succeed" not in eng.extra_data:
+            eng.extra_data["_uuid_workflow_succeed"] = []
 
     return _start_workflow
 
@@ -159,7 +160,7 @@ def wait_for_workflows_to_complete(obj, eng):
     This function wait all the asynchronous workflow launched.
     It acts like a barrier
 
-    :param obj: Bibworkflow Object to process
+    :param obj: BibworkflowObject being process
     :param eng: BibWorkflowEngine processing the object
     """
     from invenio.modules.workflows.models import BibWorkflowEngineLog
@@ -177,10 +178,10 @@ def wait_for_workflows_to_complete(obj, eng):
 def wait_for_a_workflow_to_complete_obj(obj, eng):
     """
     This function wait for the asynchronous workflow specified
-    in obj.data ( asyncresult )
+    in obj.data (asyncresult)
     It acts like a barrier
 
-    :param obj: Bibworkflow Object to process
+    :param obj: BibworkflowObject to process
     :param eng: BibWorkflowEngine processing the object
     """
     from invenio.modules.workflows.models import BibWorkflowEngineLog
@@ -206,9 +207,9 @@ def wait_for_a_workflow_to_complete(scanning_time=0.5):
     def _wait_for_a_workflow_to_complete(obj, eng):
         """
         This function wait for the asynchronous workflow specified
-        in obj.data ( asyncresult )
+        in obj.data (asyncresult)
         It acts like a barrier
-        :param obj: Bibworkflow Object to process
+        :param obj: BibworkflowObject to process
         :param eng: BibWorkflowEngine processing the object
         """
         if '_workflow_ids' in eng.extra_data:
@@ -246,16 +247,20 @@ def workflow_result_management(async_result, eng):
     :param eng: workflowenginne for loging and state change.
     """
     try:
-        async_result.get()
+        engine = async_result.get()
         eng.extra_data["_nb_workflow_finish"] += 1
+        eng.extra_data["_uuid_workflow_succeed"].append(engine.uuid)
     except WorkflowError as e:
         eng.log.error("Error: Workflow failed %s" % str(e))
         workflowlog = BibWorkflowEngineLog.query.filter(
             BibWorkflowEngineLog.id_object == e.id_workflow
-        ).filter(BibWorkflowEngineLog.log_type == 40).all()
+        ).filter(BibWorkflowEngineLog.log_type >= 40).all()
 
         for log in workflowlog:
             eng.log.error(log.message)
+
+        for i in e.payload:
+            eng.log.error(str(i))
         eng.extra_data["_uuid_workflow_crashed"].append(e.id_workflow)
         eng.extra_data["_nb_workflow_failed"] += 1
         eng.extra_data["_nb_workflow_finish"] += 1
@@ -358,7 +363,7 @@ def workflows_reviews(stop_if_error=False, clean=True):
     This function just give you a little review of you children workflows.
     This function can be used to stop the workflow if a child has crashed.
 
-    :param clean: optionnal, allowxs the cleaning of data about workflow for example
+    :param clean: optional, allows the cleaning of data about workflow for example
      start again from clean basis.
     :type clean: bool
     :param stop_if_error: give to the function the indication it it should stop

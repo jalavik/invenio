@@ -25,6 +25,40 @@ from six import iteritems
 from .errors import WorkflowDefinitionError
 
 
+# def generate_workflow_report(engine):
+#
+#     report = ""
+#
+#     if not isinstance(engine, BibWorkflowEngine) or isinstance(engine, Workflow):
+#             engine = uui_to_workflow(engine)
+#
+#     write_message("ERROR HAPPEN")
+#     write_message("____________Workflow log output____________")
+#     workflow_id_preservation = e.id_workflow
+#     workflowlog = BibWorkflowEngineLog.query.filter(BibWorkflowEngineLog.id_object == e.id_workflow) \
+#         .filter(BibWorkflowEngineLog.log_type >= 40).all()
+#
+#     for log in workflowlog:
+#         write_message(log.message)
+#
+#     for i in e.payload:
+#         write_message("\n\n____________Workflow " + i + " log output____________")
+#         workflowlog = BibWorkflowEngineLog.query.filter(BibWorkflowEngineLog.id_object == i) \
+#             .filter(BibWorkflowEngineLog.log_type >= 40).all()
+#         for log in workflowlog:
+#             write_message(log.message)
+#
+#     write_message("ERROR HAPPEN")
+#     write_message("____________Object log output____________")
+#     objectlog = BibWorkflowObjectLog.query.filter(BibWorkflowObjectLog.id_object == e.id_object) \
+#         .filter(BibWorkflowEngineLog.log_type >= 40).all()
+#     for log in objectlog:
+#         write_message(log.message)
+#     execution_time = round(time.time() - start_time, 2)
+#     write_message("Execution time :" + str(execution_time))
+#
+#
+
 def session_manager(orig_func):
     """Decorator to wrap function with the session."""
     from invenio.ext.sqlalchemy import db
@@ -91,12 +125,10 @@ class BibWorkflowObjectIdContainer(object):
             self.id = None
 
     def get_object(self):
-        from invenio.modules.workflows.models import BibWorkflowObject
+        from ..workflows.models import BibWorkflowObject as bwlObject
 
         if self.id is not None:
-            return BibWorkflowObject.query.filter(
-                BibWorkflowObject.id == self.id
-            ).one()
+            return bwlObject.query.filter(bwlObject.id == self.id).one()
         else:
             return None
 
@@ -131,7 +163,6 @@ def get_workflow_definition(name):
                                       workflow_name=name)
 
 
-## TODO special thanks to http://code.activestate.com/recipes/440514-dictproperty-properties-for-dictionary-attributes/
 class dictproperty(object):
     class _proxy(object):
         def __init__(self, obj, fget, fset, fdel):
@@ -285,3 +316,8 @@ def parse_bwids(bwolist):
     import ast
 
     return list(ast.literal_eval(bwolist))
+
+
+
+def generate_report_workflow():
+    o=0

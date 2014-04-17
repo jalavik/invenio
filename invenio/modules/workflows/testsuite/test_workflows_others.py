@@ -26,9 +26,9 @@ from invenio.testsuite import (InvenioTestCase,
 
 class WorkflowOthers(InvenioTestCase):
     def test_result_abstraction(self):
-        from invenio.modules.workflows.utils import BibWorkflowObjectIdContainer
-        from invenio.modules.workflows.models import BibWorkflowObject
-        from invenio.modules.workflows.worker_result import AsynchronousResultWrapper
+        from ..utils import BibWorkflowObjectIdContainer
+        from ..models import BibWorkflowObject
+        from ..worker_result import AsynchronousResultWrapper
 
         bwoic = BibWorkflowObjectIdContainer(None)
         self.assertEqual(bwoic.get_object(), None)
@@ -50,15 +50,26 @@ class WorkflowOthers(InvenioTestCase):
         from invenio.modules.workflows.errors import WorkflowDefinitionError
 
         try:
-            start("@thisisnotatrueworkflow@", ["my_false_data"], random_kay_args="value")
+            start("@thisisnotatrueworkflow@", ["my_false_data"],
+                  random_kay_args="value")
         except Exception as e:
             self.assertEqual(isinstance(e, WorkflowDefinitionError), True)
-            return
-        self.assertEqual(False, True)
+
+    def test_workflows_exceptions(self):
+        from invenio.modules.workflows.errors import WorkflowError
+        from invenio.modules.workflows.api import start
+
+        try:
+            start("test_workflow_error", [2])
+        except Exception as e:
+            self.assertEqual(isinstance(e, WorkflowError), True)
+            self.assertEqual("ZeroDivisionError" in e.message, True)
+            self.assertEqual("call_a()" in e.message, True)
+            self.assertEqual("call_b()" in e.message, True)
+            self.assertEqual("call_c()" in e.message, True)
 
 
-TEST_SUITE = make_test_suite(WorkflowOthers,
-                             )
+TEST_SUITE = make_test_suite(WorkflowOthers)
 
 if __name__ == "__main__":
     run_test_suite(TEST_SUITE)

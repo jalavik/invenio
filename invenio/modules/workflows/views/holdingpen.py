@@ -138,8 +138,12 @@ def batch_widget(bwolist):
         info_list.append(extracted_data['info'])
         w_metadata_list.append(extracted_data['w_metadata'])
         workflow_func_list.append(extracted_data['workflow_func'])
-        if bwobject.get_widget() not in widgetlist:
-            widgetlist.append(bwobject.get_widget())
+        try:
+            if bwobject.get_extra_data()['widget'] not in widgetlist:
+                widgetlist.append(bwobject.get_widget())
+        except KeyError:
+            if bwobject.get_extra_data()['_widget'] not in widgetlist:
+                widgetlist.append(bwobject.get_widget())
 
     widget_form = widgets[widgetlist[0]]
 
@@ -493,7 +497,10 @@ def get_info(bwobject):
     info['parent id'] = bwobject.id_parent
     info['workflow id'] = bwobject.id_workflow
     info['object id'] = bwobject.id
-    info['widget'] = bwobject.get_widget()
+    try:
+        info['widget'] = bwobject.get_extra_data()['widget']
+    except:
+        info['widget'] = bwobject.get_extra_data()['_widget']
     return info
 
 

@@ -39,8 +39,19 @@ from .errors import WorkflowWorkerError
 
 
 class WorkerBackend(object):
+    """
+    WorkerBackend is a class representing the worker
+    it will automatically get the worker thanks to the configuration
+    when called.
+    """
     @cached_property
     def worker(self):
+        """
+        This cached property is the one which is returning the worker
+        to use.
+
+        :return: the worker configurer into the configuration file.
+        """
         try:
             return import_string('invenio.modules.workflows.workers.%s:%s' % (
                 cfg['CFG_BIBWORKFLOW_WORKER'], cfg['CFG_BIBWORKFLOW_WORKER']))
@@ -181,7 +192,6 @@ def start_by_oids(workflow_name, oids, **kwargs):
 
     :return: BibWorkflowEngine that ran the workflow.
     """
-    from .models import BibWorkflowObject
 
     if not oids:
         # oids is not defined!
@@ -215,7 +225,6 @@ def start_by_oids_delayed(workflow_name, oids, **kwargs):
 
     :return: BibWorkflowEngine that ran the workflow.
     """
-    from .models import BibWorkflowObject
 
     objects = BibWorkflowObject.query.filter(
         BibWorkflowObject.id.in_(list(oids))
@@ -305,7 +314,7 @@ def resume_objects_in_workflow(id_workflow, start_point="continue_next",
 
     yield: BibWorkflowEngine that ran the workflow
     """
-    from .models import BibWorkflowObject, ObjectVersion
+    from .models import ObjectVersion
 
     # Resume workflow if there are objects to resume
     objects = BibWorkflowObject.query.filter(
