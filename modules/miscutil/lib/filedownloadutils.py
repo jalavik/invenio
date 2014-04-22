@@ -34,6 +34,7 @@ import urllib
 import tempfile
 import shutil
 import sys
+from mimetypes import guess_all_extensions
 
 from invenio.urlutils import make_invenio_opener
 
@@ -59,6 +60,11 @@ class InvenioFileCopyError(Exception):
     pass
 
 
+class InvenioFileDownloadFormatError(Exception):
+    """A problem with format detection occurred."""
+    pass
+
+
 def download_url(url, content_type=None, download_to_file=None,
                  retry_count=10, timeout=10.0):
     """
@@ -80,8 +86,8 @@ def download_url(url, content_type=None, download_to_file=None,
     @param url: where the file lives on the interwebs
     @type url: string
 
-    @param content_type: desired content_type to check for in external URLs.
-                         (optional)
+    @param content_type: desired MIME content_type or extension to check for
+                         in external URLs. (optional)
     @type content_type: string
 
     @param download_to_file: where the file should live after download.
@@ -97,7 +103,8 @@ def download_url(url, content_type=None, download_to_file=None,
     @type timeout: float
 
     @return: the path of the downloaded/copied file
-    @raise InvenioFileDownloadError: raised upon URL/HTTP errors, file errors or wrong format
+    @raise InvenioFileDownloadError: raised upon URL/HTTP errors, file errors
+                                     or wrong format
     """
     if not download_to_file:
         download_to_file = safe_mkstemp(suffix=".tmp",
@@ -133,7 +140,8 @@ def download_external_url(url, download_to_file, content_type=None,
     @param download_to_file: the path to download the file to
     @type download_to_file: string
 
-    @param content_type: the content_type of the file (optional)
+    @param content_type: desired MIME content_type or extension to check for
+                         in external URLs. (optional)
     @type content_type: string
 
     @param retry_count: max number of retries for downloading the file
@@ -146,6 +154,20 @@ def download_external_url(url, download_to_file, content_type=None,
     @rtype: string
     @raise StandardError: if the download failed
     """
+    if content_type and "/" in content_type:
+        # Probably a MIME type passed
+        # Try to map it to a list of extensions.
+        extensions = guess_all_extensions(content_type)
+        if extensions is None:
+            msg = 'The content type to check is invalid "%s"' \
+                  % (content_type,)
+            raise InvenioFileDownloadFormatError(msg)
+    elif content_type:
+        # We assume extension is passed
+        if content_type[0] != '.':
+            content_type = '.' + content_type
+        extensions = [content_type]
+
     error_str = ""
     error_code = None
     retry_attempt = 0
@@ -205,7 +227,7 @@ def download_external_url(url, download_to_file, content_type=None,
         else:
             # When we get here, it means that the download was a success.
             try:
-                finalize_download(url, download_to_file, content_type, request)
+                finalize_download(url, download_to_file, extensions, request)
             finally:
                 request.close()
             return download_to_file
@@ -215,15 +237,25 @@ def download_external_url(url, download_to_file, content_type=None,
     raise InvenioFileDownloadError(msg, code=error_code)
 
 
-def finalize_download(url, download_to_file, content_type, request):
+def finalize_download(url, download_to_file, extensions, request):
     """
     Finalizes the download operation by doing various checks, such as format
     type, size check etc.
     """
     # If format is given, a format check is performed.
-    if content_type and content_type not in request.headers['content-type']:
-        msg = 'The downloaded file is not of the desired format'
-        raise InvenioFileDownloadError(msg)
+    if extensions:
+        downloaded_extensions = guess_all_extensions(
+            request.headers['content-type']
+        )
+
+        # Ease comparison by making things lowercase.
+        extensions = map(str.lower, extensions)
+        downloaded_extensions = map(str.lower, downloaded_extensions)
+        if not set(extensions) & set(downloaded_extensions):
+            msg = 'The downloaded file format "%s" is probably' \
+                  ' not of the desired formats: %r' \
+                  % (request.headers['content-type'], extensions)
+            raise InvenioFileDownloadError(msg)
 
     # Save the downloaded file to desired or generated location.
     to_file = open(download_to_file, 'w')
