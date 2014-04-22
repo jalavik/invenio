@@ -95,13 +95,12 @@ from invenio.bibtask import task_init, write_message, \
     task_update_progress, task_sleep_now_if_required, fix_argv_paths, \
     RecoverableError
 from invenio.bibdocfile import BibRecDocs, file_strip_ext, normalize_format, \
-    get_docname_from_url, check_valid_url, download_url, \
+    get_docname_from_url, check_valid_url, \
     KEEP_OLD_VALUE, decompose_bibdocfile_url, InvenioBibDocFileError, \
     bibdocfile_url_p, CFG_BIBDOCFILE_AVAILABLE_FLAGS, guess_format_from_url, \
     BibRelation, MoreInfo, guess_via_magic
-
-from invenio.search_engine import search_pattern
-
+from invenio.filedownloadutils import (download_url,
+                                       InvenioFileDownloadFormatError)
 from invenio.bibupload_revisionverifier import RevisionVerifier, \
                                                InvenioBibUploadConflictingRevisionsError, \
                                                InvenioBibUploadInvalidRevisionError, \
@@ -2010,6 +2009,9 @@ def elaborate_fft_tags(record, rec_id, mode, pretend=False,
                             if guessed_format != docformat:
                                 raise RuntimeError("Given URL %s was supposed to refer to format %s but was found to be of format %s. Is this document behind an authentication page?" % (url, docformat, guessed_format))
                         write_message("%s saved into %s" % (url, downloaded_url), verbose=9)
+                    except InvenioFileDownloadFormatError, err:
+                        write_message("WARNING: format detection problem when downloading '%s' because of: %s" % (url, err), stream=sys.stderr)
+                        raise
                     except Exception, err:
                         write_message("ERROR: in downloading '%s' because of: %s" % (url, err), stream=sys.stderr)
                         raise
