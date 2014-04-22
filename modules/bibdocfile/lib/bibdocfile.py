@@ -336,7 +336,8 @@ def _sql_generate_conjunctive_where(to_process):
         q_str.append(_val_or_null(entry[0], eq_name = entry[1], q_args = q_args))
     return (" AND ".join(q_str), q_args)
 
-def file_strip_ext(afile, skip_version=False, only_known_extensions=False, allow_subformat=True):
+def file_strip_ext(afile, skip_version=False,
+                   only_known_extensions=False, allow_subformat=True):
     """
     Strip in the best way the extension from a filename.
 
@@ -348,12 +349,14 @@ def file_strip_ext(afile, skip_version=False, only_known_extensions=False, allow
     'foo'
     >>> file_strip_ext("foo.buz", only_known_extensions=True)
     'foo.buz'
-    >>> file_strip_ext("foo.buz;1", skip_version=False,
-    ... only_known_extensions=True)
+    >>> file_strip_ext("foo.buz;1",
+                       skip_version=False,
+                       allow_subformat=False,
+                       only_known_extensions=True)
     'foo.buz;1'
     >>> file_strip_ext("foo.gif;icon")
     'foo'
-    >>> file_strip_ext("foo.gif:icon", allow_subformat=False)
+    >>> file_strip_ext("foo.gif:icon", only_known_extensions=True)
     'foo.gif:icon'
 
     @param afile: the path/name of a file.
@@ -372,11 +375,17 @@ def file_strip_ext(afile, skip_version=False, only_known_extensions=False, allow
     if skip_version or allow_subformat:
         afile = afile.split(';')[0]
     nextfile = _extensions.sub('', afile)
+    extension = afile[len(nextfile) + 1:]
     if nextfile == afile and not only_known_extensions:
         nextfile = os.path.splitext(afile)[0]
     while nextfile != afile:
         afile = nextfile
-        nextfile = _extensions.sub('', afile)
+        tmp_nextfile = _extensions.sub('', afile)
+        new_extension = afile[len(tmp_nextfile) + 1:]
+        if new_extension != extension:
+            nextfile = tmp_nextfile
+        else:
+            break
     return nextfile
 
 def normalize_format(docformat, allow_subformat=True):
