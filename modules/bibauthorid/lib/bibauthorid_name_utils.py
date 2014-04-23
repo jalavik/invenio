@@ -27,11 +27,14 @@ import invenio.bibauthorid_config as bconfig
 from invenio.bibauthorid_string_utils import string_partition
 from copy import deepcopy
 
+from invenio.bibauthorid_general_utils import memoized
+
 from invenio.textutils import translate_to_ascii
 
 from invenio.bibauthorid_general_utils import name_comparison_print
 
 from math import sqrt
+from unidecode import unidecode
 
 SQRT2 = sqrt(2)
 
@@ -76,6 +79,7 @@ artifact_removal = re.compile("[^a-zA-Z0-9]")
 
 #Gender names and names variation files are loaded updon module import to increase performances
 
+@memoized
 def split_name_parts(name_string, delete_name_additions=True,
                      override_surname_sep='', return_all_lower=False):
     '''
@@ -124,7 +128,7 @@ def split_name_parts(name_string, delete_name_additions=True,
         if name_string.count(sep) >= 1:
             found_sep = sep
             surname, rest_of_name = string_partition(name_string, sep)[0::2]
-            surname = surname.strip().capitalize()
+            surname = surname.strip().title()
             # Fix for dashes
             surname = re.sub('-([a-z])', lambda n:'-' + n.group(1).upper(), surname)
             break
@@ -132,12 +136,12 @@ def split_name_parts(name_string, delete_name_additions=True,
     if not found_sep:
         if name_string.count(" ") > 0:
             rest_of_name, surname = string_partition(name_string, ' ', direc='r')[0::2]
-            surname = surname.strip().capitalize()
+            surname = surname.strip().title()
             # Fix for dashes
             surname = re.sub('-([a-z])', lambda n:'-' + n.group(1).upper(), surname)
         else:
             surname = name_string
-            surname = surname.strip().capitalize()
+            surname = surname.strip().title()
             # Fix for dashes
             surname = re.sub('-([a-z])', lambda n:'-' + n.group(1).upper(), surname)
             if not return_all_lower:
@@ -216,8 +220,82 @@ def create_normalized_name(splitted_name):
     return name
 
 
-create_indexable_name_artifact_removal_re = re.compile("[^a-zA-Z,\s]")
-def create_indexable_name(name_string):
+def create_matchable_name_old(name):
+    splitted_name = split_name_parts(name)
+    return create_normalized_name(splitted_name).lower()
+
+
+def create_matchable_name(name):
+
+    M_NAME_IGNORE_LIST = ['et al', 'et al.', 'Et al.']
+
+    M_NAME_SPECIAL_CHARACTER_MAPPING = {'-': ' ',
+                                        '.': ' ',
+                                        '\'': ''}
+
+    M_NAME_LOCALE_CHARACTER_MAPPING = {'ß': 'ss',
+                                       'ä': 'ae',
+                                       'ö': 'oe',
+                                       'ü': 'ue'}
+
+    name = _replace_content_in_parentheses(name, '')
+
+    last_name, first_name = _split_by_first_occurence(name, ',')
+
+    first_name_parts = first_name.split(' ')
+
+    for index, first_name_part in enumerate(first_name_parts):
+        first_name_parts[index] = _remove_ignored_characters_for_name(first_name_part,
+                                                                      M_NAME_IGNORE_LIST)
+
+        if _is_unseperated_initials(first_name_parts[index]):
+            first_name_parts[index] = ' '.join(first_name_part)
+
+    full_name = ' '.join(first_name_parts + [last_name]).lower()
+
+    full_name = _apply_character_mapping_to_name(full_name,
+                                                 M_NAME_SPECIAL_CHARACTER_MAPPING)
+    full_name = _apply_character_mapping_to_name(full_name,
+                                                 M_NAME_LOCALE_CHARACTER_MAPPING)
+    full_name = _remove_special_characters_and_numbers(full_name)
+
+    ascii_full_name = unidecode(full_name)
+    final_full_name = ' '.join(ascii_full_name.split())
+    return final_full_name
+
+
+def _split_by_first_occurence(name, delimeter):
+    name_parts = [token.strip() for token in name.split(delimeter, 1)]
+    if len(name_parts) == 1:
+        name_parts.append('')
+    return name_parts
+
+
+def _is_unseperated_initials(name):
+    return name.isalpha() and name.isupper() and len(name) == 2
+
+
+def _remove_ignored_characters_for_name(name, ignore_list):
+    for token_to_ignore in ignore_list:
+        name = name.replace(token_to_ignore, '')
+    return name
+
+
+def _replace_content_in_parentheses(content, replacement):
+    return re.sub(r'\([^)]*\)', replacement, content)
+
+
+def _apply_character_mapping_to_name(name, mapping):
+    for character, replacement in mapping.iteritems():
+        name = name.replace(character, replacement)
+    return name
+
+
+def _remove_special_characters_and_numbers(name):
+    return re.sub('[^a-z\s]+', '', name)
+
+
+def create_indexable_name(splitted_name):
     '''
     Creates a normalized name from a given name array. A normalized name
     looks like "Lastname, Firstnames and Initials"
@@ -228,10 +306,6 @@ def create_indexable_name(name_string):
     @return: normalized name
     @rtype: string
     '''
-
-
-    name_string = create_indexable_name_artifact_removal_re.sub(' ',name_string)
-    splitted_name = split_name_parts(name_string)
 
     name = splitted_name[0]
 

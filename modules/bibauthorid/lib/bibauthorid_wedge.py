@@ -53,7 +53,7 @@ import os
 PID = lambda : str(os.getpid())
 
 import pyximport; pyximport.install()
-from bibauthorid_meld_edges import meld_edges
+from invenio.bibauthorid_meld_edges import meld_edges
 
 def wedge(cluster_set, report_cluster_status=False, force_wedge_thrsh=False):
     # The lower bound of the edges being processed by the wedge algorithm.
@@ -471,6 +471,7 @@ def group_sort_edges(cs, original_process_id):
 
     bibauthor_print("Dumping egdes data to file...")
     cPickle.dump((plus_count, minus_count, pairs_count), data_fp)
+    bibauthor_print("Grouping and sorting of edges is done!")
     data_fp.close()
 
 

@@ -18,7 +18,7 @@
 
 imgdir=$(localstatedir)/www/img
 
-img_DATA = bibauthorid.css bootstrap.min.css glyphicons-halflings.png glyphicons-halflings-white.png \
+img_DATA = glyphicons-halflings.png glyphicons-halflings-white.png \
 	   bibauthorid-help-full-image001.png \
 	   bibauthorid-help-full-image003.png \
 	   bibauthorid-help-full-image005.png \

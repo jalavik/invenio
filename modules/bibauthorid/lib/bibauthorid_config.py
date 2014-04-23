@@ -24,6 +24,8 @@ bibauthorid_config
     declare any configuration options for the modules within themselves.
 """
 
+#To refactor: Local variables should also start with CFG.
+
 try:
     from invenio.access_control_config import SUPERADMINROLE
 except ImportError:
@@ -36,11 +38,11 @@ try:
         CFG_BIBAUTHORID_MAX_PROCESSES, \
         CFG_BIBAUTHORID_EXTERNAL_CLAIMED_RECORDS_KEY, \
         CFG_BIBAUTHORID_ENABLED, \
-        CFG_BIBAUTHORID_ON_AUTHORPAGES, \
         CFG_BIBAUTHORID_UI_SKIP_ARXIV_STUB_PAGE, \
         CFG_INSPIRE_SITE, \
         CFG_ADS_SITE, \
-        CFG_BIBAUTHORID_ENABLED_REMOTE_LOGIN_SYSTEMS
+        CFG_BIBAUTHORID_ENABLED_REMOTE_LOGIN_SYSTEMS, \
+        CFG_SITE_NAME
 
 except ImportError:
     GLOBAL_CONFIG = False
@@ -74,6 +76,11 @@ PERSONS_PER_PAGE = 5
 # Max amount of recent papers shown to the user
 MAX_NUM_SHOW_PAPERS = 5
 
+#BibAuthorId functionalities should always be enabled for Inspire.
+
+if CFG_INSPIRE_SITE:
+    CFG_BIBAUTHORID_ENABLED = True
+
 # Globally enable AuthorID Interfaces.
 #     If False: No guest, user or operator will have access to the system.
 if GLOBAL_CONFIG:
@@ -83,7 +90,7 @@ else:
 
 # Enable AuthorID information on the author pages.
 if GLOBAL_CONFIG:
-    AID_ON_AUTHORPAGES = CFG_BIBAUTHORID_ON_AUTHORPAGES
+    AID_ON_AUTHORPAGES = CFG_BIBAUTHORID_ENABLED
 else:
     AID_ON_AUTHORPAGES = True
 
@@ -92,11 +99,10 @@ else:
 # Special for ADS: Focus on ASTRONOMY collection
 if GLOBAL_CONFIG and CFG_ADS_SITE:
     LIMIT_TO_COLLECTIONS = ["ASTRONOMY"]
-else:
+elif CFG_INSPIRE_SITE:
     LIMIT_TO_COLLECTIONS = ['HEP']
-
-# Exclude documents that are visible in a collection mentioned here:
-EXCLUDE_COLLECTIONS = ["HEPDATA","Data", "HEPNAMES", "INST", "Deleted", "DELETED", "deleted"]
+else:
+    LIMIT_TO_COLLECTIONS = list()
 
 # User info keys for externally claimed records
 # e.g. for arXiv SSO: ["external_arxivids"]
@@ -129,7 +135,13 @@ RABBIT_USE_EXTERNAL_IDS = True
 
 #Collect and use in rabbit external ids INSPIREID
 COLLECT_EXTERNAL_ID_INSPIREID = CFG_INSPIRE_SITE
-RABBIT_USE_EXTERNAL_ID_INSPIREID = CFG_INSPIRE_SITE
+if CFG_INSPIRE_SITE:
+    RABBIT_EXTERNAL_IDS_TO_USE = ['InspireID', 'OrcidID']
+else:
+    RABBIT_EXTERNAL_IDS_TO_USE = list()
+
+#Threshold to the determine whether a person' records will be cached during the query.
+EXT_ID_CACHE_THRESHOLD = 50
 
 #Force rabbit to cache entire marc tables instead of querying db if dealing with more
 #then threshold papers
@@ -155,7 +167,7 @@ DEBUG_TIMESTAMPS = True
 # Print timestamps even in update_status
 DEBUG_TIMESTAMPS_UPDATE_STATUS = True
 
-DEBUG_UPDATE_STATUS_THREAD_SAFE = True
+DEBUG_UPDATE_STATUS_THREAD_SAFE = False
 DEBUG_LOG_TO_PIDFILE = False
 
 # The following options trigger the output for parts of
@@ -164,7 +176,7 @@ DEBUG_NAME_COMPARISON_OUTPUT = False
 DEBUG_METADATA_COMPARISON_OUTPUT = False
 DEBUG_WEDGE_OUTPUT = False
 DEBUG_WEDGE_PRINT_FINAL_CLUSTER_COMPATIBILITIES = False
-DEBUG_PROCESS_PEAK_MEMORY = True
+DEBUG_PROCESS_PEAK_MEMORY = False
 
 # Keep in mind that you might use an assert instead of this option.
 # Use DEBUG_CHECKS to guard heavy computations in order to make
@@ -186,8 +198,7 @@ BIBAUTHORID_CFG_INSPIRE_LOGIN = ""
 
 if GLOBAL_CONFIG and CFG_INSPIRE_SITE:
     BIBAUTHORID_CFG_INSPIRE_LOGIN = 'https://arxiv.org/inspire_login'
-
-# Shall we send from locally defined eMail address or from the users one
+# Shall we send from local:ly defined eMail address or from the users one
 # when we send out a ticket? Default is True -> send with user's email
 TICKET_SENDING_FROM_USER_EMAIL = True
 
@@ -208,7 +219,6 @@ QGRAM_LEN = 2
 MATCHING_QGRAMS_PERCENTAGE = 0.8
 MAX_T_OCCURANCE_RESULT_LIST_CARDINALITY = 35
 MIN_T_OCCURANCE_RESULT_LIST_CARDINALITY = 10
-NAME_SCORE_COEFFICIENT = 0.5
 
 # List that contains the existing remote systems that a user can logged in via them in Inspire
 CFG_BIBAUTHORID_EXISTING_REMOTE_LOGIN_SYSTEMS = ['arXiv', 'orcid']
@@ -219,3 +229,12 @@ if GLOBAL_CONFIG and not set(CFG_BIBAUTHORID_ENABLED_REMOTE_LOGIN_SYSTEMS ) <= s
 CFG_BIBAUTHORID_REMOTE_LOGIN_SYSTEMS_IDENTIFIERS = {'arxivid': '037', 'doi': 'doi' }
 CFG_BIBAUTHORID_REMOTE_LOGIN_SYSTEMS_LINKS = {'arXiv': 'invalid', 'invalid': 'invalid' }
 CFG_BIBAUTHORID_REMOTE_LOGIN_SYSTEMS_IDENTIFIER_TYPES = {'arXiv': 'arxivid', 'orcid': 'doi' }
+
+#For Inspire,the value of CFG_SITE_NAME is extensively used for a different purpose.
+#This keeps the configuration neutral of implementations.
+BIBAUTHORID_CFG_SITE_NAME = ""
+
+if GLOBAL_CONFIG and CFG_INSPIRE_SITE:
+    BIBAUTHORID_CFG_SITE_NAME = "Inspire"
+else:
+    BIBAUTHORID_CFG_SITE_NAME = CFG_SITE_NAME

@@ -17,12 +17,16 @@
  59 Temple Place, Suite 330, Boston, MA 02111 - 1307, USA.
 */
 
+#profile_search {
+    margin-top: 20px;
+}
+
 #person_menu {
     margin-bottom: 10px;
 }
 
 #bai_content {
-    font-size: 12px;
+    font-size: 14px;
 }
 
 #aid_person {
@@ -274,7 +278,7 @@
       background: white url('../img/aid_btn_blue.png') repeat-x top;
       border: 1px solid #0000FF;
       height: 25px;
-      color: #ffffff;
+      color: #ffffff !Important;
 }
 
 .aid_btn_blue:disabled {
@@ -528,21 +532,17 @@
   display: none;
 }
 
-/* Default class for modal window */
-.modal {
-  position: fixed;
-  z-index: 20;
-  min-width: 500px;
-  left: 50%;
-  top: 50px;
-  background-color: #fff
-}
-
 .login-btns {
     padding: 0;
     margin: 0;
     list-style: none;
     text-align: center;
+    width: 478px;
+}
+
+
+#login-prompt-buttons {
+    margin: 25px;
 }
 
 .login-btn {
@@ -550,28 +550,15 @@
     margin: 1em;
 }
 
-.arxiv-btn {
-    background-color: #b31b1b;
-    text-align: center;
-    padding: 3em;
-    -webkit-border-radius: 15px;
-    -moz-border-radius: 15px;
-    border-radius: 15px;
-    /*margin: 1em;*/
+.arxiv-button {
+    background-color: #b31b1b !important;
     opacity: 0.6;
-    display:inline-block;
 }
 
-.guest-btn {
-    background-color: #AAAAAA;
-    text-align: center;
-    padding: 3em;
-    -webkit-border-radius: 15px;
-    -moz-border-radius: 15px;
-    border-radius: 15px;
-    /*margin: 1em;*/
+.guest-button {
+    background-color: #AAAAAA !important;
     opacity: 0.6;
-    display:inline-block;
+
 }
 
 .guest-btn:hover {
@@ -700,6 +687,78 @@
     margin-left: auto;
 }
 
+.pagebody {
+    margin: 0;
+    padding: 0;
+}
+
+.bsw .inspire-well {
+    background-color: #ffffee;
+}
+
+.bai-box-title {
+    color: #444444;
+    margin-bottom: 10px;
+    font-size: large;
+    border-bottom: 1px solid #dddddd;
+}
+
+.bai-box-title span {
+    padding-bottom: 5px;
+    display: block;
+}
+
+.bai-box-content {
+    padding-left: 5px;
+    min-height: 32px;
+}
+
+#pubs_list {
+    min-height: 50px;
+    max-height: 300px;
+    overflow-y: auto;
+
+}
+
+ul.pub-tabs>li> a.pub-tab-active {
+    color: #444444;
+}
+
+ul.pub-tabs, .pub-tabs li {
+    margin: 0;
+    padding: 0;
+}
+
+.pub-tabs li {
+    display: inline-block;
+    vertical-align: top;
+    color: #999999;
+    margin-right: 10px;
+    padding-bottom: 5px;
+}
+
+.pub-tabs li.active {
+    border-bottom: 5px solid #dddddd;
+}
+
+.pub-tabs a {
+    background-color: transparent;
+    text-decoration: none;
+}
+
+.pub-tabs a:link, .pub-tabs a:visited {
+    color: #999999;
+}
+
+.pub-tabs a:hover {
+    color: #777777;
+    text-decoration: none;
+}
+
+.bsw .col-section-title {
+  color: #999999;
+  text-transform: uppercase;
+}
 
 /*
 .addToMergeButton {

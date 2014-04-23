@@ -110,8 +110,9 @@ def compare_personid_tables_easy(suffix='_copy', filename='/tmp/pid_comparison')
     compare_personid_tables(oldPap, oldDat, pap, dat, f)
     f.close()
 
+
 def filter_bibrecs_outside(all_papers):
-    all_bibrecs = get_all_papers()
+    all_bibrecs = get_all_bibrecs_from_aidpersonidpapers()
 
     to_remove = list(frozenset(all_bibrecs) - frozenset(all_papers))
     chunk = 1000

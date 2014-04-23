@@ -34,9 +34,9 @@ from invenio.bibauthorid_backinterface import get_authors_of_claimed_paper
 from invenio.bibauthorid_backinterface import get_claimed_papers_from_papers
 from invenio.bibauthorid_backinterface import get_all_valid_papers
 from invenio.bibauthorid_affiliations import process_affiliations
+from invenio.bibauthorid_backinterface import get_all_valid_bibrecs
 
-#python 2.4 compatibility
-from invenio.bibauthorid_general_utils import bai_any as any
+
 
 def bibauthorid_daemon():
     """Constructs the Bibauthorid bibtask."""
@@ -89,6 +89,19 @@ Examples:
       --from-scratch        Ignores the current information in the personid
                             tables and disambiguates everything from scratch.
 
+      --last-names          Performs disambiguation only for specific last names.
+                            This is useful for testing or to fix a broken last name cluster.
+                            Moreover,the threshold for the wedge algorithm may optionally be specified
+                            explicitly per cluster (or keep the value of WEDGE_THRESHOLD in bibauthorid_config).
+
+                            For example: --last-names=surname1,surname2:0.5,surname3:0.3,surname4
+
+      Option for last-names
+        (default)                 Runs in multi-threaded mode.
+
+        --single-threaded         Single-threaded mode. Useful when handling a limited number of names
+                                  and for testing. The flag is only valid when some last names are specified.
+
     There are no options for the merger.
 """,
         version="Invenio Bibauthorid v%s" % bconfig.VERSION,
@@ -100,7 +113,10 @@ Examples:
              "update-search-index",
              "all-records",
              "update-personid",
-             "from-scratch"
+             "from-scratch",
+             "last-names=",
+             "st",
+             "single-threaded"
             ]),
         task_submit_elaborate_specific_parameter_fnc=_task_submit_elaborate_specific_parameter,
         task_submit_check_options_fnc=_task_submit_check_options,
@@ -120,7 +136,7 @@ def _task_submit_elaborate_specific_parameter(key, value, opts, args):
     elif key in ("--record-ids", '-i'):
         if value.count("="):
             value = value[1:]
-        value = value.split(",")
+        value = [token.strip() for token in value.split(',')]
         bibtask.task_set_option("record_ids", value)
     elif key in ("--all-records",):
         bibtask.task_set_option("all_records", True)
@@ -132,6 +148,13 @@ def _task_submit_elaborate_specific_parameter(key, value, opts, args):
         bibtask.task_set_option("update_search_index", True)
     elif key in ("--from-scratch",):
         bibtask.task_set_option("from_scratch", True)
+    elif key in ("--last-names",):
+        if value.count("="):
+            value = value[1:]
+        value = [token.strip() for token in value.split(',')]
+        bibtask.task_set_option("last-names", value)
+    elif key in ("--single-threaded",):
+        bibtask.task_set_option("single-threaded", True)
     else:
         return False
 
@@ -156,9 +179,21 @@ def _task_run_core():
         # bibtask.task_update_progress('Affiliations update finished!')
 
     if bibtask.task_get_option("disambiguate"):
-        bibtask.task_update_progress('Performing full disambiguation...')
-        run_tortoise(bool(bibtask.task_get_option("from_scratch")))
-        bibtask.task_update_progress('Full disambiguation finished!')
+        last_names = bibtask.task_get_option('last-names')
+        from_scratch = bool(bibtask.task_get_option("from_scratch"))
+        single_threaded = bool(bibtask.task_get_option("single-threaded"))
+        if single_threaded and not last_names:
+            bibtask.write_message("""--single-threaded will not be considered
+                                     as there are no last names specified.""")
+        if last_names:
+            last_names_thresholds = _dictionarize_last_names(last_names)
+            bibtask.task_update_progress('Performing disambiguation on specific last names.')
+            run_tortoise(from_scratch, last_names_thresholds, single_threaded)
+            bibtask.task_update_progress('Disambiguation on specific last names finished!')
+        else:
+            bibtask.task_update_progress('Performing full disambiguation...')
+            run_tortoise(from_scratch)
+            bibtask.task_update_progress('Full disambiguation finished!')
 
     if bibtask.task_get_option("merge"):
         bibtask.task_update_progress('Merging results...')
@@ -171,6 +206,12 @@ def _task_run_core():
         bibtask.task_update_progress('Indexing finished!')
 
     return 1
+
+
+def _dictionarize_last_names(last_names_list_from_daemon):
+    last_names_thresholds = dict([last_name.split(':') if last_name.count(':') else (last_name, None) for last_name in last_names_list_from_daemon])
+    [map(float, last_names_thresholds[last_name]) if last_names_thresholds[last_name] else None for last_name in last_names_thresholds.keys()]
+    return last_names_thresholds
 
 
 def _task_submit_check_options():
@@ -254,7 +295,7 @@ def _get_personids_to_update_extids(papers=None):
         daemon_last_time_run = last_log[0][2]
         modified_bibrecs = get_modified_papers_since(daemon_last_time_run)
     else:
-        modified_bibrecs = get_all_valid_papers()
+        modified_bibrecs = get_all_valid_bibrecs()
     if papers:
         modified_bibrecs &= set(papers)
     if not modified_bibrecs:
@@ -303,10 +344,15 @@ def run_rabbit(paperslist, all_records=False):
         rabbit_with_log(paperslist, True, 'bibauthorid_daemon, personid_fast_assign_papers on ' + str(paperslist), partial=True)
 
 
-def run_tortoise(from_scratch):
-    from invenio.bibauthorid_tortoise import tortoise, tortoise_from_scratch
+def run_tortoise(from_scratch, last_names_thresholds=None, single_threaded=False):
+    from invenio.bibauthorid_tortoise import tortoise, tortoise_from_scratch, tortoise_last_name, tortoise_last_names
 
-    if from_scratch:
+    if single_threaded and last_names_thresholds:
+        for last_name, threshold in last_names_thresholds.items():
+            tortoise_last_name(last_name, wedge_threshold=threshold, from_mark=from_scratch)
+    elif last_names_thresholds:
+        tortoise_last_names(last_names_thresholds.items(),  from_scratch)
+    elif from_scratch:
         tortoise_from_scratch()
     else:
         start_time = get_db_time()
@@ -319,7 +365,7 @@ def run_tortoise(from_scratch):
             modified = []
         tortoise(modified)
 
-    insert_user_log(tortoise_db_name, '-1', '', '', '', timestamp=start_time)
+        insert_user_log(tortoise_db_name, '-1', '', '', '', timestamp=start_time)
 
 
 def run_merge():
@@ -327,5 +373,5 @@ def run_merge():
     merge_dynamic()
 
 def update_index():
-    from bibauthorid_search_engine import create_bibauthorid_indexer
+    from invenio.bibauthorid_search_engine import create_bibauthorid_indexer
     create_bibauthorid_indexer()

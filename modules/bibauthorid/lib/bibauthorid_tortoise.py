@@ -17,8 +17,6 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-from invenio import bibauthorid_config as bconfig
-from datetime import datetime
 import os
 #import cPickle as SER
 import msgpack as SER
@@ -26,8 +24,6 @@ import msgpack as SER
 
 import gzip as filehandler
 
-import gc
-import numpy as np
 
 #This is supposed to defeat a bit of the python vm performance losses:
 import sys
@@ -38,10 +34,9 @@ try:
 except:
     from invenio.containerutils import defaultdict
 
-from itertools import groupby, chain, repeat
-from invenio.bibauthorid_general_utils import update_status, update_status_final, override_stdout_config, override_stdout_config
+from invenio.bibauthorid_general_utils import update_status, update_status_final, override_stdout_config
 
-override_stdout_config(fileout=True, stdout=False)
+#override_stdout_config(fileout=True, stdout=False)
 
 from invenio.bibauthorid_cluster_set import delayed_cluster_sets_from_marktables
 from invenio.bibauthorid_cluster_set import delayed_cluster_sets_from_personid
@@ -50,16 +45,12 @@ from invenio.bibauthorid_name_utils import generate_last_name_cluster_str
 from invenio.bibauthorid_backinterface import empty_tortoise_results_table
 from invenio.bibauthorid_backinterface import remove_clusters_by_name
 from invenio.bibauthorid_general_utils import bibauthor_print
-from invenio.bibauthorid_prob_matrix import prepare_matirx
+from invenio.bibauthorid_prob_matrix import prepare_matrix
 #Scheduler is [temporarily] deprecated in favour of the much simpler schedule_workers
 #from invenio.bibauthorid_scheduler import schedule, matrix_coefs
-from invenio.bibauthorid_least_squares import to_function as create_approx_func
 
 
 from invenio.bibauthorid_general_utils import schedule_workers
-
-#python2.4 compatibility
-from invenio.bibauthorid_general_utils import bai_all as all
 
 '''
     There are three main entry points to tortoise
@@ -123,10 +114,9 @@ def tortoise(pure=False,
     schedule_workers(wedge_and_store, clusters)
 
 
-def tortoise_last_name(name, from_mark=True, pure=False):
+def tortoise_last_name(name, wedge_threshold=None, from_mark=True, pure=False):
     bibauthor_print('Start working on %s' % name)
     assert not(from_mark and pure)
-
     lname = generate_last_name_cluster_str(name)
 
     if from_mark:
@@ -138,7 +128,6 @@ def tortoise_last_name(name, from_mark=True, pure=False):
         clusters, lnames, sizes = delayed_cluster_sets_from_personid(pure)
         bibauthor_print(' ... delayed pure done!')
 
-#    try:
     idx = lnames.index(lname)
     cluster = clusters[idx]
     size = sizes[idx]
@@ -146,13 +135,10 @@ def tortoise_last_name(name, from_mark=True, pure=False):
     bibauthor_print("Found, %s(%s). Total number of bibs: %d." % (name, lname, size))
     create_matrix(cluster_set, False)
     wedge_and_store(cluster_set)
-#    except (IndexError, ValueError), e:
-#        print e
-#        raise e
-#        bibauthor_print("Sorry, %s(%s) not found in the last name clusters" % (name, lname))
 
-def tortoise_last_names(names_list):
-    schedule_workers(tortoise_last_name, names_list)
+
+def tortoise_last_names(names_thresholds_list=None, from_scratch=True, pure=False):
+    schedule_workers(tortoise_last_name, names_thresholds_list, optional_args=(from_scratch, pure))
 
 
 def _collect_statistics_lname_coeff(params):
@@ -361,7 +347,7 @@ def create_matrix(cluster_set, force):
                     "maximum number of comparisons: %d"
                     % (cluster_set.last_name, bibs, expected))
 
-    return prepare_matirx(cluster_set, force)
+    return prepare_matrix(cluster_set, force)
 
 
 def force_create_matrix(cluster_set, force):
@@ -369,14 +355,14 @@ def force_create_matrix(cluster_set, force):
     return create_matrix(cluster_set(), force)
 
 
-def wedge_and_store(cluster_set):
+def wedge_and_store(cluster_set, wedge_threshold=None):
     bibs = cluster_set.num_all_bibs
     expected = bibs * (bibs - 1) / 2
     bibauthor_print("Start working on %s. Total number of bibs: %d, "
                     "maximum number of comparisons: %d"
                     % (cluster_set.last_name, bibs, expected))
 
-    wedge(cluster_set)
+    wedge(cluster_set, force_wedge_thrsh=wedge_threshold)
     remove_clusters_by_name(cluster_set.last_name)
     cluster_set.store()
     return True

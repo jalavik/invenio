@@ -29,9 +29,6 @@ from invenio.bibauthorid_name_utils import generate_last_name_cluster_str
 from invenio.bibauthorid_general_utils import  bibauthor_print
 
 
-#python2.4 compatibility
-from invenio.bibauthorid_general_utils import bai_all as all
-
 class Blob(object):
     def __init__(self, personid_records):
         '''

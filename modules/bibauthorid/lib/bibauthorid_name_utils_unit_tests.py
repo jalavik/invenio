@@ -49,6 +49,10 @@ names = [
 from invenio.bibauthorid_name_utils import split_name_parts, distance, create_canonical_name, create_normalized_name, create_unified_name, soft_compare_names
 from invenio.bibauthorid_name_utils import full_names_are_equal_composites, full_names_are_substrings, surname_compatibility, initials_compatibility, compare_names
 from invenio.bibauthorid_name_utils import create_name_tuples
+from invenio.bibauthorid_name_utils import create_matchable_name, \
+    _split_by_first_occurence, _is_unseperated_initials, \
+    _remove_ignored_characters_for_name, _replace_content_in_parentheses, \
+    _apply_character_mapping_to_name, _remove_special_characters_and_numbers
 
 class Test_distance_functions(unittest.TestCase):
     """ Test string distance functions """
@@ -72,7 +76,7 @@ class Test_split_name_parts(unittest.TestCase):
          's. s. b. test': ['Test', ['S', 'S', 'B'], [], []],
          'should s. b. test': ['Test', ['S', 'S', 'B'], ['Should'], [0]],
          'should still be test': ['Test',['S', 'S', 'B'],['Should', 'Still', 'Be'],[0, 1, 2]],
-         'test with -aoe}[/])+ junk, but with comma': ['Test with -Aoe}[/])+ junk',['B', 'W', 'C'],['But', 'With', 'Comma'],[0, 1, 2]],
+         'test with -aoe}[/])+ junk, but with comma': ['Test With -Aoe}[/])+ Junk',['B', 'W', 'C'],['But', 'With', 'Comma'],[0, 1, 2]],
          'test,': ['Test', [], [], []],
          'test, m initials morder': ['Test',['M', 'I', 'M'],['Initials', 'Morder'],[1, 2]],
          'test, mix initials m.': ['Test',['M', 'I', 'M'],['Mix', 'Initials'],[0, 1]],
@@ -101,7 +105,7 @@ class Test_create_canonical_names(unittest.TestCase):
      's. s. b. test': 'S.S.B.Test',
      'should s. b. test': 'S.S.B.Test',
      'should still be test': 'S.S.B.Test',
-     'test with -aoe}[/])+ junk, but with comma': 'B.W.C.Test.with.Aoe.junk',
+     'test with -aoe}[/])+ junk, but with comma': 'B.W.C.Test.With.Aoe.Junk',
      'test,': 'Test',
      'test, m initials morder': 'M.I.M.Test',
      'test, mix initials m.': 'M.I.M.Test',
@@ -127,7 +131,7 @@ class Test_create_normalized_name(unittest.TestCase):
      's. s. b. test': 'Test, S. S. B.',
      'should s. b. test': 'Test, Should S. B.',
      'should still be test': 'Test, Should Still Be',
-     'test with -aoe}[/])+ junk, but with comma': 'Test with -Aoe}[/])+ junk, But With Comma',
+     'test with -aoe}[/])+ junk, but with comma': 'Test With -Aoe}[/])+ Junk, But With Comma',
      'test,': 'Test',
      'test, m initials morder': 'Test, M. Initials Morder',
      'test, mix initials m.': 'Test, Mix Initials M.',
@@ -155,7 +159,7 @@ class Test_create_uinified_name(unittest.TestCase):
      's. s. b. test': 'Test, S. S. B. ',
      'should s. b. test': 'Test, S. S. B. ',
      'should still be test': 'Test, S. S. B. ',
-     'test with -aoe}[/])+ junk, but with comma': 'Test with -Aoe}[/])+ junk, B. W. C. ',
+     'test with -aoe}[/])+ junk, but with comma': 'Test With -Aoe}[/])+ Junk, B. W. C. ',
      'test,': 'Test, ',
      'test, m initials morder': 'Test, M. I. M. ',
      'test, mix initials m.': 'Test, M. I. M. ',
@@ -269,6 +273,75 @@ class Test_name_comparison(unittest.TestCase):
                 #print 'TESTING: ', n1, n2, ' -- ', cn(n1,n2)
                 self.assertTrue(cn(n1,n2) == cn(n2,n1))
                 self.assertTrue(test[0](cn(n1,n2), test[1]))
+
+class Test_matchable_name(unittest.TestCase):
+    '''
+    Unit tests for the matchable name transformation function.
+    '''
+
+    def test_split_by_first_occurence(self):
+        self.assertEqual(_split_by_first_occurence('surname, name', ','),
+                         ['surname', 'name'])
+        self.assertEqual(_split_by_first_occurence('surname name', ','),
+                         ['surname name', ''])
+        self.assertEqual(_split_by_first_occurence('surname, name, secondname', ','),
+                         ['surname', 'name, secondname'])
+        self.assertNotEqual(_split_by_first_occurence('surname, name, secondname', ','),
+                         ['surname', 'name','secondname'])
+        self.assertEqual(_split_by_first_occurence(',', ','),
+                         ['', ''])
+        self.assertEqual(_split_by_first_occurence('surname\t name', '\t'),
+                         ['surname', 'name'])
+
+    def test_remove_ignored_characters_for_name(self):
+        ignore_list = ['etc.', 'ignore me']
+        self.assertEquals(_remove_ignored_characters_for_name('some text and etc.', ignore_list),
+                          'some text and ')
+        self.assertEquals(_remove_ignored_characters_for_name('some text ignore me and etc.', ignore_list),
+                          'some text  and ')
+        self.assertEquals(_remove_ignored_characters_for_name('some text andetc.', ignore_list),
+                          'some text and')
+        self.assertEquals(_remove_ignored_characters_for_name('some text andetc.ignore me', ignore_list),
+                          'some text and')
+        self.assertEquals(_remove_ignored_characters_for_name('ignore me', ignore_list),
+                          'ignore me')
+
+    def test_is_unseperated_initials(self):
+        self.assertTrue(_is_unseperated_initials('AB'))
+        self.assertFalse(_is_unseperated_initials('AB etc'))
+        self.assertFalse(_is_unseperated_initials(''))
+        self.assertFalse(_is_unseperated_initials('A'))
+        self.assertFalse(_is_unseperated_initials('A.B'))
+        self.assertFalse(_is_unseperated_initials('A..'))
+        self.assertFalse(_is_unseperated_initials('aB'))
+        self.assertFalse(_is_unseperated_initials('ABC'))
+        self.assertFalse(_is_unseperated_initials('..'))
+
+    def test_apply_character_mapping_to_name(self):
+        mapping = {'a':'b', 'x':'y'}
+        self.assertEquals(_apply_character_mapping_to_name('abcxyz', mapping), 'bbcyyz')
+        self.assertEquals(_apply_character_mapping_to_name('kkkkkk', mapping), 'kkkkkk')
+        self.assertEquals(_apply_character_mapping_to_name('abcxyz', dict()), 'abcxyz')
+
+    def test_replace_content_in_parentheses(self):
+        self.assertEquals(_replace_content_in_parentheses('abc(def)'), 'abc')
+        self.assertEquals(_replace_content_in_parentheses('abc'), 'abc')
+        self.assertEquals(_replace_content_in_parentheses('(def)'), '')
+        self.assertEquals(_replace_content_in_parentheses('()'), '')
+        self.assertEquals(_replace_content_in_parentheses('(def'), '(def')
+
+    def test_remove_special_characters_and_numbers(self):
+        self.assertEquals(_remove_special_characters_and_numbers('abc ?>%$9','abc '))
+        self.assertEquals(_remove_special_characters_and_numbers('123\"\"\"',''))
+        self.assertEquals(_remove_special_characters_and_numbers('{}][:s ! ', 's  '))
+
+    def test_create_matchable_name(self): # This can act as a regression test of the whole function.
+        self.assertEquals(_create_matchable_name('Surname, Name'), 'name surname')
+        self.assertEquals(_create_matchable_name('Surname'), 'surname')
+        self.assertEquals(_create_matchable_name('Surname, Name (removed)'), 'name surname')
+        self.assertEquals(_create_matchable_name('Surname, Name'), 'name surname')  # TODO get from m_name list in bconfig
+
+
 
 if __name__ == '__main__':
     #run_test_suite(TEST_SUITE)

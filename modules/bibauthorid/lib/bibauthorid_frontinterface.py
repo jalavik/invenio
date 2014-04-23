@@ -240,66 +240,43 @@ def person_search_engine_query(query_string):
     @return:
     @rtype:
     '''
-    personid_names_list = list()
-
-    search_engine_status = dbinter.search_engine_is_operating()
-
-    personids_list = list()
-    if search_engine_status:
-        personids_list = find_personids_by_name(query_string)
-        personid_names_list = [(i, []) for i in personids_list]
 
     if canonical_name_type.match(query_string):
         canonical_name_matches = list(get_authors_by_canonical_name_regexp(query_string))
 
         if canonical_name_matches:
-            canonical_name_matches = [i for i in canonical_name_matches if int(i[0]) not in personids_list]
-            personid_names_list = canonical_name_matches + personid_names_list
+            canonical_name_matches = [i for i in canonical_name_matches]
+            return canonical_name_matches
 
     if '@' in query_string:
         uid = dbinter.get_user_id_by_email(query_string)
         if uid is not None:
             pid = dbinter.get_author_by_uid(uid)
-            if pid and pid not in personids_list:
-                personid_names_list = [(pid, [])] + personid_names_list
+            if pid:
+                return [(pid, [])]
 
-    if personid_names_list:
-        return personid_names_list
+    try:
+        pids = list()
+        n = int(query_string)
+        pid = dbinter.get_author_by_uid(n)
+        if pid:
+            pids.append((pid, []))
+        if dbinter.author_exists(n):
+            pids.append((n, []))
+        return pids
+
+    except ValueError:
+        pass
+
+    search_engine_status = dbinter.search_engine_is_operating()
+
+    if search_engine_status:
+        personids_list = find_personids_by_name(query_string, trust_is_operating=True)
+        personid_list = [(i, []) for i in personids_list]
+        if personid_list:
+            return personid_list
 
     return fallback_find_personids_by_name_string(query_string)
-
-
-def find_personIDs_by_name_string(query_string):
-    return person_search_engine_query(query_string)
-
-def find_top5_personid_for_new_arxiv_user(bibrecs, name):
-
-    top5_list = []
-
-    pidlist = get_author_to_papers_mapping(bibrecs, limit_by_name=name)
-
-    for p in pidlist:
-        if not get_uid_of_author(p[0]):
-            top5_list.append(p[0])
-            if len(top5_list) > 4:
-                break
-
-    escaped_name = ""
-
-    if name:
-        escaped_name = escape(name, quote=True)
-    else:
-        return top5_list
-
-    pidlist = find_personIDs_by_name_string(escaped_name)
-
-    for p in pidlist:
-        if not get_uid_of_author(p[0]) and not p[0] in top5_list:
-            top5_list.append(p[0])
-            if len(top5_list) > 4:
-                break
-
-    return top5_list
 
 
 def check_personids_availability(picked_profile, uid):

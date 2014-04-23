@@ -1,0 +1,21 @@
+<p>There is no{{ " unique" if choice else "" }} HepNames record associated with this profile.</p>
+
+{% if not choice %}
+<div>
+	<a class='btn btn-default' href='{{ new_record_link }}'>
+		Create a new one!
+	</a>
+</div>
+
+<p>
+	<br>
+	The new HepNames record will be visible and associated to this author after manual revision, usually within a few days.
+</p>
+{% endif %}
+
+<p>
+	{% if choice %}
+	Please tell us if you think it is one of the following, or <a href='{{ new_record_link }}'>Create a new one!</a><br>
+    Possible choices are:
+    {% endif %}
+</p>

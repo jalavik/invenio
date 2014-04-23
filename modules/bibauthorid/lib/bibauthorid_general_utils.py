@@ -22,6 +22,7 @@ bibauthorid_general_utils
 '''
 
 from invenio import bibauthorid_config as bconfig
+from invenio.config import CFG_BASE_URL
 from datetime import datetime
 import sys
 from math import floor
@@ -37,10 +38,14 @@ from collections import deque
 import multiprocessing as mp
 import time
 import re
+import random
+from collections import Hashable
+from functools import partial
 
 PRINT_TS = bconfig.DEBUG_TIMESTAMPS
 PRINT_TS_US = bconfig.DEBUG_TIMESTAMPS_UPDATE_STATUS and PRINT_TS
 NEWLINE = bconfig.DEBUG_UPDATE_STATUS_THREAD_SAFE
+PRINT_OUTPUT = bconfig.DEBUG_OUTPUT
 
 FO = bconfig.DEBUG_LOG_TO_PIDFILE
 
@@ -67,6 +72,72 @@ arxiv_new_regex = re.compile(r"(arXiv:)?(\d{4})\.(\d{4,6})(v\d+)?$", re.IGNORECA
 arxiv_old_regex = re.compile(r"(arXiv:)?((?:[a-zA-Z]|[a-zA-Z]-[a-zA-Z])+)(\.[a-zA-Z]{2})?/(\d{7})(v\d+)?$", re.IGNORECASE)
 doi_regex = re.compile(r"((?:https?://)?(?:dx.)?doi.org/)?(10\.(\d+)(/|\.)\S.*)$", re.IGNORECASE)
 
+
+class memoized(object):
+   '''Decorator. Caches a function's return value each time it is called.
+   If called later with the same arguments, the cached value is returned
+   (not reevaluated).
+   Keeps at most cache_limit elements. Deletes half of caches in case of overflow.
+   '''
+   def __init__(self, func, cache_limit=1000000):
+
+      self.func = func
+      self.cache = {}
+
+      if cache_limit:
+          self.cache_limit = cache_limit
+      else:
+          cache_limit = False
+
+   def __call__(self, *args):
+      if not isinstance(args, Hashable):
+         # uncacheable. a list, for instance.
+         # better to not cache than blow up.
+         return self.func(*args)
+      if args in self.cache:
+         return self.cache[args]
+      else:
+         value = self.func(*args)
+         self.cache[args] = value
+         if self.cache_limit and len(self.cache) > self.cache_limit:
+             keys  = self.cache.keys()
+             random.shuffle(keys)
+             to_delete = keys[0:self.cache_limit/2]
+             map(self.cache.pop, to_delete)
+         return value
+   def __repr__(self):
+      '''Return the function's docstring.'''
+      return self.func.__doc__
+   def __get__(self, obj, objtype):
+      '''Support instance methods.'''
+      return partial(self.__call__, obj)
+
+def get_doi_url(doi):
+    """
+    Provides a HTTP DX DOI resolvable url given a DOI.
+
+    @param doi: DOI string
+    @return: Resolvable DOI URL
+    """
+    return "http://dx.doi.org/%s" % doi
+
+def get_arxiv_url(arxiv):
+    """
+    Provides a HTTP arXiv resolvable url given an arXiv ID.
+
+    @param arxiv: arXiv string
+    @return: Resolvable arXiv URL
+    """
+    return "http://http://arxiv.org/abs/%s" % arxiv
+
+def get_inspire_record_url(recid):
+    """
+    Provides a resolvable url given an inspire recid.
+
+    @param recid: internal record id
+    @return: Resolvable inspire record URL
+    """
+    return "%s/record/%s" % (CFG_BASE_URL, recid)
 
 def get_orcid_from_string(identifier, uri=False):
     """
@@ -313,21 +384,32 @@ def get_title_of_arxiv_pubid(arxiv_pubid):
     return arxiv_pubid
 
 
-def schedule_workers(function, args, max_processes=mp.cpu_count()):
-    processes = dict( (x,None) for x in range(max_processes) )
+def schedule_workers(function, args, optional_args=None, max_processes=mp.cpu_count()):
+    processes = dict((x, None) for x in range(max_processes))
 
     jobs = list(args)
     jobs.reverse()
 
     while jobs:
+        mand_args = jobs.pop()
+        if not isinstance(mand_args, tuple):
+            mand_args = (mand_args,)
+        if optional_args:
+            final_args = mand_args + (optional_args,)
+        else:
+            final_args = mand_args
+        print final_args
         for p, proc in processes.iteritems():
             if not proc or not proc.is_alive():
                 if proc:
                     proc.join()
                     proc.terminate()
-                new_proc = mp.Process(target=function, args=(jobs.pop(),))
-                new_proc.start()
-                processes[p] = new_proc
+                try:
+                    new_proc = mp.Process(target=function, args=final_args)
+                    new_proc.start()
+                    processes[p] = new_proc
+                except IndexError:
+                    continue
         time.sleep(1)
     for p, proc in processes.iteritems():
         if not proc or not proc.is_alive():
@@ -402,40 +484,44 @@ bai_all = all
 #end of python2.4 compatibility. Please remove this horror as soon as all systems will have
 #been ported to python2.6+
 
-
-def __print_func(*args):
-    set_stdout()
-    if PRINT_TS:
-        print datetime.now(),
-    for arg in args:
-        print arg,
-    print ""
-    sys.stdout.flush()
-
 def __dummy_print(*args):
     pass
 
-def __create_conditional_print(cond):
-    if cond:
-        return __print_func
-    else:
-        return __dummy_print
+def __print_func(*args):
+    if PRINT_OUTPUT:
+        set_stdout()
+        if PRINT_TS:
+            print datetime.now(),
+        for arg in args:
+            print arg,
+        print ""
+        sys.stdout.flush()
 
-bibauthor_print = __create_conditional_print(bconfig.DEBUG_OUTPUT)
-name_comparison_print = __create_conditional_print(bconfig.DEBUG_NAME_COMPARISON_OUTPUT)
-metadata_comparison_print = __create_conditional_print(bconfig.DEBUG_METADATA_COMPARISON_OUTPUT)
-wedge_print = __create_conditional_print(bconfig.DEBUG_WEDGE_OUTPUT)
+bibauthor_print = __print_func
 
+if bconfig.DEBUG_NAME_COMPARISON_OUTPUT:
+    name_comparison_print = __print_func
+else:
+    name_comparison_print = __dummy_print
 
-if bconfig.DEBUG_OUTPUT:
+if bconfig.DEBUG_METADATA_COMPARISON_OUTPUT:
+    metadata_comparison_print = __print_func
+else:
+    metadata_comparison_print = __dummy_print
 
-    status_len = 18
-    comment_len = 40
+if bconfig.DEBUG_WEDGE_OUTPUT:
+    wedge_print = __print_func
+else:
+    wedge_print = __dummy_print
 
-    def padd(stry, l):
-        return stry[:l].ljust(l)
+status_len = 18
+comment_len = 40
 
-    def update_status(percent, comment="", print_ts=False):
+def padd(stry, l):
+    return stry[:l].ljust(l)
+
+def update_status(percent, comment="", print_ts=False):
+    if PRINT_OUTPUT:
         set_stdout()
         filled = max(0,int(floor(percent * status_len)))
         bar = "[%s%s] " % ("#" * filled, "-" * (status_len - filled))
@@ -448,18 +534,13 @@ if bconfig.DEBUG_OUTPUT:
         print progress, comment, TERMINATOR,
         sys.stdout.flush()
 
-    def update_status_final(comment=""):
+def update_status_final(comment=""):
+    if PRINT_OUTPUT:
         set_stdout()
         update_status(1., comment, print_ts=PRINT_TS)
         print ""
         sys.stdout.flush()
 
-else:
-    def update_status(percent, comment=""):
-        pass
-
-    def update_status_final(comment=""):
-        pass
 
 def print_tortoise_memory_log(summary, fp):
     stry = "PID:\t%s\tPEAK:\t%s,%s\tEST:\t%s\tBIBS:\t%s\n" % (summary['pid'], summary['peak1'], summary['peak2'], summary['est'], summary['bibs'])
@@ -636,3 +717,40 @@ def sortFileInPlace(inFileName, outFileName=None, getKeyMethod=None, reverse=Fal
 
     fs.sort(reverse=reverse)
     fs = None
+
+
+import inspect
+
+
+def lineno():
+    a = inspect.getframeinfo(inspect.getouterframes(inspect.currentframe())[2][0])
+    return (a.filename,a.lineno)
+
+
+def caller():
+    a =  inspect.stack()[3]
+    return (a[1], a[2])
+
+def monitored(func):
+
+    with open('/tmp/logfile', 'w') as logfile:
+        logfile.write('')
+
+    def wrap(*args, **keywords):
+        with open('/tmp/logfile', 'a') as logfile:
+            start_time = time.time()
+            r = func(*args, **keywords)
+            end_time = time.time()
+            file_name, line = lineno()
+            file_name = file_name.split('/')[-1]
+            call_name, call_line = caller()
+            call_name = call_name.split('/')[-1]
+            logfile.write(file_name + '\t' + str(line) + '\t' + str(end_time - start_time) + '\t'+ str(call_name) +'\t'+ str(call_line) +  '\n')
+            return r
+
+    return wrap
+
+
+
+
+

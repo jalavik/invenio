@@ -150,7 +150,7 @@ class ProbabilityMatrix(object):
         update_status_final("Matrix done. %d calc, %d opt." % (cur_calc, opti))
 
 
-def prepare_matirx(cluster_set, force):
+def prepare_matrix(cluster_set, force):
     if bconfig.DEBUG_CHECKS:
         assert cluster_set._debug_test_hate_relation()
         assert cluster_set._debug_duplicated_recs()
