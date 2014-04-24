@@ -33,7 +33,7 @@ from invenio.bibauthorid_general_utils import defaultdict
 
 import invenio.search_engine as search_engine
 from invenio.bibformat import format_record
-from invenio.search_engine import perform_request_search
+from invenio.search_engine import perform_request_search, get_record
 from cgi import escape
 from invenio.dateutils import strftime
 from time import time, gmtime, ctime
@@ -53,7 +53,8 @@ from invenio.mailutils import send_email
 from invenio.bibauthorid_name_utils import most_relevant_name
 from invenio.bibauthorid_general_utils import is_arxiv_id_or_doi
 from invenio.shellutils import retry_mkstemp
-from invenio.bibrecord import record_xml_output, record_add_field
+from invenio.bibrecord import record_xml_output, record_add_field, record_get_field_instances,\
+    record_get_field_value, record_get_field_values, record_has_field
 from invenio.bibtask import task_low_level_submission
 from invenio.bibauthorid_dbinterface import get_external_ids_of_author, add_arxiv_papers_to_author, get_arxiv_papers_of_author  #pylint: disable-msg=W0614
 
@@ -1112,6 +1113,65 @@ def get_user_role(req):
 
     return role
 
+def display_name_from_hepnames(record):
+    display_name = (record_get_field_value(record, '880', '','', 'a') or
+                    record_get_field_value(record, '100', '', '', 'q') or
+                    record_get_field_value(record, '100', '', '', 'a'))
+
+    return display_name
+
+def main_hepnames_email(record):
+    email = (record_get_field_values(record,'371', '','', 'm',
+                filter_subfield_code='z',
+                filter_subfield_value='Current|current|CURRENT',
+                filter_subfield_mode='r') or
+            record_get_field_value(record, '371', '','', 'm'))
+
+    return email
+
+def institution_history(record):
+
+    def extract_institution(sub_fields):
+        institution = {}
+        mapping = {
+            'a': 'name',
+            'r': 'rank',
+            's': 'start',
+            't': 'end'
+        }
+        for code, value in sub_fields:
+            if code in mapping:
+                institution[mapping[code]] = value
+        if 'start' not in institution:
+            return None
+        else:
+            return institution or None
+
+    if (not record_has_field(record, '371')):
+        return None
+
+    field_instances = record_get_field_instances(record, '371', '', '')
+    institutions = [extract_institution(x[0]) for x in field_instances if extract_institution(x[0]) is not None]
+
+    institutions.sort(key=lambda x: x['start'], reverse=True)
+
+    return institutions
+
+
+def hepnames_context(record):
+    '''
+    Generates template a context using a HepNames record.
+    '''
+    context = {
+        'record_id': record_get_field_value(record, '001','','',''),
+        'display_name': display_name_from_hepnames(record),
+        'urls': record_get_field_values(record, '856', '4','','u'),
+        'email': main_hepnames_email(record),
+        'institution_history': institution_history(record)
+    }
+
+    return context
+
 def get_hepnames(person_id, bibauthorid_data=None):
     '''
     Returns hepnames data.
@@ -1135,7 +1195,10 @@ def get_hepnames(person_id, bibauthorid_data=None):
     searchid = '035:"%s"' % bibauthorid_data['cid']
     hepRecord = perform_request_search(rg=0, cc='HepNames', p=' %s ' % searchid)[:CFG_WEBAUTHORPROFILE_MAX_HEP_CHOICES]
 
-    hepnames_data = {}
+    hepnames_data = {
+        'new_record_link': 'http://slac.stanford.edu/spires/hepnames/additions.shtml'
+    }
+
     hepnames_data['cid'] = bibauthorid_data['cid']
     hepnames_data['pid'] = person_id
 
@@ -1145,17 +1208,16 @@ def get_hepnames(person_id, bibauthorid_data=None):
         query = ' or '.join(['author:"%s"' % str(n) for n in dbnames])
         additional_records = perform_request_search(rg=0, cc='HepNames', p=query)[:CFG_WEBAUTHORPROFILE_MAX_HEP_CHOICES]
         hepRecord += additional_records
-        hepnames_data['HaveHep'] = False
-        hepnames_data['HaveChoices'] = bool(hepRecord)
+        hepnames_data['have_hep'] = False
+        hepnames_data['choice'] = bool(hepRecord)
         # limit possible choiches!
-        hepnames_data['HepChoices'] = [(format_record(x, 'hb'), x) for x in hepRecord ]
-        hepnames_data['heprecord'] = hepRecord
+        hepnames_data['choice_list'] = [hepnames_context(get_record(x)) for x in hepRecord]
         hepnames_data['bd'] = bibauthorid_data
     else:
         # show the heprecord we just found.
-        hepnames_data['HaveHep'] = True
-        hepnames_data['HaveChoices'] = False
-        hepnames_data['heprecord'] = format_record(hepRecord[0], 'hd')
+        hepnames_data['have_hep'] = True
+        hepnames_data['choice'] = False
+        hepnames_data['record'] = hepnames_context(get_record(hepRecord[0]))
         hepnames_data['bd'] = bibauthorid_data
 
     return hepnames_data

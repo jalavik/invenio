@@ -1,21 +1,23 @@
-<p>There is no{{ " unique" if choice else "" }} HepNames record associated with this profile.</p>
-
-{% if not choice %}
-<div>
-	<a class='btn btn-default' href='{{ new_record_link }}'>
-		Create a new one!
+{% if not record %}
+<p>There is no{{ " unique" if choices else "" }} HepNames record associated with this profile.</p>
+<div class="panel panel-default">
+	{% if choices %}
+	<div class="panel-heading">Which one looks right?</div>
+	{% endif %}
+	<div class="list-group">
+	{% for item in choice_list %}
+	<a href="#" class="list-group-item">
+		<h4 class="list-group-item-heading">{{ item.display_name }}</h4>
 	</a>
+	{% endfor %}
+	<a href="{{ new_record_link }}" class="list-group-item">
+		<h4 class="list-group-item-heading">Create One</h4>
+		<p class="list-group-item-text">I am able to provide INSPIRE with some details.
+		The new HepNames record will be visible and associated to this author after manual revision, usually within a few days.</p>
+	</a>
+	</div>
+
 </div>
-
-<p>
-	<br>
-	The new HepNames record will be visible and associated to this author after manual revision, usually within a few days.
-</p>
+{% else %}
+<p>{{ record }}</p>
 {% endif %}
-
-<p>
-	{% if choice %}
-	Please tell us if you think it is one of the following, or <a href='{{ new_record_link }}'>Create a new one!</a><br>
-    Possible choices are:
-    {% endif %}
-</p>

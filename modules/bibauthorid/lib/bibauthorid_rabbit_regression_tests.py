@@ -21,10 +21,6 @@
 
 __revision__ = "$Id$"
 
-from invenio.testutils import InvenioTestCase
-from invenio.testutils import make_test_suite
-from invenio.testutils import run_test_suite
-
 from invenio.bibtask import setup_loggers
 from invenio.bibtask import task_set_task_param
 from invenio.bibupload_regression_tests import wipe_out_record_from_all_tables
@@ -52,8 +48,10 @@ from invenio.bibauthorid_dbinterface import _add_external_id_to_author
 from invenio.bibauthorid_dbinterface import _remove_external_id_from_author
 from invenio.bibauthorid_dbinterface import create_matchable_name
 
+import unittest
 
-class BibAuthorIDRabbitTestCase(InvenioTestCase):
+
+class BibAuthorIDRabbitTestCase(unittest.TestCase):
     '''
     Class with helper method for rabbit regression tests.
     '''
@@ -620,11 +618,6 @@ class MnamesFunctionsTest(BibAuthorIDRabbitTestCase):
         #TODO Assert the order of calling. It should always be preserved.
 
 
-TEST_SUITE = make_test_suite(OneAuthorRabbitTestCase,
-                             CoauthorsRabbitTestCase,
-                             MatchableNameRabbitTestCase,
-                             MnamesCacheConsistencyTestCase,
-                             MnamesFunctionsTest)
 
 if __name__ == "__main__":
-    run_test_suite(TEST_SUITE, warn_user=False)
+    unittest.main(verbosity=2)

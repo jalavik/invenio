@@ -560,9 +560,13 @@ class WebAuthorPages(WebInterfaceDirectory):
             if json_data.has_key('personId'):
                 person_id = json_data['personId']
 
-                hepdict, hepdictStatus = get_hepnames_data(person_id)
+                context, hepdictStatus = get_hepnames_data(person_id)
+                if not hepdictStatus:
+                    return json.dumps({'status': False, 'html': ''})
 
-                json_response = {'status': hepdictStatus, 'html': bibauthorid_template.tmpl_hepnames_box(hepdict, ln='en', add_box=False, loading=not hepdictStatus)}
+                content = WebProfilePage.render_template('personal_details_box', context)
+
+                json_response = {'status': hepdictStatus, 'html': content}
                 req.content_type = 'application/json'
                 return json.dumps(json_response)
 

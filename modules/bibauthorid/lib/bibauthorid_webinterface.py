@@ -2667,16 +2667,13 @@ class WebInterfaceBibAuthorIDManageProfilePages(WebInterfaceDirectory):
 
             session.dirty = True
 
-        content += TEMPLATE.tmpl_profile_management(ln, person_data, arxiv_data,
-                                                    orcid_data, claim_paper_data,
-                                                    int_ids_data, ext_ids_data,
-                                                    autoclaim_data, support_data,
-                                                    merge_data, hepnames_data)
-
         if CFG_INSPIRE_SITE:
             html_arxiv = TEMPLATE.tmpl_arxiv_box(arxiv_data, ln, add_box=False, loading=False)
             html_orcid = TEMPLATE.tmpl_orcid_box(orcid_data, ln, add_box=False, loading=False)
-            html_hepnames = TEMPLATE.tmpl_hepnames_box(hepnames_data, ln, add_box=False, loading=False)
+            if hepnames_data is not None:
+                html_hepnames = WebProfilePage.render_template('personal_details_box', hepnames_data)
+            else:
+                html_hepnames = "Loading.."
             html_support = TEMPLATE.tmpl_support_box(support_data, ln, add_box=False, loading=False)
 
         if autoclaim_data['hidden']:
@@ -3294,8 +3291,7 @@ class WebInterfaceAuthorTicketHandling(WebInterfaceDirectory):
             unsuccessfull_recids = pinfo['autoclaim']['res']['unsuccessful_recids']
             for entry in ticket:
                 recid = entry['rec']
-                pinfo['autoclaim']['res']['successful_recids'] += unsuccessfull_recids
-                unsuccessfull_recids = [(_, _, record_id)  for _, _, record_id in unsuccessfull_recids if record_id != recid]
+                unsuccessfull_recids = [rec for rec in unsuccessfull_recids if rec[2] != recid]
                 pinfo['autoclaim']['res']['unsuccessful_recids'] = unsuccessfull_recids
 
         webapi.commit_operations_from_ticket(ticket, userinfo, uid, ulevel)
