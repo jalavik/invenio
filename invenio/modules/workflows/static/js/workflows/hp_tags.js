@@ -41,12 +41,12 @@ var WORKFLOWS_HP_TAGS = function ( $, holdingpen ){
     var init = function () {
         $('.task-btn').on('click', function(){
             if($.inArray($(this)[0].name, tagList) <= -1){
-                var widget_name = $(this)[0].name;
+                var action_name = $(this)[0].name;
                 $("#tags").tagsinput('add', $(this)[0].text);
                 WORKFLOWS_HP_UTILITIES.requestNewObjects();
             }
             else{
-                closeTag(widget_name);
+                closeTag(action_name);
                 holdingpen.oTable.fnFilter( '^$', 4, true, false );
                 holdingpen.oTable.fnDraw(false);
             }

@@ -77,9 +77,9 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
                 holdingpen.rowList.splice(holdingpen.rowList.indexOf(current_row.row_id), 1);
                 holdingpen.rowIndexList.splice( holdingpen.rowIndexList.indexOf(current_row._DT_RowIndex+holdingpen.oSettings._iDisplayStart), 1);
                 current_row.style.background = "white";
-                widget_name = selectCellByTitle_content(current_row, 'Actions')
-                if (widget_name != 'N/A'){
-                    if(widget_name === 'Approve Record'){
+                action_name = selectCellByTitle_content(current_row, 'Actions')
+                if (action_name != 'N/A'){
+                    if(action_name === 'Approve Record'){
                         holdingpen.recordsToApprove.splice(holdingpen.recordsToApprove.indexOf(current_row.row_id), 1);
                     }
                 }
@@ -90,14 +90,14 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
 
     function selectRow (row, e, oSettings) {
         selectedRow = row;
-        var widget_name;
+        var action_name;
         if( e.shiftKey === true ){
 
             this.selectRange(row);
         }
         else{
             if(selectCellByTitle(row, 'Actions').childNodes[0].id === 'submitButtonMini'){
-                widget_name = 'Approve Record';
+                action_name = 'Approve Record';
             }
             if($.inArray(row.row_id, holdingpen.rowList) <= -1){
                 // Select row
@@ -105,12 +105,12 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
                 holdingpen.rowIndexList.push(row._DT_RowIndex+oSettings._iDisplayStart);
                 row.style.background = "#ffa";
                 if (selectCellByTitle_content(row, 'Actions') != 'N/A'){
-                    if(widget_name === 'Approve Record'){
+                    if(action_name === 'Approve Record'){
                         holdingpen.recordsToApprove.push(row.row_id);
                     }
-                }   
+                }
                 row.checkbox.checked = true;
-            }   
+            }
             else{
                 $('#select-all')[0].checked = false;
                 // De-Select
@@ -118,14 +118,14 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
                 holdingpen.rowIndexList.splice( holdingpen.rowIndexList.indexOf(row._DT_RowIndex+holdingpen.oSettings._iDisplayStart), 1);
                 row.style.background = "white";
                 if (selectCellByTitle_content(row, 'Actions') != 'N/A'){
-                if(widget_name === 'Approve Record'){
-                    holdingpen.recordsToApprove.splice(holdingpen.recordsToApprove.indexOf(row.row_id), 1);
-                }
+                    if(action_name === 'Approve Record'){
+                        holdingpen.recordsToApprove.splice(holdingpen.recordsToApprove.indexOf(row.row_id), 1);
+                    }
                 }
                 row.checkbox.checked = false;
             }
         }
-        window['approval_widget'].checkRecordsToApprove();
+        window['approval'].checkRecordsToApprove();
     }
     function  removeSelection() {
             if (window.getSelection) {  // all browsers, except IE before version 9
@@ -144,7 +144,7 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
         holdingpen.rowIndexList = [];
         holdingpen.oTable.fnDraw(false);
         window.getSelection().removeAllRanges();
-    } 
+    }
 
     function hoverRow (row) {
         row.style.background = "#FFFFEE";
@@ -244,7 +244,7 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
     });
 
     $(document).keyup(function(e){
-        if (e.keyCode == 27) {  // esc           
+        if (e.keyCode == 27) {  // esc
             deselectAll();
         }
     });

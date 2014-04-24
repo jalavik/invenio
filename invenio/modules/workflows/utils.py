@@ -138,7 +138,7 @@ def get_workflow_definition(name):
     if name in workflows:
         return getattr(workflows[name], "workflow", None)
     else:
-        return None
+        return WorkflowMissing.workflow
 
 
 class dictproperty(object):
@@ -269,3 +269,15 @@ def parse_bwids(bwolist):
     import ast
 
     return list(ast.literal_eval(bwolist))
+
+
+def dummy_function(obj, eng):
+    """
+    Workflow function not found for workflow.
+    """
+    pass
+
+
+class WorkflowMissing(object):
+    """ Workflow is missing """
+    workflow = [dummy_function]

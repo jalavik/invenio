@@ -55,8 +55,8 @@ def run_workflow(wfe, data, stop_on_halt=False,
             # Save current object progress
             current_obj = wfe.get_current_object()
             if current_obj:
-                if workflowhalt_triggered.widget:
-                    current_obj.add_widget(workflowhalt_triggered.widget,
+                if workflowhalt_triggered.action:
+                    current_obj.add_action(workflowhalt_triggered.action,
                                            workflowhalt_triggered.message)
                 current_obj.version = ObjectVersion.HALTED
                 current_obj.save(version=ObjectVersion.HALTED,

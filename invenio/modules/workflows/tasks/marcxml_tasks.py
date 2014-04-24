@@ -53,7 +53,8 @@ def add_metadata_to_extra_data(obj, eng):
     :param eng: BibWorkflowEngine processing the object
     """
     obj.extra_data["_last_task_name"] = "add_metadata_to_extra_data"
-    from invenio.legacy.bibrecord import create_record as old_create_record, record_get_field_value
+    from invenio.legacy.bibrecord import create_record as old_create_record, \
+        record_get_field_value
 
     record = old_create_record(obj.data)
     obj.extra_data['redis_search']['category'] = \
@@ -66,14 +67,18 @@ def add_metadata_to_extra_data(obj, eng):
 
 def approve_record(obj, eng):
     """
-    Will add the approval widget to the record.
+    Will add the approval action to the record.
     The workflow need to be halted to use the
-    widget in the holdingpen.
+    action in the holdingpen.
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
     """
-    eng.halt(widget="approval_widget",
-             msg='Record needs approval')
+    try:
+        eng.halt(action="approval",
+                 msg='Record needs approval')
+    except KeyError:
+        # Log the error
+        obj.extra_data["_error_msg"] = 'Could not assign action'
 
 
 def filtering_oai_pmh_identifier(obj, eng):
@@ -96,8 +101,8 @@ def filtering_oai_pmh_identifier(obj, eng):
         delimiter_start = "<identifier>"
         delimiter_end = "</identifier>"
         identifier = record[
-            record.index(delimiter_start) +
-            len(delimiter_start):record.index(delimiter_end)
+                     record.index(delimiter_start) +
+                     len(delimiter_start):record.index(delimiter_end)
         ]
         if identifier in eng.extra_data["oaiharvest"]["identifiers"]:
             return False
@@ -107,7 +112,7 @@ def filtering_oai_pmh_identifier(obj, eng):
 
 
 def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
-                          custom_widgeted=(), widget=None):
+                          custom_widgeted=(), action=None):
     """
     This function allow you to filter for any type of key in a dictionnary stored
     in object data.
@@ -122,7 +127,7 @@ def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
     :type custom_refused: list
     :param custom_widgeted: list of value that trigger a widget
     :type custom_widgeted: list
-    :param widget: widget triggered if a value in custom_widgeted is found.
+    :param action: action triggered if a value in custom_widgeted is found.
     :return: function to be intepreted by the workflow engine
     """
 
@@ -160,7 +165,7 @@ def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
                 fields_to_process)
             eng.halt(str(
                 fields_to_process) + " not found in the record. Human intervention needed",
-                     widget=widget)
+                     action=action)
 
         for i in custom_widgeted:
             if i != '*':
@@ -198,14 +203,14 @@ def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
                 # they are nice!
                 msg = ("Category out of task definition. "
                        "Human intervention needed")
-                eng.halt(msg, widget=widget)
+                eng.halt(msg, action=action)
         else:
             if sum_action == action_to_take[0]:
                 eng.halt("The %s of this record is %s, "
                          "this field is under filtering. "
                          "Should we accept this record ? "
-                         % (fields[len(fields)-1], custom_to_process_next),
-                         widget=widget)
+                         % (fields[len(fields) - 1], custom_to_process_next),
+                         action=action)
             elif sum_action == action_to_take[1]:
                 return None
             elif sum_action == action_to_take[2]:
@@ -214,20 +219,20 @@ def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
                 eng.halt(
                     "Category filtering needs human intervention,"
                     " rules are incoherent !!!",
-                    widget=widget)
+                    action=action)
 
     return _inspire_filter_custom
 
 
 def inspire_filter_category(category_accepted_param=(),
                             category_refused_param=(),
-                            category_widgeted_param=(), widget_param=None):
+                            category_widgeted_param=(), action=None):
     """
 
     :param category_accepted_param:
     :param category_refused_param:
     :param category_widgeted_param:
-    :param widget_param:
+    :param action:
     :return:
     """
 
@@ -250,11 +255,6 @@ def inspire_filter_category(category_accepted_param=(),
                     'category_widgeted']
         except KeyError:
             category_widgeted = category_widgeted_param
-        try:
-            widget = obj.extra_data["_repository"]["arguments"]["filtering"][
-                'widget']
-        except KeyError:
-            widget = widget_param
 
         category_to_process = []
         action_to_take = [0, 0, 0]
@@ -269,7 +269,7 @@ def inspire_filter_category(category_accepted_param=(),
         except KeyError:
             msg = "Category not found in the record. Human intervention needed"
             eng.log.error(msg)
-            eng.halt(msg, widget=widget)
+            eng.halt(msg, action=action)
 
         for i in category_widgeted:
             if i != '*':
@@ -304,13 +304,13 @@ def inspire_filter_category(category_accepted_param=(),
                 # We don't know what we should do, in doubt query human... they are nice!
                 msg = ("Category out of task definition. "
                        "Human intervention needed")
-                eng.halt(msg, widget=widget)
+                eng.halt(msg, action=action)
         else:
             if sum_action == action_to_take[0]:
                 eng.halt("The category of this record is %s,"
                          "this category is under filtering."
                          "Should we accept this record ?" % category,
-                         widget=widget)
+                         action=action)
             elif sum_action == action_to_take[1]:
                 return None
             elif sum_action == action_to_take[2]:
@@ -318,7 +318,8 @@ def inspire_filter_category(category_accepted_param=(),
             else:
                 eng.halt(
                     "Category filtering needs human intervention, rules are incoherent !!!",
-                    widget=widget)
+                    action=action)
+
     return _inspire_filter_category
 
 
@@ -371,7 +372,9 @@ def get_repositories_list(repositories=()):
                     reposlist_temp.append(
                         OaiHARVEST.get(OaiHARVEST.name == reposname).one())
                 except (MultipleResultsFound, NoResultFound):
-                    eng.log.critical("Repository %s doesn't exit into our database", reposname)
+                    eng.log.critical(
+                        "Repository %s doesn't exit into our database",
+                        reposname)
         else:
             reposlist_temp = OaiHARVEST.get(OaiHARVEST.name != "").all()
         true_repo_list = []
@@ -381,8 +384,9 @@ def get_repositories_list(repositories=()):
         if true_repo_list:
             return true_repo_list
         else:
-            eng.halt("No Repository named %s. Impossible to harvest non-existing things."
-                     % repositories_to_harvest)
+            eng.halt(
+                "No Repository named %s. Impossible to harvest non-existing things."
+                % repositories_to_harvest)
 
     return _get_repositories_list
 
@@ -802,6 +806,7 @@ def upload_record(mode="ir"):
         task_id = bibtask.task_low_level_submission("bibupload", "bibworkflow",
                                                     *tuple(params))
         eng.log_info("Submitted task #%s" % (task_id,))
+
     return _upload_record
 
 
@@ -991,8 +996,9 @@ def author_list(obj, eng):
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
     """
-    from invenio.legacy.oaiharvest.utils import (translate_fieldvalues_from_latex,
-                                                 find_matching_files)
+    from invenio.legacy.oaiharvest.utils import (
+        translate_fieldvalues_from_latex,
+        find_matching_files)
     from invenio.legacy.bibrecord import create_records, record_xml_output
     from invenio.legacy.bibconvert.xslt_engine import convert
     from invenio.utils.plotextractor.cli import get_defaults
