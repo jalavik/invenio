@@ -18,13 +18,22 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
-from invenio.testsuite import (InvenioTestCase,
-                               make_test_suite,
+from invenio.testsuite import (make_test_suite,
                                run_test_suite,
                                )
 
+from invenio.modules.workflows.testsuite.test_workflows import WorkflowTasksTestCase
 
-class WorkflowOthers(InvenioTestCase):
+class WorkflowOthers(WorkflowTasksTestCase):
+    def setUp(self):
+        self.create_registries()
+
+    def tearDown(self):
+        """ Clean up created objects """
+        from invenio.modules.workflows.utils import tearDown as mtearDown
+        mtearDown(self)
+        self.cleanup_registries()
+
     def test_result_abstraction(self):
         from ..utils import BibWorkflowObjectIdContainer
         from ..models import BibWorkflowObject

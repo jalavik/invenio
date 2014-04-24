@@ -25,40 +25,6 @@ from six import iteritems
 from .errors import WorkflowDefinitionError
 
 
-# def generate_workflow_report(engine):
-#
-#     report = ""
-#
-#     if not isinstance(engine, BibWorkflowEngine) or isinstance(engine, Workflow):
-#             engine = uui_to_workflow(engine)
-#
-#     write_message("ERROR HAPPEN")
-#     write_message("____________Workflow log output____________")
-#     workflow_id_preservation = e.id_workflow
-#     workflowlog = BibWorkflowEngineLog.query.filter(BibWorkflowEngineLog.id_object == e.id_workflow) \
-#         .filter(BibWorkflowEngineLog.log_type >= 40).all()
-#
-#     for log in workflowlog:
-#         write_message(log.message)
-#
-#     for i in e.payload:
-#         write_message("\n\n____________Workflow " + i + " log output____________")
-#         workflowlog = BibWorkflowEngineLog.query.filter(BibWorkflowEngineLog.id_object == i) \
-#             .filter(BibWorkflowEngineLog.log_type >= 40).all()
-#         for log in workflowlog:
-#             write_message(log.message)
-#
-#     write_message("ERROR HAPPEN")
-#     write_message("____________Object log output____________")
-#     objectlog = BibWorkflowObjectLog.query.filter(BibWorkflowObjectLog.id_object == e.id_object) \
-#         .filter(BibWorkflowEngineLog.log_type >= 40).all()
-#     for log in objectlog:
-#         write_message(log.message)
-#     execution_time = round(time.time() - start_time, 2)
-#     write_message("Execution time :" + str(execution_time))
-#
-#
-
 def session_manager(orig_func):
     """Decorator to wrap function with the session."""
     from invenio.ext.sqlalchemy import db
@@ -77,38 +43,39 @@ def session_manager(orig_func):
 
 
 def tearDown(self):
-        """ Clean up created objects """
-        from invenio.modules.workflows.models import (BibWorkflowObject,
-                                                      Workflow,
-                                                      BibWorkflowEngineLog,
-                                                      BibWorkflowObjectLog)
-        from invenio.ext.sqlalchemy import db
+    """ Clean up created objects """
+    from invenio.modules.workflows.models import (BibWorkflowObject,
+                                                  Workflow,
+                                                  BibWorkflowEngineLog,
+                                                  BibWorkflowObjectLog)
+    from invenio.ext.sqlalchemy import db
 
-        workflows = Workflow.get(Workflow.module_name == "unit_tests").all()
-        for workflow in workflows:
-            BibWorkflowObject.query.filter(
-                BibWorkflowObject.id_workflow == workflow.uuid
-            ).delete()
+    workflows = Workflow.get(Workflow.module_name == "unit_tests").all()
+    for workflow in workflows:
+        BibWorkflowObject.query.filter(
+            BibWorkflowObject.id_workflow == workflow.uuid
+        ).delete()
 
-            objects = BibWorkflowObjectLog.query.filter(
-                BibWorkflowObject.id_workflow == workflow.uuid
-            ).all()
-            for obj in objects:
-                db.session.delete(obj)
-            db.session.delete(workflow)
+        objects = BibWorkflowObjectLog.query.filter(
+            BibWorkflowObject.id_workflow == workflow.uuid
+        ).all()
+        for obj in objects:
+            db.session.delete(obj)
+        db.session.delete(workflow)
 
-            objects = BibWorkflowObjectLog.query.filter(
-                BibWorkflowObject.id_workflow == workflow.uuid
-            ).all()
-            for obj in objects:
-                BibWorkflowObjectLog.delete(id=obj.id)
-            BibWorkflowEngineLog.delete(uuid=workflow.uuid)
-            # Deleting dumy object created in tests
-        db.session.query(BibWorkflowObject).filter(
-            BibWorkflowObject.id_workflow.in_([11, 123, 253])
-        ).delete(synchronize_session='fetch')
-        Workflow.query.filter(Workflow.module_name == "unit_tests").delete()
-        db.session.commit()
+        objects = BibWorkflowObjectLog.query.filter(
+            BibWorkflowObject.id_workflow == workflow.uuid
+        ).all()
+        for obj in objects:
+            BibWorkflowObjectLog.delete(id=obj.id)
+        BibWorkflowEngineLog.delete(uuid=workflow.uuid)
+        # Deleting dumy object created in tests
+    db.session.query(BibWorkflowObject).filter(
+        BibWorkflowObject.id_workflow.in_([11, 123, 253])
+    ).delete(synchronize_session='fetch')
+    Workflow.query.filter(Workflow.module_name == "unit_tests").delete()
+    db.session.commit()
+
 
 class BibWorkflowObjectIdContainer(object):
     """
@@ -316,8 +283,3 @@ def parse_bwids(bwolist):
     import ast
 
     return list(ast.literal_eval(bwolist))
-
-
-
-def generate_report_workflow():
-    o=0

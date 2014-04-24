@@ -95,8 +95,8 @@ class DictModuleAutoDiscoverySubRegistry(ModuleAutoDiscoverySubRegistry):
         value = self.valuegetter(value)
         key = self.keygetter(key, value)
 
-        if key in self._registry:
-            raise RegistryError("Key %s already registered." % key)
+        #if key in self._registry:
+        #    raise RegistryError("Key %s already registered." % key)
 
         if value:
             self._registry[key] = value

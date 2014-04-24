@@ -17,19 +17,24 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
+from invenio.testsuite import (make_test_suite,
+                               run_test_suite,
+                               )
 
+from ...workflows.testsuite.test_workflows import WorkflowTasksTestCase
 
-from invenio.testsuite import (InvenioTestCase,
-                               make_test_suite,
-                               run_test_suite, )
+from invenio.celery import celery
 
+class WorkflowDelayedTest(WorkflowTasksTestCase):
+    def setUp(self):
+        self.create_registries()
+        celery.conf['CELERY_ALWAYS_EAGER'] = True
 
-class WorkflowDelayedTest(InvenioTestCase):
     def tearDown(self):
         """ Clean up created objects """
         from invenio.modules.workflows.utils import tearDown as mtearDown
-
         mtearDown(self)
+        self.cleanup_registries()
 
     def test_workflow_delay(self):
         from invenio.modules.workflows.models import BibWorkflowObject
@@ -135,7 +140,6 @@ class WorkflowDelayedTest(InvenioTestCase):
             celery_continue(test_object.id, "continue_next",
                             module_name="unit_tests"))
         from invenio.modules.workflows.engine import WorkflowStatus
-
 
         self.assertEqual(engine.status, WorkflowStatus.COMPLETED)
 

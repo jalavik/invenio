@@ -607,6 +607,7 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
                      (stylesheet,))
 
         try:
+            print obj.data
             obj.data = convert(obj.data, stylesheet)
         except Exception as e:
             msg = "Could not convert record: %s\n%s" % \
@@ -728,7 +729,11 @@ def fulltext_download(obj, eng):
                                                        master_format='marc',
                                                        namespace='recordext')
             try:
-                obj.data['fft'].append(new_dict_representation["fft"])
+                if isinstance(new_dict_representation["fft"], list):
+                    for element in new_dict_representation["fft"]:
+                        obj.data['fft'].append(element)
+                else:
+                    obj.data['fft'].append(new_dict_representation["fft"])
             except (KeyError, TypeError):
                 obj.data['fft'] = [new_dict_representation['fft']]
 
@@ -767,7 +772,6 @@ def quick_match_record(obj, eng):
         #get our persistent identifier safe easy way
 
         for key in function_dictionnary.keys():
-
             if key in obj.data:
                 temp_result = obj.data[key]
                 if isinstance(temp_result, dict):
@@ -785,7 +789,10 @@ def quick_match_record(obj, eng):
             recid = function_dictionnary[identifier](
                 identifiers[identifier])
             if recid:
-                obj.data['recid']['value'] = recid
+                if 'recid' not in obj.data:
+                    obj.data['recid'] = {'value': recid}
+                else:
+                    obj.data['recid']['value'] = recid
                 obj.extra_data["persistent_ids"]["recid"] = recid
                 return True
         return False
@@ -925,7 +932,12 @@ def plot_extract(plotextractor_types):
                                                 master_format='marc',
                                                 namespace='recordext')
                     try:
-                        obj.data['fft'].append(new_dict["fft"])
+                        if isinstance(new_dict["fft"], list):
+                            for element in new_dict["fft"]:
+                                obj.data['fft'].append(element)
+                        else:
+                            obj.data['fft'].append(new_dict["fft"])
+
                     except KeyError:
                         obj.data['fft'] = [new_dict['fft']]
                     obj.add_task_result("filesfft", new_dict["fft"])
@@ -1094,7 +1106,7 @@ def upload_step(obj, eng):
     #
     #Prepare in case of filtering the files to up,
     #no filtering, no other things to do
-
+    print(str(obj.data))
     marcxml_value = obj.data.legacy_export_as_marc()
     task_id = None
     # Get a random sequence ID that will allow for the tasks to be
@@ -1143,7 +1155,6 @@ def upload_step(obj, eng):
         eng.log.info(
             "material harvested from source %s was successfully uploaded" %
             (obj.extra_data["_repository"]["name"],))
-
     if cfg['CFG_INSPIRE_SITE']:
         # Launch BibIndex,Webcoll update task to show uploaded content quickly
         bibindex_params = ['-w', 'collection,reportnumber,global',
@@ -1154,6 +1165,7 @@ def upload_step(obj, eng):
         bibtask.task_low_level_submission("bibindex", "oaiharvest",
                                           *tuple(bibindex_params))
     eng.log.info("end of upload")
+
 
 
 def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
