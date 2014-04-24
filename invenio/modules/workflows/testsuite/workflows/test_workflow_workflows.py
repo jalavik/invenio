@@ -37,7 +37,6 @@ from invenio.modules.workflows.tasks.logic_tasks import (simple_for,
                                                          )
 from invenio.modules.workflows.tasks.marcxml_tasks import set_obj_extra_data_key
 
-
 class test_workflow_workflows(object):
     """
     Test workflow for unit-tests.

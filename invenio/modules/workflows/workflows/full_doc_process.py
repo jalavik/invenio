@@ -35,7 +35,6 @@ from ..tasks.logic_tasks import (workflow_if,
                                  )
 from invenio.config import CFG_PREFIX
 
-
 class full_doc_process(object):
     object_type = "record"
     workflow = [convert_record_with_repository("oaiarxiv2marcxml.xsl"),
@@ -47,8 +46,8 @@ class full_doc_process(object):
                     inspire_filter_custom(fields=["field"], custom_accepted=["*"],
                                           custom_refused=["gr-qc"],
                                           widget="approval_widget"),
-                    bibclassify(taxonomy=CFG_PREFIX + "/etc/bibclassify/HEP.rdf",
-                                output_mode="dict", match_mode="partial"),
+                    #bibclassify(taxonomy=CFG_PREFIX + "/etc/bibclassify/HEP.rdf",
+                    #            output_mode="dict", match_mode="partial"),
                     refextract,
                     author_list,
                     upload_step,

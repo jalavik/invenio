@@ -18,13 +18,23 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
-from invenio.testsuite import (InvenioTestCase,
-                               make_test_suite,
+from invenio.testsuite import (make_test_suite,
                                run_test_suite,
                                )
 
+from ...workflows.testsuite.test_workflows import WorkflowTasksTestCase
 
-class WorkflowMarcXML(InvenioTestCase):
+class WorkflowMarcXML(WorkflowTasksTestCase):
+
+    def setUp(self):
+        self.create_registries()
+
+    def tearDown(self):
+        """ Clean up created objects """
+        from invenio.modules.workflows.utils import tearDown as mtearDown
+        mtearDown(self)
+        self.cleanup_registries()
+
     def test_filtering(self):
         from ..tasks.marcxml_tasks import filtering_oai_pmh_identifier
         from invenio.modules.workflows.api import start
@@ -62,21 +72,6 @@ class WorkflowMarcXML(InvenioTestCase):
         engine.extra_data = engine.get_extra_data()
         self.assertEqual(filtering_oai_pmh_identifier(my_test_obj, engine),
                          False)
-
-    def test_bibfield_conversion(self):
-        from ..tasks.marcxml_tasks import convert_record_to_bibfield
-        from invenio.modules.workflows.api import start
-        from invenio.modules.workflows.models import BibWorkflowObject
-        expected_result = {}
-        my_test_obj = BibWorkflowObject()
-        my_test_obj.set_data([2])
-        my_test_obj.save()
-        engine = start("test_workflow_dummy", my_test_obj)
-        my_test_obj.data = my_test_obj.get_data()
-        engine.extra_data = engine.get_extra_data()
-        my_test_obj.extra_data = my_test_obj.get_extra_data()
-        convert_record_to_bibfield(my_test_obj, engine)
-        self.assertEqual(expected_result, my_test_obj.data)
 
     def test_init_harvesting(self):
         from ..tasks.marcxml_tasks import init_harvesting

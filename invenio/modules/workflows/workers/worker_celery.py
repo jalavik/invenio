@@ -14,13 +14,17 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+from flask_registry import ImportPathRegistry
 
 from six import iteritems
 
 from invenio.celery import celery
 
 from invenio.base.helpers import with_app_context
-from invenio.modules.workflows.worker_result import AsynchronousResultWrapper, uui_to_workflow
+from invenio.modules.workflows.worker_result import (AsynchronousResultWrapper,
+                                                     uui_to_workflow,
+                                                     )
+
 from invenio.modules.workflows.utils import session_manager
 
 
@@ -54,7 +58,6 @@ def celery_restart(wid, **kwargs):
     Restarts the workflow with Celery
     """
     from ..worker_engine import restart_worker
-
     result = restart_worker(wid, **kwargs).uuid
     return result
 
@@ -66,7 +69,6 @@ def celery_continue(oid, restart_point, **kwargs):
     Restarts the workflow with Celery
     """
     from ..worker_engine import continue_worker
-
     return continue_worker(oid, restart_point, **kwargs).uuid
 
 

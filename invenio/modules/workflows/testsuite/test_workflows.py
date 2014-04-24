@@ -54,7 +54,6 @@ class WorkflowViewTest(InvenioTestCase):
         # FIXME: tmp 401 due to missing file
         self.assert401(response)
 
-
 class WorkflowTasksTestCase(InvenioTestCase):
     def create_registries(self):
         self.app.extensions['registry']['workflows.tests'] = \
@@ -78,7 +77,6 @@ class WorkflowTasksTestAPI(WorkflowTasksTestCase):
     """ Test basic workflow API """
     def setUp(self):
         self.create_registries()
-
         self.test_data = {}
         self.id_workflows = []
         self.recxml = """<?xml version="1.0" encoding="UTF-8"?>

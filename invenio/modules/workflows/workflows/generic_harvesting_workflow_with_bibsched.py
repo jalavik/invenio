@@ -44,7 +44,6 @@ from ..tasks.logic_tasks import (foreach,
 
 from invenio.legacy.bibsched.bibtask import task_update_progress, write_message
 
-
 class generic_harvesting_workflow_with_bibsched(object):
     repository = 'arXivb'
     workflow = [
