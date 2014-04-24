@@ -63,9 +63,10 @@ def produce(self, fields=None):
                             except:
                                 try:
                                     tmp_dict[marc_tag] = try_to_eval(subfield,
-                                        functions(
-                                            self.additional_info.namespace),
-                                        value=value, self=self)
+                                                                     functions(
+                                                                         self.additional_info.namespace),
+                                                                     value=value,
+                                                                     self=self)
                                 except ImportError:
                                     pass
                                 except Exception as e:

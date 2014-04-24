@@ -30,7 +30,6 @@ import re
 from flask import has_app_context, current_app
 from werkzeug.utils import import_string, find_modules
 from functools import partial
-from itertools import chain
 
 
 def register_extensions(app):
@@ -170,20 +169,25 @@ def try_to_eval(string, context={}, **general_context):
     res = None
     imports = []
     general_context.update(context)
+    simple = False
 
-    while (True):
+    while True:
         try:
             res = eval(string, globals().update(general_context), locals())  # kwalitee: disable=eval
         except NameError as err:
             #Try first to import using werkzeug import_string
             try:
                 from werkzeug.utils import import_string
-                part = string.split('.')[0]
-                import_string(part)
-                for i in string.split('.')[1:]:
-                    part += '.' + i
+                if "." in string:
+
+                    part = string.split('.')[0]
                     import_string(part)
-                continue
+                    for i in string.split('.')[1:]:
+                        part += '.' + i
+                        import_string(part)
+                    continue
+                else:
+                    simple = True
             except:
                 pass
 
@@ -195,5 +199,16 @@ def try_to_eval(string, context={}, **general_context):
                     globals()[import_name] = __import__(import_name)
                     imports.append(import_name)
                 continue
+            elif simple:
+                import_name = str(err).split("'")[0]
+                if import_name in context:
+                    globals()[import_name] = context[import_name]
+                else:
+                    globals()[import_name] = __import__(import_name)
+                    imports.append(import_name)
+                continue
+
             raise ImportError("Can't import the needed module to evaluate %s" (string, ))
+        if isinstance(res, type(os)):
+            raise ImportError
         return res
