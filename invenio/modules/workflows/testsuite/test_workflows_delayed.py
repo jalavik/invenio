@@ -47,11 +47,11 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
         test_objectb = BibWorkflowObject()
         test_objectb.set_data(20)
         test_objectb.save()
-        from invenio.modules.workflows.worker_result import uui_to_workflow
+        from invenio.modules.workflows.worker_result import uuid_to_workflow
 
         asyncr = start_delayed('test_workflow', [test_objectb],
                                module_name="unit_tests")
-        engineb = asyncr.get(uui_to_workflow)
+        engineb = asyncr.get(uuid_to_workflow)
 
         self.assertEqual(test_objectb.get_data(), 38)
 
@@ -63,7 +63,7 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
         test_objecte.save()
         asyncr = start_delayed('test_workflow', [test_objecte],
                                module_name="unit_tests")
-        engineb = asyncr.get(uui_to_workflow)
+        engineb = asyncr.get(uuid_to_workflow)
         while engineb.status != WorkflowStatus.COMPLETED:
             asyncr = continue_oid_delayed(test_objecte.id)
             engineb = asyncr.get()
@@ -117,9 +117,9 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
         test_object = BibWorkflowObject()
         test_object.save()
         test_object.set_data(0)
-        from invenio.modules.workflows.worker_result import uui_to_workflow
+        from invenio.modules.workflows.worker_result import uuid_to_workflow
 
-        engine = uui_to_workflow(
+        engine = uuid_to_workflow(
             celery_run('test_workflow_logic', [test_object],
                        module_name="unit_tests"))
         self.assertEqual(test_object.get_data(), 5)
@@ -136,7 +136,7 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
         celery_continue(test_object.id, "continue_next")
         self.assertEqual(test_object.get_data(), 15)
         self.assertEqual(test_object.get_extra_data()["test"], "gte9")
-        engine = uui_to_workflow(
+        engine = uuid_to_workflow(
             celery_continue(test_object.id, "continue_next",
                             module_name="unit_tests"))
         from invenio.modules.workflows.engine import WorkflowStatus

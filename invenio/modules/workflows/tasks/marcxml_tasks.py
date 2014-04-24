@@ -65,9 +65,6 @@ def add_metadata_to_extra_data(obj, eng):
         record_get_field_value(record[0], '035', code='9')
 
 
-add_metadata_to_extra_data.__title__ = "Metadata Extraction"
-
-
 def approve_record(obj, eng):
     """
     Will add the approval widget to the record.
@@ -78,10 +75,6 @@ def approve_record(obj, eng):
     """
     eng.halt(widget="approval_widget",
              msg='Record needs approval')
-
-
-approve_record.__title__ = "Record Approval"
-approve_record.__description__ = "This task assigns the approval widget to a record."
 
 
 def filtering_oai_pmh_identifier(obj, eng):
@@ -317,7 +310,6 @@ def inspire_filter_category(category_accepted_param=(),
                 eng.halt(
                     "Category filtering needs human intervention, rules are incoherent !!!",
                     widget=widget)
-
     return _inspire_filter_category
 
 
@@ -329,10 +321,12 @@ def convert_record_to_bibfield(obj, eng):
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
     """
+    print(str(obj.data))
     obj.extra_data[
         "last_task_name"] = "last task name: convert_record_to_bibfield"
     obj.data = Reader.translate(obj.data, SmartJson, master_format='marc',
                                 namespace='recordext')
+    print(str(obj.data))
     eng.log.info("Field conversion succeeded")
 
 
@@ -457,9 +451,6 @@ def harvest_records(obj, eng):
     eng.log.info(
         "%d files harvested and processed \n End harvest records task" % (
             len(harvested_files_list),))
-
-
-harvest_records.__id__ = "h"
 
 
 def get_records_from_file(path=None):
@@ -607,7 +598,6 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
                      (stylesheet,))
 
         try:
-            print obj.data
             obj.data = convert(obj.data, stylesheet)
         except Exception as e:
             msg = "Could not convert record: %s\n%s" % \
@@ -773,6 +763,7 @@ def quick_match_record(obj, eng):
 
         for key in function_dictionnary.keys():
             if key in obj.data:
+                print(str(key) + "   " + str(obj.data[key]))
                 temp_result = obj.data[key]
                 if isinstance(temp_result, dict):
                     temp_result = temp_result["value"]
@@ -788,6 +779,7 @@ def quick_match_record(obj, eng):
         for identifier in identifiers:
             recid = function_dictionnary[identifier](
                 identifiers[identifier])
+            print(str(recid))
             if recid:
                 if 'recid' not in obj.data:
                     obj.data['recid'] = {'value': recid}
@@ -814,13 +806,7 @@ def upload_record(mode="ir"):
         task_id = bibtask.task_low_level_submission("bibupload", "bibworkflow",
                                                     *tuple(params))
         eng.log_info("Submitted task #%s" % (task_id,))
-
-    _upload_record.__title__ = "Upload Record"
-    _upload_record.__description__ = "Uploads the record using BibUpload"
     return _upload_record
-
-
-upload_record.__id__ = "u"
 
 
 def plot_extract(plotextractor_types):
@@ -842,7 +828,8 @@ def plot_extract(plotextractor_types):
         """
         Performs the plotextraction step.
         """
-        # Download tarball for each harvested/converted record, then run plotextrator.
+        # Download tarball for each harvested/converted record,
+        # then run plotextrator.
         # Update converted xml files with generated xml or add it for upload
         bibtask.task_sleep_now_if_required()
         if "_result" not in obj.extra_data:
@@ -861,8 +848,6 @@ def plot_extract(plotextractor_types):
         if 'latex' in p_extraction_source:
             # Run LaTeX plotextractor
             if "tarball" not in obj.extra_data["_result"]:
-                # turn oaiharvest_23_1_20110214161632_converted -> oaiharvest_23_1_material
-                # to let harvested material in same folder structure
                 extract_path = plotextractor_getter.make_single_directory(
                     cfg['CFG_TMPSHAREDDIR'], eng.uuid)
                 tarball, pdf = plotextractor_getter.harvest_single(
@@ -913,7 +898,8 @@ def plot_extract(plotextractor_types):
                         cleaned_image_data = prepare_image_data(
                             partly_extracted_image_data,
                             tex_file, converted_image_list)
-                        # Using prev. extracted info, get contexts for each image found
+                        # Using prev. extracted info, get contexts for each
+                        # image found
                         extracted_image_data.extend(
                             (extract_context(tex_file, cleaned_image_data)))
 
@@ -925,7 +911,8 @@ def plot_extract(plotextractor_types):
                 marc_xml += "\n</collection>"
 
                 if marc_xml:
-                    # We store the path to the directory  the tarball contents live
+                    # We store the path to the directory  the tarball
+                    # contents live
                     # Read and grab MARCXML from plotextractor run
                     new_dict = Reader.translate(marc_xml,
                                                 SmartJson,
@@ -1007,7 +994,8 @@ def refextract(obj, eng):
 
 def author_list(obj, eng):
     """
-    Performs the special authorlist extraction step (Mostly INSPIRE/CERN related).
+    Performs the special authorlist extraction step
+    (Mostly INSPIRE/CERN related).
 
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
@@ -1089,9 +1077,6 @@ def author_list(obj, eng):
                                 new_dict_representation["number_of_authors"])
 
 
-author_list.__id__ = "u"
-
-
 def upload_step(obj, eng):
     """
     Perform the upload step.
@@ -1106,7 +1091,6 @@ def upload_step(obj, eng):
     #
     #Prepare in case of filtering the files to up,
     #no filtering, no other things to do
-    print(str(obj.data))
     marcxml_value = obj.data.legacy_export_as_marc()
     task_id = None
     # Get a random sequence ID that will allow for the tasks to be
@@ -1165,7 +1149,6 @@ def upload_step(obj, eng):
         bibtask.task_low_level_submission("bibindex", "oaiharvest",
                                           *tuple(bibindex_params))
     eng.log.info("end of upload")
-
 
 
 def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,

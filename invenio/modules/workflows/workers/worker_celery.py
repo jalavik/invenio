@@ -22,7 +22,7 @@ from invenio.celery import celery
 
 from invenio.base.helpers import with_app_context
 from invenio.modules.workflows.worker_result import (AsynchronousResultWrapper,
-                                                     uui_to_workflow,
+                                                     uuid_to_workflow,
                                                      )
 
 from invenio.modules.workflows.utils import session_manager
@@ -127,6 +127,6 @@ class CeleryResult(AsynchronousResultWrapper):
     @session_manager
     def get(self, postprocess=None):
         if postprocess is None:
-            return uui_to_workflow(self.asyncresult.get())
+            return uuid_to_workflow(self.asyncresult.get())
         else:
             return postprocess(self.asyncresult.get())
