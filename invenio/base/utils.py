@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ## This file is part of Invenio.
-## Copyright (C) 2011, 2012, 2013 CERN.
+## Copyright (C) 2011, 2012, 2013, 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -171,7 +171,7 @@ def try_to_eval(string, context={}, **general_context):
     imports = []
     general_context.update(context)
 
-    while (True):
+    while True:
         try:
             res = eval(string, globals().update(general_context), locals())  # kwalitee: disable=eval
         except NameError as err:
@@ -188,7 +188,7 @@ def try_to_eval(string, context={}, **general_context):
                 pass
 
             import_name = str(err).split("'")[1]
-            if not import_name in imports:
+            if import_name not in imports:
                 if import_name in context:
                     globals()[import_name] = context[import_name]
                 else:

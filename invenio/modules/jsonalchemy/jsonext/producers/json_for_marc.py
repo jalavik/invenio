@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##
 ## This file is part of Invenio.
-## Copyright (C) 2013 CERN.
+## Copyright (C) 2013, 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@ def produce(self, fields=None):
     """
     Export the json in marc format.
 
-    @param tags: list of tags to include in the output, if None or
+    :param fields: list of fields to include in the output, if None or
                 empty list all available tags will be included.
     """
     from invenio.base.utils import try_to_eval
@@ -49,9 +49,11 @@ def produce(self, fields=None):
                 for rule in get_producer_rules(json_id, 'json_for_marc',
                                                'recordext'):
                     marc_tags = rule[0] if isinstance(rule[0], tuple) \
-                                        else (rule[0], )
-                    if marc_tags and not any([tag in marc_tags \
-                            for tag in self.meta_metadata[field]['function']]):
+                        else (rule[0], )
+                    if marc_tags and not any([tag in marc_tags
+                                              for tag in
+                                              self.meta_metadata[field][
+                                                  'function']]):
                         continue
                     tmp_dict = dict()
                     for marc_tag, subfield in iteritems(rule[1]):
