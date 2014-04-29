@@ -17,22 +17,21 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# OAI Harvest daemon - harvest records from OAI repositories.
-#
-# If started via CLI with --verb parameters, starts a manual single-shot
-# harvesting. Otherwise starts a BibSched task for periodical harvesting
-# of repositories defined in the OAI Harvest admin interface
+"""
+OAI Harvest daemon - harvest records from OAI repositories.
+
+If started via CLI with --verb parameters, starts a manual single-shot
+harvesting. Otherwise starts a BibSched task for periodical harvesting
+of repositories defined in the OAI Harvest admin interface
+"""
 
 from __future__ import print_function
-
-
-__revision__ = "$Id$"
 
 import sys
 import getopt
 import getpass
 import time
-import six.moves.urllib
+from six.moves import urllib
 
 from sqlalchemy import orm
 from invenio.config import (CFG_OAI_FAILED_HARVESTING_STOP_QUEUE,
