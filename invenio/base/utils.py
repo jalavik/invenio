@@ -128,7 +128,6 @@ def try_to_eval(string, context={}, **general_context):
                     simple = True
             except:
                 pass
-
             import_name = str(err).split("'")[1]
             if import_name not in imports:
                 if import_name in context:
