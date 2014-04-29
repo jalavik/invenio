@@ -19,10 +19,10 @@
 
 import os
 import tempfile
-from six.moves import cPickle
-from invenio.modules.workflows.utils import session_manager
 import base64
 import logging
+
+from six.moves import cPickle
 from six import (string_types,
                  iteritems,
                  )
@@ -35,6 +35,7 @@ from invenio.base.globals import cfg
 
 from .utils import (redis_create_search_entry,
                     WorkflowsTaskResult,
+                    session_manager,
                     )
 from .logger import (get_logger,
                      BibWorkflowLogHandler,
@@ -90,9 +91,6 @@ class Workflow(db.Model):
     counter_error = db.Column(db.Integer, default=0, nullable=False)
     counter_finished = db.Column(db.Integer, default=0, nullable=False)
     module_name = db.Column(db.String(64), nullable=False)
-
-
-
 
     def __repr__(self):
         return "<Workflow(name: %s, module: %s, cre: %s, mod: %s," \
@@ -339,8 +337,6 @@ class BibWorkflowObject(db.Model):
         else:
             self.extra_data["_tasks_results"][task_name] = [res_obj]
 
-
-
     def add_widget(self, widget, message):
         """
         Assign a widget to this object for an action to be taken
@@ -507,9 +503,11 @@ class BibWorkflowObject(db.Model):
                     except Exception:
                         # Some other parsing error
                         pass
-                        # Just return raw string
+
+            # Just return raw string
             return data
-            # Not any of the above types. How juicy!
+
+        # Not any of the above types. How juicy!
         return data
 
     @session_manager

@@ -68,11 +68,10 @@ var WORKFLOWS_HOLDINGPEN = (function ( $ ){
                     "sAlign": "left",
                     "iOverlayFade": 1
                 },
-                "aoColumnDefs":[{'bSearchable': false, 'bVisible': false, 'aTargets': [0]},
-                                {'bSortable': false, 'aTargets': [1]},
+                "aoColumnDefs":[{'bSortable': false, 'aTargets': [1]},
+                                {'bSearchable': false, 'bVisible': false, 'aTargets': [0]},
                                 {'sWidth': "25%", 'aTargets': [2]},
-                                {'sWidth': "15%", 'aTargets': [4]}
-                                ],
+                                {'sWidth': "15%", 'aTargets': [4]}],
                 "fnRowCallback": function ( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                     var id = aData[0];
                     datatable.rememberSelected(nRow, id);

@@ -79,28 +79,31 @@ def approve_record(obj, eng):
 
 def filtering_oai_pmh_identifier(obj, eng):
     """
+    Get the OAI-PMH identifier in the OAI request.
+
     :param obj: BibworkflowObject being processed
     :param eng: BibWorkflowEngine processing the object
     """
-    if "_function_reserved_filtering_oai_pmh_identifier" not in eng.extra_data:
-        eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"] = {}
-    if "identifiers" not in eng.extra_data[
-        "_function_reserved_filtering_oai_pmh_identifier"]:
-        eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"][
-            "identifiers"] = []
+    if "oaiharvest" not in eng.extra_data:
+        eng.extra_data["oaiharvest"] = {}
+    if "identifiers" not in eng.extra_data["oaiharvest"]:
+        eng.extra_data["oaiharvest"]["identifiers"] = []
+
     if not isinstance(obj.data, list):
         obj_data_list = [obj.data]
     else:
         obj_data_list = obj.data
     for record in obj_data_list:
-        substring = record[record.index("<identifier>") + 12:record.index(
-            "</identifier>")]
-        if substring in eng.extra_data[
-            "_function_reserved_filtering_oai_pmh_identifier"]["identifiers"]:
+        delimiter_start = "<identifier>"
+        delimiter_end = "</identifier>"
+        identifier = record[
+            record.index(delimiter_start) +
+            len(delimiter_start):record.index(delimiter_end)
+        ]
+        if identifier in eng.extra_data["oaiharvest"]["identifiers"]:
             return False
         else:
-            eng.extra_data["_function_reserved_filtering_oai_pmh_identifier"][
-                "identifiers"].append(substring)
+            eng.extra_data["oaiharvest"]["identifiers"].append(identifier)
             return True
 
 
@@ -315,18 +318,14 @@ def inspire_filter_category(category_accepted_param=(),
 
 def convert_record_to_bibfield(obj, eng):
     """
-    Convert a record in data log.errorinto a 'dictionary'
+    Convert a record in data log.error into a 'dictionary'
     thanks to BibField
 
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
     """
-    print(str(obj.data))
-    obj.extra_data[
-        "last_task_name"] = "last task name: convert_record_to_bibfield"
     obj.data = Reader.translate(obj.data, SmartJson, master_format='marc',
                                 namespace='recordext')
-    print(str(obj.data))
     eng.log.info("Field conversion succeeded")
 
 
@@ -335,7 +334,6 @@ def init_harvesting(obj, eng):
     This function gets all the option linked to the task and stores them into the
     object to be used later.
 
-
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
 
@@ -343,8 +341,7 @@ def init_harvesting(obj, eng):
     try:
         obj.extra_data["options"] = eng.extra_data["options"]
     except KeyError:
-        eng.log.error("Non Critical Error: No options",
-                      "No options for this task have been found. It is possible"
+        eng.log.error("No options for this task have been found. It is possible"
                       "that the following task could failed or work not as expected")
         obj.extra_data["options"] = {}
     eng.log.info("end of init_harvesting")
@@ -369,9 +366,7 @@ def get_repositories_list(repositories=()):
                     reposlist_temp.append(
                         OaiHARVEST.get(OaiHARVEST.name == reposname).one())
                 except (MultipleResultsFound, NoResultFound):
-                    eng.log.error(
-                        "CRITICAL: repository %s doesn't exit into our database",
-                        reposname)
+                    eng.log.critical("Repository %s doesn't exit into our database", reposname)
         else:
             reposlist_temp = OaiHARVEST.get(OaiHARVEST.name != "").all()
         true_repo_list = []
@@ -381,8 +376,8 @@ def get_repositories_list(repositories=()):
         if true_repo_list:
             return true_repo_list
         else:
-            eng.halt(
-                "No Repository named %s. Impossible to harvest non-existing things." % repositories_to_harvest)
+            eng.halt("No Repository named %s. Impossible to harvest non-existing things."
+                     % repositories_to_harvest)
 
     return _get_repositories_list
 
@@ -763,7 +758,6 @@ def quick_match_record(obj, eng):
 
         for key in function_dictionnary.keys():
             if key in obj.data:
-                print(str(key) + "   " + str(obj.data[key]))
                 temp_result = obj.data[key]
                 if isinstance(temp_result, dict):
                     temp_result = temp_result["value"]

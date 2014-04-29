@@ -18,9 +18,11 @@
 
 """ Implements a workflow for testing """
 
-from ...tasks.sample_tasks import (add_data,
-                                   halt_if_data_less_than,
-                                   reduce_data_by_one)
+from invenio.modules.workflows.tasks.sample_tasks import (
+    add_data,
+    halt_if_data_less_than,
+    reduce_data_by_one
+)
 
 
 class test_workflow(object):

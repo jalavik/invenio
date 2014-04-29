@@ -156,6 +156,7 @@ def task_run_core():
         write_message("Execution time :" + str(execution_time))
     except WorkflowError as e:
         write_message("ERRORS HAPPENED")
+        write_message("____________Workflow log output____________")
         workflow_id_preservation = e.id_workflow
         workflowlog = BibWorkflowEngineLog.query.filter(
             BibWorkflowEngineLog.id_object == e.id_workflow
@@ -575,7 +576,6 @@ Automatic (periodical) harvesting mode:
                                   '  --workflow       specify the workflow to execute.\n'
                                   '  --create-ticket-in   Provide desired ticketing queue to create a ticket in it on upload and/or finished harvest.\n'
                                   '                       Requires a configured ticketing system (BibCatalog).\n',
-              version=__revision__,
               specific_params=(
                   "r:i:d:W",
                   ["repository=", "identifier=", "dates=", "workflow=",

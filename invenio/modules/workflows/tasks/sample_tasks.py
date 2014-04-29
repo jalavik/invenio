@@ -35,20 +35,22 @@ def add_data(data_param):
 
 
 def generate_error(obj, eng):
-    foo = 1
-    bar = foo + 1
+    """ Generate a ZeroDevisionError """
     call_a()
 
 
 def call_a():
+    """ Used in order to test deep stack trace output """
     call_b()
 
 
 def call_b():
+    """ Used in order to test deep stack trace output """
     call_c()
 
 
 def call_c():
+    """ Used in order to test deep stack trace output """
     raise ZeroDivisionError
 
 
@@ -131,8 +133,10 @@ def subtract(value):
 
     return _subtract
 
+
 def halt_whatever(obj, eng):
     eng.halt("halt!", None)
+
 
 def task_reduce_and_halt(obj, eng):
     eng.log.info("value" + str(obj.data))

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##
 ## This file is part of Invenio.
-## Copyright (C) 2013 CERN.
+## Copyright (C) 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -21,8 +21,8 @@
 from invenio.testsuite import (make_test_suite,
                                run_test_suite,
                                )
+from .test_workflows import WorkflowTasksTestCase
 
-from invenio.modules.workflows.testsuite.test_workflows import WorkflowTasksTestCase
 
 class WorkflowOthers(WorkflowTasksTestCase):
     def setUp(self):
@@ -30,8 +30,8 @@ class WorkflowOthers(WorkflowTasksTestCase):
 
     def tearDown(self):
         """ Clean up created objects """
-        from invenio.modules.workflows.utils import tearDown as mtearDown
-        mtearDown(self)
+        from invenio.modules.workflows.utils import test_teardown
+        test_teardown(self)
         self.cleanup_registries()
 
     def test_result_abstraction(self):

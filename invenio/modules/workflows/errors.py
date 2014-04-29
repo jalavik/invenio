@@ -55,12 +55,12 @@ class WorkflowError(Exception):
 
     def __init__(self, message, id_workflow, id_object, payload=[]):
         if isinstance(message, unicode):
-            message = message.encode('ascii','ignore')
+            message = message.encode('utf-8', 'ignore')
         self.message = message
         self.id_workflow = id_workflow
         self.id_object = id_object
         self.payload = payload
-        #Needed for passing an exception through message queue
+        # Needed for passing an exception through message queue
         Exception.__init__(self, message, message, id_object, payload)
 
     def to_dict(self):
@@ -88,7 +88,7 @@ class WorkflowDefinitionError(Exception):
     def __init__(self, message, workflow_name, **kwargs):
         Exception.__init__(self)
         if isinstance(message, unicode):
-            message = message.encode('ascii','ignore')
+            message = message.encode('utf-8', 'ignore')
         self.message = message
         self.workflow_name = workflow_name
         self.payload = kwargs

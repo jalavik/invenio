@@ -347,7 +347,6 @@ class SmartJson(SmartDict):
         export = '<record>'
         marc_dicts = self.produce('json_for_marc')
         for marc_dict in marc_dicts:
-            print marc_dict
             content = ''
             tag = ''
             ind1 = ''

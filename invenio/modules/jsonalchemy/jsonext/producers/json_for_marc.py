@@ -28,6 +28,7 @@ def produce(self, fields=None):
                 empty list all available tags will be included.
     """
     from invenio.base.utils import try_to_eval
+
     from invenio.modules.jsonalchemy.parser import get_producer_rules
     from invenio.modules.jsonalchemy.registry import functions
 
@@ -47,7 +48,6 @@ def produce(self, fields=None):
             try:
                 for rule in get_producer_rules(json_id, 'json_for_marc',
                                                'recordext'):
-
                     marc_tags = rule[0] if isinstance(rule[0], tuple) \
                                         else (rule[0], )
                     if marc_tags and not any([tag in marc_tags \
@@ -62,12 +62,10 @@ def produce(self, fields=None):
                                 tmp_dict[marc_tag] = value[subfield]
                             except:
                                 try:
-                                    if "(" in subfield or ")" in subfield:
-                                        tmp_dict[marc_tag] = try_to_eval(subfield,
-                                                                         functions(
-                                                                             self.additional_info.namespace),
-                                                                         value=value,
-                                                                         self=self)
+                                    tmp_dict[marc_tag] = try_to_eval(subfield,
+                                        functions(
+                                            self.additional_info.namespace),
+                                        value=value, self=self)
                                 except ImportError:
                                     pass
                                 except Exception as e:

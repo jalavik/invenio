@@ -50,7 +50,7 @@ class WorkerBackend(object):
         This cached property is the one which is returning the worker
         to use.
 
-        :return: the worker configurer into the configuration file.
+        :return: the worker configured into the configuration file.
         """
         try:
             return import_string('invenio.modules.workflows.workers.%s:%s' % (
@@ -88,7 +88,7 @@ def start(workflow_name, data, **kwargs):
     The workflow engine object generated is returned upon completion.
 
     :param workflow_name: the workflow name to run. Ex: "my_workflow"
-    :type workflow_name: str or String
+    :type workflow_name: str
 
     :param data: the workflow name to run. Ex: "my_workflow"
     :type data: list of objects/dicts
@@ -103,13 +103,13 @@ def start(workflow_name, data, **kwargs):
 def start_delayed(workflow_name, data, **kwargs):
     """
     Starts a *delayed* workflow by using one of the defined workers
-    available. For example, enqueueing the execution of the workflow in
+    available. For example, enqueue the execution of the workflow in
     a task queue such as Celery (http://celeryproject.org).
 
     Otherwise, see documentation of start().
 
     :param workflow_name: the workflow name to run. Ex: "my_workflow"
-    :type workflow_name:  String or str
+    :type workflow_name:  str
 
     :param data: the workflow name to run. Ex: "my_workflow"
     :type data: list of objects/dicts
@@ -130,7 +130,7 @@ def start_delayed(workflow_name, data, **kwargs):
                 data[i] = BibWorkflowObjectIdContainer(data[i]).to_dict()
     else:
         if isinstance(data, BibWorkflowObject):
-            data = BibWorkflowObjectIdContainer(data).to_dict()
+            data = [BibWorkflowObjectIdContainer(data).to_dict()]
 
     return WORKER().run_worker(workflow_name, data, **kwargs)
 
@@ -287,7 +287,6 @@ def continue_oid_delayed(oid, start_point="continue_next", **kwargs):
     :return: BibWorkflowEngine that ran the workflow
     """
     return WORKER().continue_worker(oid, start_point, **kwargs)
-
 
 
 def resume_objects_in_workflow(id_workflow, start_point="continue_next",

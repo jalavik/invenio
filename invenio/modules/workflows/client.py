@@ -17,11 +17,11 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 import traceback
-from invenio.modules.workflows.errors import (WorkflowHalt,
-                                              WorkflowError,
-                                              )
-from invenio.modules.workflows.models import ObjectVersion
-from invenio.modules.workflows.engine import WorkflowStatus
+from .errors import (WorkflowHalt,
+                     WorkflowError,
+                     )
+from .models import ObjectVersion
+from .engine import WorkflowStatus
 
 
 def run_workflow(wfe, data, stop_on_halt=False,
@@ -89,16 +89,18 @@ def run_workflow(wfe, data, stop_on_halt=False,
             wfe._objects[wfe.getCurrObjId()].save(
                 ObjectVersion.HALTED,
                 wfe.getCurrTaskId(),
-                id_workflow=wfe.uuid)
+                id_workflow=wfe.uuid
+            )
             wfe.save(status=WorkflowStatus.ERROR)
             wfe.setPosition(wfe.getCurrObjId() + 1, [0, 0])
             if stop_on_error:
                 if isinstance(exception_triggered, WorkflowError):
                     raise exception_triggered
                 else:
-                    raise WorkflowError(message=msg,
-                                        id_workflow=wfe.uuid,
-                                        id_object=wfe.getCurrObjId(),
+                    raise WorkflowError(
+                        message=msg,
+                        id_workflow=wfe.uuid,
+                        id_object=wfe.getCurrObjId(),
                     )
 
 
@@ -131,7 +133,8 @@ def continue_execution(wfe, workflow_object, restart_point="restart_task",
         pos[-1] -= task_offset
     elif restart_point == "continue_next":
         pos[-1] += task_offset
-        # Set (object index, position index) in the workflow. Only one object so
+
+    # Set (object index, position index) in the workflow. Only one object so
     # object selection is 0. Position is the index of the task to run.
 
     wfe.setPosition(0, pos)

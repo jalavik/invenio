@@ -163,9 +163,6 @@ def wait_for_workflows_to_complete(obj, eng):
     :param obj: BibworkflowObject being process
     :param eng: BibWorkflowEngine processing the object
     """
-    from invenio.modules.workflows.models import BibWorkflowEngineLog
-    from invenio.modules.workflows.errors import WorkflowError
-
     if '_workflow_ids' in eng.extra_data:
         for workflow_id in eng.extra_data['_workflow_ids']:
             workflow_result_management(workflow_id, eng)
@@ -184,9 +181,6 @@ def wait_for_a_workflow_to_complete_obj(obj, eng):
     :param obj: BibworkflowObject to process
     :param eng: BibWorkflowEngine processing the object
     """
-    from invenio.modules.workflows.models import BibWorkflowEngineLog
-    from invenio.modules.workflows.errors import WorkflowError
-
     if not obj.data:
         eng.extra_data["_nb_workflow"] = 0
         eng.extra_data["_nb_workflow_failed"] = 0
@@ -240,14 +234,15 @@ def wait_for_a_workflow_to_complete(scanning_time=0.5):
 
 def workflow_result_management(async_result, eng):
     """
-    This function is here mainly to factorize the code .
+    This function is here mainly to factorize the code.
 
     :param async_result: asynchronous result that we want to query to
     get data.
-    :param eng: workflowenginne for loging and state change.
+    :param eng: workflow engine for logging and state change.
     """
+    from invenio.modules.workflows.worker_result import uuid_to_workflow
     try:
-        engine = async_result.get()
+        engine = async_result.get(uuid_to_workflow)
         eng.extra_data["_nb_workflow_finish"] += 1
         eng.extra_data["_uuid_workflow_succeed"].append(engine.uuid)
     except WorkflowError as e:
@@ -269,12 +264,13 @@ def workflow_result_management(async_result, eng):
         eng.extra_data["_nb_workflow_failed"] += 1
         eng.extra_data["_nb_workflow_finish"] += 1
 
-def write_something_generic(messagea, func):
+
+def write_something_generic(message, func):
     """
     This function allows you to write a message where you want.
-    This function support the multicasting.
+    This function support the multi-casting.
 
-    Messagea is a string or a list of string  and function that will be concatenate
+    Message is a string or a list of string  and function that will be concatenate
     in one and only string.
 
     Func is the list of the functions that will be used to send the message. The function
@@ -282,40 +278,40 @@ def write_something_generic(messagea, func):
 
     :param func: the list of function that will be used to propagate the message
     :type func: list of functions or a functions.
-    :param messagea: the message that you want to propagate
-    :type messagea: list of strings and functions.
+    :param message: the message that you want to propagate
+    :type message: list of strings and functions.
     """
 
     def _write_something_generic(obj, eng):
-        if isinstance(messagea, six.string_types):
+        if isinstance(message, six.string_types):
             if isinstance(func, list):
                 for function in func:
-                    function(messagea)
+                    function(message)
             else:
-                func(messagea)
+                func(message)
             return None
 
-        if not isinstance(messagea, list):
-            if callable(messagea):
-                func_messagea = messagea
-                while callable(func_messagea):
-                    func_messagea = func_messagea(obj, eng)
+        if not isinstance(message, list):
+            if callable(message):
+                func_message = message
+                while callable(func_message):
+                    func_message = func_message(obj, eng)
                 if isinstance(func, list):
                     for function in func:
-                        function(func_messagea)
+                        function(func_message)
                 else:
-                    func(func_messagea)
+                    func(func_message)
             return None
 
-        if len(messagea) > 0:
+        if len(message) > 0:
             temp = ""
-            for func_messagea in messagea:
-                if callable(func_messagea):
-                    while callable(func_messagea):
-                        func_messagea = func_messagea(obj, eng)
-                    temp += str(func_messagea)
-                elif isinstance(func_messagea, six.string_types):
-                    temp += func_messagea
+            for func_message in message:
+                if callable(func_message):
+                    while callable(func_message):
+                        func_message = func_message(obj, eng)
+                    temp += str(func_message)
+                elif isinstance(func_message, six.string_types):
+                    temp += func_message
             if isinstance(func, list):
                 for function in func:
                     function(temp)
@@ -404,15 +400,15 @@ def log_info(message):
     the function write_something_generic.
 
     :param message: this value represent what we want to log,
-    if meessage is a function then it will be executed.
+    if message is a function then it will be executed.
     :type message: str or function
     :return:
     """
 
     def _log_info(obj, eng):
-        messagea = message
-        while six.callable(messagea):
-            messagea = messagea(obj, eng)
-        eng.log.info(messagea)
+        message_buffer = message
+        while six.callable(message_buffer):
+            message_buffer = message_buffer(obj, eng)
+        eng.log.info(message_buffer)
 
     return _log_info
