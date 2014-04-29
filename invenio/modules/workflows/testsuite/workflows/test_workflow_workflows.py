@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ## This file is part of Invenio.
-## Copyright (C) 2012, 2013 CERN.
+## Copyright (C) 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -36,6 +36,7 @@ from invenio.modules.workflows.tasks.logic_tasks import (simple_for,
                                                          workflow_else,
                                                          )
 from invenio.modules.workflows.tasks.marcxml_tasks import set_obj_extra_data_key
+
 
 class test_workflow_workflows(object):
     """

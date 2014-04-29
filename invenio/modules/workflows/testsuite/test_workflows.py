@@ -28,8 +28,6 @@ import logging
 from ..registry import WorkflowsRegistry
 from flask.ext.registry import ImportPathRegistry
 from invenio.testsuite import InvenioTestCase, make_test_suite, run_test_suite
-from flask.ext.registry import (RegistryProxy,
-                                ImportPathRegistry)
 
 TEST_PACKAGES = [
     'invenio.modules.*',
@@ -53,6 +51,7 @@ class WorkflowViewTest(InvenioTestCase):
         response = self.client.get(url_for('workflows.show_workflows'))
         # FIXME: tmp 401 due to missing file
         self.assert401(response)
+
 
 class WorkflowTasksTestCase(InvenioTestCase):
     def create_registries(self):
@@ -116,8 +115,8 @@ distances from it.
 
     def tearDown(self):
         """ Clean up created objects """
-        from invenio.modules.workflows.utils import tearDown as mtearDown
-        mtearDown(self)
+        from invenio.modules.workflows.utils import test_teardown
+        test_teardown(self)
         self.cleanup_registries()
 
     def test_halt(self):
@@ -142,7 +141,6 @@ distances from it.
         self.assertEqual(eng.status, WorkflowStatus.HALTED)
         self.assertEqual(BibWorkflowObjectLog.get(
             id_object=obj.id, log_type=logging.ERROR).count(), 0)
-
 
     def test_halt_in_branch(self):
         from workflow.patterns import IF_ELSE
@@ -535,9 +533,6 @@ test purpose, this object will log several things"""
             obj_running.delete(e.id_object)
         obj_running.delete(obj_running)
 
-
-
-
     def test_continue_execution_for_object(self):
         """
         Tests continuing execution of workflow for object
@@ -654,12 +649,9 @@ class TestWorkflowTasks(WorkflowTasksTestCase):
         self.create_registries()
 
     def tearDown(self):
+        from invenio.modules.workflows.utils import test_teardown
         self.cleanup_registries()
-
-    def tearDown(self):
-        """ Clean up created objects """
-        from invenio.modules.workflows.utils import tearDown as mtearDown
-        mtearDown(self)
+        test_teardown(self)
 
     def test_logic_tasks(self):
         """
@@ -675,7 +667,9 @@ class TestWorkflowTasks(WorkflowTasksTestCase):
 
         self.assertEqual(test_object.get_data(), 5)
         self.assertEqual(test_object.get_extra_data()["test"], "lt9")
+
         start_by_wid(workflow.uuid)
+
         self.assertEqual(test_object.get_data(), 5)
         self.assertEqual(test_object.get_extra_data()["test"], "lt9")
         continue_oid(test_object.id,

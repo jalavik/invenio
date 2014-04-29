@@ -42,7 +42,7 @@ def session_manager(orig_func):
     return new_func
 
 
-def tearDown(self):
+def test_teardown(self):
     """ Clean up created objects """
     from invenio.modules.workflows.models import (BibWorkflowObject,
                                                   Workflow,

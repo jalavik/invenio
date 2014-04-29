@@ -39,13 +39,23 @@ var WORKFLOWS_HP_SELECTION = function ( $, holdingpen ){
         for (var i=fromPos; i<=toPos; i++){
             j = i % holdingpen.oSettings._iDisplayLength;
             current_row = holdingpen.oSettings.aoData[holdingpen.oSettings.aiDisplay[j]].nTr;
+<<<<<<< HEAD
             if($.inArray(current_row.row_id, holdingpen.rowList) <= -1){
                     holdingpen.rowIndexList.push(i);
                     holdingpen.rowList.push(current_row.row_id);
+=======
+            console.log(current_row);
+            console.log(rowList);
+            if($.inArray(current_row.row_id, rowList) <= -1){
+                if (selectCellByTitle(current_row, 'Actions').innerText != 'N/A'){
+                    rowIndexList.push(i);
+                    rowList.push(current_row.row_id);
+>>>>>>> dad792d... lol
                     current_row.style.background = "#ffa";
                     current_row.cells[0].firstChild.checked = true;
             }
         }
+        console.log("finish");
     }
 
     function selectCellByTitle (row, title){

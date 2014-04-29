@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##
 ## This file is part of Invenio.
-## Copyright (C) 2013 CERN.
+## Copyright (C) 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -21,8 +21,8 @@
 from invenio.testsuite import (make_test_suite,
                                run_test_suite,
                                )
+from .test_workflows import WorkflowTasksTestCase
 
-from ...workflows.testsuite.test_workflows import WorkflowTasksTestCase
 
 class WorkflowMarcXML(WorkflowTasksTestCase):
 
@@ -31,8 +31,8 @@ class WorkflowMarcXML(WorkflowTasksTestCase):
 
     def tearDown(self):
         """ Clean up created objects """
-        from invenio.modules.workflows.utils import tearDown as mtearDown
-        mtearDown(self)
+        from invenio.modules.workflows.utils import test_teardown
+        test_teardown(self)
         self.cleanup_registries()
 
     def test_filtering(self):
@@ -77,6 +77,7 @@ class WorkflowMarcXML(WorkflowTasksTestCase):
         from ..tasks.marcxml_tasks import init_harvesting
         from invenio.modules.workflows.api import start
         from invenio.modules.workflows.models import BibWorkflowObject
+
         my_test_obj = BibWorkflowObject()
         my_test_obj.set_data([2])
         my_test_obj.save()
@@ -87,8 +88,6 @@ class WorkflowMarcXML(WorkflowTasksTestCase):
         engine.extra_data = engine.get_extra_data()
         init_harvesting(my_test_obj, engine)
         self.assertEqual(engine.get_extra_data()["options"]["test"], True)
-
-
 
 TEST_SUITE = make_test_suite(WorkflowMarcXML)
 

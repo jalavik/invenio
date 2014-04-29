@@ -17,11 +17,15 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 from __future__ import absolute_import
+
 import traceback
+import sys
 from uuid import uuid1 as new_uuid
 import base64
 
-from six import iteritems
+from six import iteritems, reraise
+from six.moves import cPickle
+
 from workflow.engine import (GenericWorkflowEngine,
                              ContinueNextToken,
                              HaltProcessing,
@@ -31,9 +35,7 @@ from workflow.engine import (GenericWorkflowEngine,
                              WorkflowError,
                              )
 
-from six.moves import cPickle
 from .errors import WorkflowError as WorkflowErrorClient
-from invenio.config import CFG_DEVEL_SITE
 from .models import (Workflow,
                      BibWorkflowObject,
                      BibWorkflowEngineLog,
@@ -46,6 +48,8 @@ from .logger import (get_logger,
                      BibWorkflowLogHandler,
                      )
 from .errors import WorkflowHalt
+
+from invenio.config import CFG_DEVEL_SITE
 
 DEBUG = CFG_DEVEL_SITE > 0
 
@@ -118,6 +122,11 @@ class BibWorkflowEngine(GenericWorkflowEngine):
         :param value:
         """
         self.db_obj._extra_data = base64.b64encode(cPickle.dumps(value))
+
+    def reset_extra_data(self):
+        """Reset extra data to defaults."""
+        from .models import get_default_extra_data
+        self.db_obj._extra_data = get_default_extra_data()
 
     def extra_data_get(self, key):
         if key not in self.db_obj.get_extra_data():
@@ -356,7 +365,7 @@ BibWorkflowEngine
                     # this is the only case when a WFE can be completely
                     # stopped
                     if type(e) == WorkflowHalt:
-                        raise e
+                        reraise(*sys.exc_info())
                     else:
                         raise WorkflowHalt(e)
                 except Exception as e:
@@ -367,11 +376,12 @@ BibWorkflowEngine
                     # Changing counter should be moved to wfe object
                     # together with default exception handling
                     if isinstance(e, WorkflowErrorClient):
-                        raise e
+                        reraise(*sys.exc_info())
                     else:
-                        raise WorkflowErrorClient(message=msg,
-                                                  id_workflow=self.uuid,
-                                                  id_object=self.getCurrObjId(),
+                        raise WorkflowErrorClient(
+                            message=msg,
+                            id_workflow=self.uuid,
+                            id_object=self.getCurrObjId(),
                         )
             # We save the object once it is fully run through
             obj.save(version=ObjectVersion.FINAL)
