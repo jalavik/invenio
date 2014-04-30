@@ -25,7 +25,8 @@ from ..tasks.marcxml_tasks import (convert_record_with_repository,
                                    upload_step,
                                    quick_match_record,
                                    inspire_filter_custom,
-                                   bibclassify
+                                   bibclassify,
+                                   approve_record
                                    )
 
 from ..tasks.workflows_tasks import (log_info)
@@ -45,8 +46,10 @@ class full_doc_process(object):
         [
             plot_extract(["latex"]),
             fulltext_download,
+            approve_record,
             inspire_filter_custom(fields=["field"], custom_accepted=["*"],
                                   custom_refused=["gr-qc"],
+                                  custom_widgeted=["hep-*"],
                                   widget="approval_widget"),
             bibclassify(taxonomy=CFG_PREFIX + "/etc/bibclassify/HEP.rdf",
                         output_mode="dict", match_mode="partial"),
