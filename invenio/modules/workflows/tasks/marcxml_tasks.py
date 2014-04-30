@@ -681,7 +681,7 @@ def fulltext_download(obj, eng):
     bibtask.task_sleep_now_if_required()
     if "pdf" not in obj.extra_data["_result"]:
         extract_path = plotextractor_getter.make_single_directory(
-            cfg['CFG_TMPSHAREDDIR'], eng.uuid)
+            cfg['CFG_TMPSHAREDDIR'], str(eng.uuid))
         tarball, pdf = plotextractor_getter.harvest_single(
             obj.data["system_number_external"]["value"],
             extract_path, ["pdf"])
@@ -705,11 +705,10 @@ def fulltext_download(obj, eng):
                             "    </datafield>"
                            ) % {'url': obj.extra_data["_result"]["pdf"],
                                 'doctype': doctype}
-            updated_xml = '<?xml version="1.0" encoding="UTF-8"?>\n' \
+            updated_xml = '<?xml version="1.0"?>\n' \
                           '<collection>\n<record>\n' + fulltext_xml + \
                           '</record>\n</collection>'
-
-            new_dict_representation = Reader.translate(updated_xml,
+            new_dict_representation = Reader.translate(str(updated_xml),
                                                        SmartJson,
                                                        master_format='marc',
                                                        namespace='recordext')
@@ -908,7 +907,7 @@ def plot_extract(plotextractor_types):
                     # We store the path to the directory  the tarball
                     # contents live
                     # Read and grab MARCXML from plotextractor run
-                    new_dict = Reader.translate(marc_xml,
+                    new_dict = Reader.translate(str(marc_xml),
                                                 SmartJson,
                                                 master_format='marc',
                                                 namespace='recordext')
@@ -968,7 +967,7 @@ def refextract(obj, eng):
                           '<collection>\n<record>' + references_xml.group(1) + \
                           "</record>\n</collection>"
 
-            new_dict_representation = Reader.translate(updated_xml,
+            new_dict_representation = Reader.translate(str(updated_xml),
                                                        SmartJson,
                                                        master_format='marc',
                                                        namespace='recordext')
@@ -1059,7 +1058,7 @@ def author_list(obj, eng):
         if not None == updated_xml:
             # We store the path to the directory  the tarball contents live
             # Read and grab MARCXML from plotextractor run
-            new_dict_representation = Reader.translate(updated_xml,
+            new_dict_representation = Reader.translate(str(updated_xml),
                                                        SmartJson,
                                                        master_format='marc',
                                                        namespace='recordext')
