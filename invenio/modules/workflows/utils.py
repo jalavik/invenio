@@ -42,6 +42,22 @@ def session_manager(orig_func):
     return new_func
 
 
+def convert_marcxml_to_bibfield(marcxml):
+    """
+
+    :param marcxml:
+    :return:
+    """
+    from invenio.modules.jsonalchemy.reader import Reader
+    from invenio.modules.jsonalchemy.wrappers import SmartJson
+    if isinstance(marcxml, unicode):
+        marcxml = marcxml.encode(errors='ignore')
+    return Reader.translate(marcxml,
+                            SmartJson,
+                            master_format='marc',
+                            namespace='recordext')
+
+
 def test_teardown(self):
     """ Clean up created objects """
     from invenio.modules.workflows.models import (BibWorkflowObject,

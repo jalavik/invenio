@@ -202,7 +202,7 @@ def load_table():
     if 'iSortCol_0' in current_app.config:
         i_sortcol_0 = int(i_sortcol_0)
         if i_sortcol_0 != current_app.config['iSortCol_0'] \
-        or s_sortdir_0 != current_app.config['sSortDir_0']:
+            or s_sortdir_0 != current_app.config['sSortDir_0']:
             bwolist = sort_bwolist(bwolist, i_sortcol_0, s_sortdir_0)
 
     current_app.config['iDisplayStart'] = i_display_start
@@ -235,15 +235,31 @@ def load_table():
 
         mini_widget = getattr(widget, "mini_widget", None)
         record = bwo.get_data()
-        if not isinstance(record, dict):
-            record = {}
+        if not hasattr(record, "get"):
+            try:
+                record = dict(record)
+            except:
+                record = {}
+
         extra_data = bwo.get_extra_data()
         category_list = record.get('subject_term', [])
         if isinstance(category_list, dict):
             category_list = [category_list]
         categories = ["%s (%s)" % (subject['term'], subject['scheme'])
                       for subject in category_list]
+
+        extracted_title = []
+        if "title" in record:
+            if isinstance(record["title"], str):
+                extracted_title = [record["title"]]
+            else:
+                for a_title in record["title"]:
+                    extracted_title.append(record["title"][a_title])
+        else:
+            extracted_title = ["No title"]
+
         row = render_template('workflows/row_formatter.html',
+                              title=extracted_title,
                               object=bwo,
                               record=record,
                               extra_data=extra_data,
@@ -267,7 +283,7 @@ def load_table():
              d['type'],
              d['details'],
              d['widget']
-             ]
+            ]
         )
 
     table_data['sEcho'] = sEcho

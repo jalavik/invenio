@@ -33,6 +33,7 @@ from invenio.base.wrappers import lazy_import
 from invenio.utils.shell import (run_shell_command,
                                  Timeout)
 from invenio.utils.plotextractor.converter import untar
+from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
 
 bibtask = lazy_import("invenio.legacy.bibsched.bibtask")
 records_api = lazy_import("invenio.modules.records.api")
@@ -324,8 +325,7 @@ def convert_record_to_bibfield(obj, eng):
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
     """
-    obj.data = Reader.translate(obj.data, SmartJson, master_format='marc',
-                                namespace='recordext')
+    obj.data = convert_marcxml_to_bibfield(obj.data)
     eng.log.info("Field conversion succeeded")
 
 
@@ -708,10 +708,7 @@ def fulltext_download(obj, eng):
             updated_xml = '<?xml version="1.0"?>\n' \
                           '<collection>\n<record>\n' + fulltext_xml + \
                           '</record>\n</collection>'
-            new_dict_representation = Reader.translate(str(updated_xml),
-                                                       SmartJson,
-                                                       master_format='marc',
-                                                       namespace='recordext')
+            new_dict_representation = convert_marcxml_to_bibfield(updated_xml)
             try:
                 if isinstance(new_dict_representation["fft"], list):
                     for element in new_dict_representation["fft"]:
@@ -907,10 +904,7 @@ def plot_extract(plotextractor_types):
                     # We store the path to the directory  the tarball
                     # contents live
                     # Read and grab MARCXML from plotextractor run
-                    new_dict = Reader.translate(str(marc_xml),
-                                                SmartJson,
-                                                master_format='marc',
-                                                namespace='recordext')
+                    new_dict = convert_marcxml_to_bibfield(marc_xml)
                     try:
                         if isinstance(new_dict["fft"], list):
                             for element in new_dict["fft"]:
@@ -967,10 +961,7 @@ def refextract(obj, eng):
                           '<collection>\n<record>' + references_xml.group(1) + \
                           "</record>\n</collection>"
 
-            new_dict_representation = Reader.translate(str(updated_xml),
-                                                       SmartJson,
-                                                       master_format='marc',
-                                                       namespace='recordext')
+            new_dict_representation = convert_marcxml_to_bibfield(updated_xml)
             try:
                 obj.data['reference'].append(
                     new_dict_representation["reference"])
@@ -1058,10 +1049,7 @@ def author_list(obj, eng):
         if not None == updated_xml:
             # We store the path to the directory  the tarball contents live
             # Read and grab MARCXML from plotextractor run
-            new_dict_representation = Reader.translate(str(updated_xml),
-                                                       SmartJson,
-                                                       master_format='marc',
-                                                       namespace='recordext')
+            new_dict_representation = convert_marcxml_to_bibfield(updated_xml)
             obj.data['authors'] = new_dict_representation["authors"]
             obj.data['number_of_authors'] = new_dict_representation[
                 "number_of_authors"]
