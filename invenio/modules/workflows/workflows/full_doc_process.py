@@ -46,7 +46,7 @@ class full_doc_process(object):
             plot_extract(["latex"]),
             fulltext_download,
             inspire_filter_custom(fields=["field"], custom_accepted=["*"],
-                                  custom_refused=["gr-qc"],
+                                  custom_widgeted=["gr-qc"],
                                   widget="approval_widget"),
             bibclassify(taxonomy=CFG_PREFIX + "/etc/bibclassify/HEP.rdf",
                         output_mode="dict", match_mode="partial"),
