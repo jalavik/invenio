@@ -642,6 +642,7 @@ class TestMarcReader(InvenioTestCase):
         self.assertEquals(json.class3(), ('foo', ')', ','))
         self.assertTrue('foo' in json['title'])
         self.assertEquals(json['title.foo'], 'bar')
+        print json.legacy_export_as_marc()
 
     def test_add_fields(self):
         """JSONAlchemy - add field"""

@@ -19,13 +19,15 @@
 from ..tasks.sample_tasks import (add_data,
                                   )
 from ..tasks.logic_tasks import execute_if
-from ..tasks.marcxml_tasks import approve_record
+from ..tasks.marcxml_tasks import *
 
 
 class sample_workflow(object):
     """
     This is a sample workflow.
     """
-    workflow = [execute_if(add_data(1), lambda obj, eng: True),
-                approve_record]
+    workflow = [
+        convert_record_with_repository("oaiarxiv2marcxml.xsl"),
+        convert_record_to_bibfield,
+    ]
     title = "Sample workflow"

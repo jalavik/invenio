@@ -134,6 +134,7 @@ class Record(SmartJson):
 
         pids = PIDList()
         for key, value in self.items(without_meta_metadata=True):
+            print key, value
             if self.meta_metadata[key]['pid'] is not None:
                 pids.insert(self.meta_metadata[key]['pid'], (key, value))
         return filter(None, pids)

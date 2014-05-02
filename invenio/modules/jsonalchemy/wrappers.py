@@ -211,6 +211,10 @@ class SmartJson(SmartDict):
         for key in self.keys():
             if key == '__meta_metadata__' and without_meta_metadata:
                 continue
+            print key
+            if key == "creation_date":
+                import ipdb
+                ipdb.set_trace()
             yield (key, self[key])
     iteritems = items
 
@@ -247,7 +251,7 @@ class SmartJson(SmartDict):
                 if value is None and \
                         self.meta_metadata[key]['type'] == 'calculated':
                     dict_[key] = self[key]
-        if without_meta_metadata:
+        if without_meta_metadata and "__meta_metadata__" in dict_:
             del dict_['__meta_metadata__']
         if clean:
             for key in list(dict_.keys()):
