@@ -159,6 +159,33 @@ MATCHER_DEFAULT_CONFIG = {
     "SEARCH_TIMEOUT_RETRIES": 3
 }
 
+<<<<<<< HEAD
+=======
+# Storage area for CLI results
+MATCHER_CLI_RESULTS_DIRECTORY = 'matcher_cli'
+MATCHER_CLI_RESULTS_PREFIX = 'matcher_results'
+MATCHER_CLI_RESULTS_AUTO_SAVE = True
+
+# Ambiguous Matching Variables
+MATCHER_CLI_LOOKUP_ATTEMPTS = 3
+MATCHER_CLI_TIMEOUT_WAIT = 30
+MATCHER_CLI_TAG_LIST = {
+    'control': ['001'],
+    'datafld': [
+        ('035', " ", " ", ''),
+        ('037', " ", " ", ''),
+        ('100', " ", " ", ''),
+        ('245', " ", " ", ''),
+        ('269', " ", " ", ''),
+        ('300', " ", " ", ''),
+        ('773', " ", " ", ''),
+        ('980', " ", " ", '')
+    ]
+}
+
+MATCHER_LOGFILE = 'matcher.log'
+
+>>>>>>> 3a7e900... matcher: CLI Flask-Script integration
 # =============================================================================
 #  Legacy Variables, these should be replaced with the cfg_matcher dictionary
 # TODO: depreciate everything here
