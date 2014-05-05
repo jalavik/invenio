@@ -244,23 +244,20 @@ def sort_bwolist(bwolist, iSortCol_0, sSortDir_0):
         else:
             bwolist.sort(key=lambda x: x.id, reverse=False)
     elif iSortCol_0 == 1:
-        pass
-        # if sSortDir_0 == 'desc':
-        #     bwolist.sort(key=lambda x: x.id_user, reverse=True)
-        # else:
-        #     bwolist.sort(key=lambda x: x.id_user, reverse=False)
+        if sSortDir_0 == 'desc':
+            bwolist.sort(key=lambda x: x.id_user, reverse=True)
+        else:
+            bwolist.sort(key=lambda x: x.id_user, reverse=False)
     elif iSortCol_0 == 2:
-        pass
-        # if sSortDir_0 == 'desc':
-        #     bwolist.sort(key=lambda x: x.id_user, reverse=True)
-        # else:
-        #     bwolist.sort(key=lambda x: x.id_user, reverse=False)
+        if sSortDir_0 == 'desc':
+            bwolist.sort(key=lambda x: x.id_user, reverse=True)
+        else:
+            bwolist.sort(key=lambda x: x.id_user, reverse=False)
     elif iSortCol_0 == 3:
-        pass
-        # if sSortDir_0 == 'desc':
-        #     bwolist.sort(key=lambda x: x.id_user, reverse=True)
-        # else:
-        #     bwolist.sort(key=lambda x: x.id_user, reverse=False)
+        if sSortDir_0 == 'desc':
+            bwolist.sort(key=lambda x: x.id_user, reverse=True)
+        else:
+            bwolist.sort(key=lambda x: x.id_user, reverse=False)
     elif iSortCol_0 == 4:
         if sSortDir_0 == 'desc':
             bwolist.sort(key=lambda x: x.id_workflow, reverse=True)

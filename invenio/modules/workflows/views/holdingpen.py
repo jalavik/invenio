@@ -28,6 +28,7 @@
 """
 
 import re
+from mock import _Call
 
 from six import iteritems, text_type
 
@@ -98,10 +99,23 @@ def maintable():
     for name, widget in iteritems(widgets):
         if getattr(widget, "static", None):
             widget_static.extend(widget.static)
+    my_tags = current_app.config.get('VERSION_SHOWING', [])
+    tags_to_print = ""
+    for tag in my_tags:
+        if tag == ObjectVersion.FINAL:
+            tags_to_print += "Done,"
+        if tag == ObjectVersion.HALTED:
+            tags_to_print += "Need action,"
+        if tag == ObjectVersion.RUNNING:
+            tags_to_print += "In process,"
+        if tag == ObjectVersion.INITIAL:
+            tags_to_print += "New,"
+
 
     return dict(bwolist=bwolist,
                 widget_list=widget_list,
-                widget_static=widget_static)
+                widget_static=widget_static,
+                tags=tags_to_print)
 
 
 @blueprint.route('/batch_widget', methods=['GET', 'POST'])
@@ -183,18 +197,11 @@ def load_table():
     elif "VERSION_SHOWING" in current_app.config:
         version_showing = current_app.config.get('VERSION_SHOWING', [])
 
-    try:
-        i_sortcol_0 = request.args.get('iSortCol_0')
-        s_sortdir_0 = request.args.get('sSortDir_0')
-        i_display_start = int(request.args.get('iDisplayStart'))
-        i_display_length = int(request.args.get('iDisplayLength'))
-        sEcho = int(request.args.get('sEcho')) + 1
-    except:
-        i_sortcol_0 = current_app.config.get('iSortCol_0', 0)
-        s_sortdir_0 = current_app.config.get('sSortDir_0', None)
-        i_display_start = current_app.config.get('iDisplayStart', 0)
-        i_display_length = current_app.config.get('iDisplayLength', 10)
-        sEcho = current_app.config.get('sEcho', 0) + 1
+    i_sortcol_0 = current_app.config.get('iSortCol_0', 0)
+    s_sortdir_0 = current_app.config.get('sSortDir_0', None)
+    i_display_start = current_app.config.get('iDisplayStart', 0)
+    i_display_length = current_app.config.get('iDisplayLength', 10)
+    sEcho = current_app.config.get('sEcho', 0) + 1
 
     bwolist = get_holdingpen_objects(ssearch=s_search,
                                      version_showing=version_showing)
@@ -218,7 +225,7 @@ def load_table():
     try:
         table_data['iTotalRecords'] = len(bwolist)
         table_data['iTotalDisplayRecords'] = len(bwolist)
-    except:
+    except TypeError:
         bwolist = get_holdingpen_objects(version_showing=version_showing)
         table_data['iTotalRecords'] = len(bwolist)
         table_data['iTotalDisplayRecords'] = len(bwolist)
@@ -228,6 +235,9 @@ def load_table():
 
     for bwo in bwolist[i_display_start:i_display_start + i_display_length]:
         widget_name = bwo.get_widget()
+        widget_message = bwo.get_widget_message()
+        if not widget_message:
+            widget_message = ""
         widget = widgets.get(widget_name, None)
 
         # if widget != None and bwo.version in VERSION_SHOWING:
@@ -265,6 +275,7 @@ def load_table():
                               extra_data=extra_data,
                               categories=categories,
                               widget=widget,
+                              widget_message=widget_message,
                               mini_widget=mini_widget,
                               pretty_date=pretty_date)
 
@@ -317,7 +328,6 @@ def details(objectid):
 
     formatted_data = bwobject.get_formatted_data(of)
     extracted_data = extract_data(bwobject)
-
     try:
         edit_record_widget = widgets['edit_record_widget']()
     except KeyError:
@@ -410,6 +420,7 @@ def show_widget(objectid):
     # FIXME: add case here if no widget
     widget_form = widgets[widget]
     extracted_data = extract_data(bwobject)
+
     result = widget_form().render([bwobject],
                                   [extracted_data['bwparent']],
                                   [extracted_data['info']],
@@ -417,8 +428,9 @@ def show_widget(objectid):
                                   [extracted_data['w_metadata']],
                                   [extracted_data['workflow_func']])
     url, parameters = result
-
-    return render_template(url, **parameters)
+    #### message
+    parameters["message"] = bwobject.get_widget_message()
+    return render_template("workflows/hp_approval_widget.html", **parameters)
 
 
 @blueprint.route('/resolve', methods=['GET', 'POST'])

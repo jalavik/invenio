@@ -34,7 +34,13 @@
 
     <script type="text/javascript">
         $(document).ready(function(){
-            var url_preview = "{{ url_for('holdingpen.entry_data_preview') }}";
+            var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
+            window.jQuery.ajax({
+                url: context_url,
+                success: function(data) {
+                    WORKFLOWS_HP_DETAILS.init(data, {{ bwobject_list[0].id }});
+                }
+            })
         });
     </script>
 {%- endblock javascript %}
@@ -44,7 +50,7 @@
 <div class="container" style="padding-left:0">
     <div id="goodbye-msg" class="col-md-12 text-center">
     </div>
-    
+
 {% for i in range(obj_number) %}
 {% set bwobject = bwobject_list[i] %}
 {% set bwparent = bwparent_list[i] %}
@@ -64,28 +70,32 @@
     {% block hp_navbar scoped%}
         {{ super() }}
     {% endblock hp_navbar %}
-    
-    <div id="row_fluid{{i}}" class="row">
-        <div class="col-md-3">
-            <div id="decision-btns{{i}}" class="row decision-btns">
-                <form id="form{{i}}" class="theform" method="POST" name="{{ url_for('holdingpen.resolve_widget', object_id=bwobject.id, widget='approval_widget') }}">
+
+
+            <div class="col-md-3">
+            {% block hpbody_details scoped %}
+            <div id="decision-btns{{i}}" class="row decision-btns well" >
+                <p>{{message}}</p>
+                <form id="form{{i}}" class="theform" method="POST" name="{{ url_for('holdingpen.resolve_widget', object_id=bwobject.id, widget='' )}}">
                     {% for field in widget %}
                         {{ field }}
                     {% endfor %}
                 </form>
             </div>
-            </br>
-
-            {% block hpbody_details scoped %}
             {{ super() }}
             {% endblock hpbody_details %}
-            
-        </div>
-
+            </div>
+         <div class="col-md-9">
+        {% if bwobject.version == 1 %}
+            <div id="successmessage" class="alert alert-success">
+                Record ran workflow successfully.
+                <a class="close" data-dismiss="alert">×</a>
+            </div>
+        {% endif %}
         {% block hp_preview scoped %}
         {{ super() }}
         {% endblock hp_preview %}
-    </div>
+        </div>
 
     <hr id="hr{{i}}">
     {% endfor %}

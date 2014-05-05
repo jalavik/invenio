@@ -23,8 +23,6 @@ import glob
 import re
 import traceback
 
-from invenio.modules.jsonalchemy.reader import Reader
-from invenio.modules.jsonalchemy.wrappers import SmartJson
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 from invenio.base.globals import cfg
@@ -196,13 +194,17 @@ def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
             elif '*' in custom_accepted:
                 return None
             else:
-                # We don't know what we should do, in doubt query human... they are nice!
+                # We don't know what we should do, in doubt query human...
+                # they are nice!
                 msg = ("Category out of task definition. "
                        "Human intervention needed")
                 eng.halt(msg, widget=widget)
         else:
             if sum_action == action_to_take[0]:
-                eng.halt("Category filtering needs human intervention",
+                eng.halt("The %s of this record is %s, "
+                         "this field is under filtering. "
+                         "Should we accept this record ? "
+                         % (fields[len(fields)-1], custom_to_process_next),
                          widget=widget)
             elif sum_action == action_to_take[1]:
                 return None
@@ -210,7 +212,8 @@ def inspire_filter_custom(fields, custom_accepted=(), custom_refused=(),
                 eng.stopProcessing()
             else:
                 eng.halt(
-                    "Category filtering needs human intervention, rules are incoherent !!!",
+                    "Category filtering needs human intervention,"
+                    " rules are incoherent !!!",
                     widget=widget)
 
     return _inspire_filter_custom
@@ -304,7 +307,9 @@ def inspire_filter_category(category_accepted_param=(),
                 eng.halt(msg, widget=widget)
         else:
             if sum_action == action_to_take[0]:
-                eng.halt("Category filtering needs human intervention",
+                eng.halt("The category of this record is %s,"
+                         "this category is under filtering."
+                         "Should we accept this record ?" % category,
                          widget=widget)
             elif sum_action == action_to_take[1]:
                 return None
