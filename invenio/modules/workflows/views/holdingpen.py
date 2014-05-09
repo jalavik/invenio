@@ -38,11 +38,11 @@ from flask import (render_template,
                    jsonify,
                    url_for,
                    flash,
-                   )
+)
 from flask.ext.login import login_required
 from flask.ext.breadcrumbs import (default_breadcrumb_root,
                                    register_breadcrumb,
-                                   )
+)
 from flask.ext.menu import register_menu
 
 from invenio.base.decorators import templated, wash_arguments
@@ -53,7 +53,7 @@ from ..models import BibWorkflowObject, Workflow, ObjectVersion
 from ..registry import widgets
 from ..utils import (get_workflow_definition,
                      sort_bwolist,
-                     )
+)
 from ..api import continue_oid_delayed, start
 
 
@@ -109,7 +109,6 @@ def maintable():
             tags_to_print += "In process,"
         if tag == ObjectVersion.INITIAL:
             tags_to_print += "New,"
-
 
     return dict(bwolist=bwolist,
                 widget_list=widget_list,
@@ -181,7 +180,6 @@ def load_table():
     """
     version_showing = []
     req = request.json
-    s_search = request.args.get('sSearch', None)
 
     if req is not None:
         if "final" in req:
@@ -195,12 +193,22 @@ def load_table():
         current_app.config['VERSION_SHOWING'] = version_showing
     elif "VERSION_SHOWING" in current_app.config:
         version_showing = current_app.config.get('VERSION_SHOWING', [])
+    s_search = request.args.get('sSearch', None)
+    i_sortcol_0 = request.args["iSortCol_0"]
+    if i_sortcol_0 == 0:
+        i_sortcol_0 = current_app.config.get('iSortCol_0', 0)
+    s_sortdir_0 = request.args["sSortDir_0"]
+    if not s_sortdir_0:
+        s_sortdir_0 = current_app.config.get('sSortDir_0', None)
 
-    i_sortcol_0 = current_app.config.get('iSortCol_0', 0)
-    s_sortdir_0 = current_app.config.get('sSortDir_0', None)
-    i_display_start = current_app.config.get('iDisplayStart', 0)
-    i_display_length = current_app.config.get('iDisplayLength', 10)
-    sEcho = current_app.config.get('sEcho', 0) + 1
+    i_display_start = int(request.args["iDisplayStart"])
+    i_display_length = int(request.args["iDisplayLength"])
+
+    if i_display_length == 0:
+        i_display_length = current_app.config.get('iDisplayLength', 10)
+    sEcho = request.args["sEcho"]
+    if sEcho == 0:
+        sEcho = current_app.config.get('sEcho', 0) + 1
 
     bwolist = get_holdingpen_objects(ssearch=s_search,
                                      version_showing=version_showing)
@@ -208,7 +216,7 @@ def load_table():
     if 'iSortCol_0' in current_app.config:
         i_sortcol_0 = int(i_sortcol_0)
         if i_sortcol_0 != current_app.config['iSortCol_0'] \
-            or s_sortdir_0 != current_app.config['sSortDir_0']:
+                or s_sortdir_0 != current_app.config['sSortDir_0']:
             bwolist = sort_bwolist(bwolist, i_sortcol_0, s_sortdir_0)
 
     current_app.config['iDisplayStart'] = i_display_start
@@ -591,28 +599,61 @@ def get_holdingpen_objects(isortcol_0=None,
         isortcol_0 = int(isortcol_0)
 
     bwobject_list = BibWorkflowObject.query.filter(
-        BibWorkflowObject.id_parent != 0 and
-        not version_showing or BibWorkflowObject.version.in_(version_showing)
-    ).all()
+        BibWorkflowObject.id_parent==None
+        ).filter(not version_showing or BibWorkflowObject.version.in_(version_showing)).all()
 
-    if ssearch and len(ssearch) < 2:
+    if ssearch and len(ssearch) > 2:
         bwobject_list_tmp = []
         for bwo in bwobject_list:
             extra_data = bwo.get_extra_data()
-            if bwo.id_parent == ssearch:
-                bwobject_list_tmp.append(bwo)
-            elif bwo.id_user == ssearch:
-                bwobject_list_tmp.append(bwo)
-            elif bwo.id_workflow == ssearch:
-                bwobject_list_tmp.append(bwo)
-            elif extra_data['_last_task_name'] == ssearch:
-                bwobject_list_tmp.append(bwo)
+
+            if hasattr(bwo.get_data(), "get"):
+                data = bwo.get_data()
             else:
-                widget_name = bwo.get_widget()
-                if widget_name:
-                    widget = widgets[widget_name]
-                    if ssearch in widget.__title__ or ssearch in widget_name:
-                        bwobject_list_tmp.append(bwo)
+                data = {}
+
+            all_parameters = {"record": data, "extra_data": extra_data,
+                              "bwo": bwo}
+            if not isinstance(ssearch, list):
+                if "," in ssearch:
+                    ssearch = ssearch.split(",")
+                else:
+                    ssearch = [ssearch]
+
+            checking_functions = {"title": get_title,
+                                  "category": get_subject_categories,
+                                  "identifiers": get_identifiers,
+                                  "created": get_pretty_date,
+                                  "type": get_type
+
+            }
+
+            confirm = 0
+            to_add = True
+            for term in ssearch:
+                for function in checking_functions:
+                    if check_ssearch_over_data(term,
+                                               checking_functions[function](
+                                                       **dict(
+                                                               (
+                                                                       checking_functions[
+                                                                           function].func_code.co_varnames[
+                                                                           i],
+                                                               all_parameters[
+                                                                   checking_functions[
+                                                                       function].func_code.co_varnames[
+                                                                       i]]) for
+                                                               i in
+                                                               range(0,
+                                                                     checking_functions[
+                                                                         function].func_code.co_argcount)))):
+                        confirm += 1
+                if confirm == 0:
+                    to_add = False
+                confirm = 0
+
+            if to_add:
+                bwobject_list_tmp.append(bwo)
         bwobject_list = bwobject_list_tmp
 
     if isortcol_0 == -6:
@@ -622,42 +663,84 @@ def get_holdingpen_objects(isortcol_0=None,
     return bwobject_list
 
 
+def check_ssearch_over_data(ssearch, data):
+    if not isinstance(ssearch, list):
+        if "," in ssearch:
+            ssearch = ssearch.split(",")
+        else:
+            ssearch = [ssearch]
+    if not isinstance(data, list):
+        data = [data]
+    count = 0
+    for terms in ssearch:
+        for datum in data:
+            if terms.lower() in datum.lower():
+                count += 1
+    if count > 0:
+        return True
+    else:
+        return False
+
+
 def get_subject_categories(record):
     """
     Get the subject categories.
     """
-    if 'subject' in record:
-        lookup = ["subject", "term"]
-    elif "subject_term":
-        lookup = ["subject_term", "term"]
-    else:
-        lookup = None
-
-    if lookup is None:
+    if hasattr(record, "get"):
+        if 'subject' in record:
+            lookup = ["subject", "term"]
+        elif "subject_term":
+            lookup = ["subject_term", "term"]
+        else:
+            lookup = None
         categories = []
-    else:
-        primary, secondary = lookup
-        category_list = record.get(primary, [])
-        if isinstance(category_list, dict):
-            category_list = [category_list]
-        categories = ["%s (%s)" % (subject[secondary], subject['source'])
-                      for subject in category_list]
-    return categories
+        if lookup:
+            primary, secondary = lookup
+            category_list = record.get(primary, [])
+            if isinstance(category_list, dict):
+                category_list = [category_list]
+            for subject in category_list:
+                category = subject[secondary]
+                if len(subject) == 2:
+                    if subject.keys()[1] == secondary:
+                        source_list = subject[subject.keys()[0]]
+                    else:
+                        source_list = subject[subject.keys()[1]]
+                else:
+                    try:
+                        source_list = subject['source']
+                    except KeyError:
+                        source_list = ""
+                categories.append(category + "(" + source_list + ")")
+        else:
+            categories = [" No categories"]
+        return categories
+    return [" No categories"]
+
+
+def get_pretty_date(bwo):
+    return pretty_date(bwo.created)
+
+
+def get_type(bwo):
+    return bwo.data_type
 
 
 def get_title(record):
     """
     Get the title.
     """
+
     extracted_title = []
-    if "title" in record:
+
+    if hasattr(record, "get") and "title" in record:
         if isinstance(record["title"], str):
             extracted_title = [record["title"]]
         else:
             for a_title in record["title"]:
                 extracted_title.append(record["title"][a_title])
     else:
-        extracted_title = ["No title"]
+        extracted_title = [" No title"]
     return extracted_title
 
 
@@ -665,13 +748,9 @@ def get_identifiers(record):
     """
     Get record identifiers.
     """
-    return [record.get("system_control_number", {}).get("value", 'No ids')]
-    def fun(d):
-        if 'pid' in d:
-            yield d['pid']
-        for k in d:
-            if isinstance(d[k], list):
-                for i in d[k]:
-                    for j in fun(i):
-                        yield j
-    return [pid for pid in fun(record)]
+    #FIXME: after solving the bibfield problem use the oaiidentifier
+    if hasattr(record, "get"):
+        return [record.get("system_control_number", {}).get("value", 'No ids')]
+    else:
+        return ' No ids'
+
