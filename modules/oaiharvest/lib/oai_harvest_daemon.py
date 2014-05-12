@@ -1347,9 +1347,12 @@ def call_bibfilter(bibfilterprogram, marcxmlfile):
             all_err_msg.append("marcxmlfile %s is not a file" % (marcxmlfile,))
             exitcode = 1
         else:
-            exitcode, dummy, cmd_stderr = run_shell_command(cmd="%s '%s'", \
-                                                             args=(bibfilterprogram, \
-                                                                   marcxmlfile))
+            exitcode, cmd_stdout, cmd_stderr = run_shell_command(cmd="%s '%s'",
+                                                                 args=(bibfilterprogram,
+                                                                       marcxmlfile))
+            if cmd_stdout:
+                # Propagate any output from the filter
+                write_message(cmd_stdout)
             if exitcode != 0 or cmd_stderr != "":
                 all_err_msg.append("Error while running filtering script on %s\nError:%s" % \
                          (marcxmlfile, cmd_stderr))
