@@ -45,7 +45,7 @@ class full_doc_process(object):
         [
             plot_extract(["latex"]),
             fulltext_download,
-            inspire_filter_custom(fields=["report_number", "arxiv_category"],
+            inspire_filter_custom(fields=["subject_term", "term"],
                                   custom_accepted=["*"],
                                   custom_widgeted=["gr-qc"],
                                   action="approval"),
