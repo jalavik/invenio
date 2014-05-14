@@ -46,6 +46,8 @@ class Storage(BaseStorage):
 
             if os.path.exists(destination):
                 self.log("{0} is already present!".format(o))
+            elif f == destination:
+                self.log("{0} and {1} are the same!".format(f, destination))
             else:
                 os.symlink(f, destination)
                 self.log("{0}:{1} symbolink link created".format(bp.name, o))
