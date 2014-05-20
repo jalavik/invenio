@@ -28,7 +28,7 @@ import sys
 import codecs
 
 from time import sleep
-from six import StringIO, next
+from six import StringIO, next, iteritems
 from threading import Thread, BoundedSemaphore
 from traceback import format_exc
 
@@ -40,8 +40,7 @@ from invenio.utils.connector import (InvenioConnector,
 from invenio.legacy.bibrecord.scripts.xmlmarc2textmarc import (
     get_sysno_from_record, create_marc_record)
 
-from .errors import MARCXMLError, CeleryFeederError
-from .config import MATCHER_DEFAULT_CONFIG
+from .errors import CeleryFeederError, InvalidConfigError, MARCXMLError
 from .tasks import celery_match
 
 
@@ -56,6 +55,8 @@ REGEX_RECORD_END = re.compile('</(?:[a-z]+?:)?record>', re.IGNORECASE)
 
 LOGGER_FORMAT_LINE = "%(asctime)s -- [%(levelname)s] %(message)s"
 LOGGER_FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S"
+
+USER_CONFIG_PREFIX = "MATCHER_DEFAULT_"
 
 
 class ResultType(object):
@@ -325,19 +326,39 @@ class LogQueue(object):
         self.message_queue.append(('critical', msg, args, kwargs))
 
 
-def generate_config(user_config):
+def generate_config(user_conf):
     """Generate final configuration based on user config and default.
 
     Takes the user provided configuration and combines it with the default
-    configuration.
+    configuration. If the user configuration is invalid then an exception
+    ``InvalidConfigError`` is raised.
 
-    :param user_config: Dictionary of the user configuration.
+    :param user_conf: Dictionary of the user configuration.
 
     :return: Final user configuration.
     """
-    # TODO: Configiuration refactor
-    user_config.update(MATCHER_DEFAULT_CONFIG)
-    return user_config
+    gen_conf = get_default_configuration()
+    if not user_conf:
+        return gen_conf
+
+    if not isinstance(user_conf, dict):
+        raise InvalidConfigError("User config needs to be a dictionary.")
+
+    errors = []
+    for key, value in iteritems(user_conf):
+        try:
+            if not isinstance(value, type(gen_conf[key])):
+                msg = ("Config option '%s' should be of type " % (key,) +
+                       " %s (found type %s)." % (type(value),
+                                                 type(gen_conf[key])))
+                errors.append(msg)
+        except KeyError:
+            errors.append("'%s' is not a valid config option." % (key,))
+
+    if errors:
+        raise InvalidConfigError('\n'.join(errors))
+    gen_conf.update(user_conf)
+    return gen_conf
 
 
 def generate_logger(handlers):
@@ -397,6 +418,30 @@ def get_records_from_file(filepath):
             raise ValueError("Error creating record: %s" % (errors,))
         records.append(rec)
     return records
+
+
+def get_default_configuration():
+    """
+    Fetches the default Matcher config.
+
+    Retreives all values from invenio.base.globals.cfg and filters
+    all those items whose keys begin with USER_CONFIG_PREFIX and gives
+    back a dictionary with the prefix removed.
+
+    The value of USER_CONFIG_PREFIX is usually 'MATCHER_DEFAULT_' and
+    defined at the top of this file.
+
+    For example...
+        {'MATCHER_DEFAULT_SLEEPTIME': 60}
+    becomes...
+        {'SLEEPTIME': 60}
+
+    :return: default configuration as a dictionary
+    """
+    default_config = dict((key[len(USER_CONFIG_PREFIX):], value)
+                          for key, value in iteritems(cfg)
+                          if key.startswith(USER_CONFIG_PREFIX))
+    return default_config
 
 
 def deposit_messages(logger, message_queue):
