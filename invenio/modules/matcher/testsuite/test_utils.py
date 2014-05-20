@@ -42,6 +42,7 @@ CeleryFeeder = lazy_import('invenio.modules.matcher.utils:CeleryFeeder')
 LogQueue = lazy_import('invenio.modules.matcher.utils:LogQueue')
 
 generate_logger = lazy_import('invenio.modules.matcher.utils:generate_logger')
+generate_config = lazy_import('invenio.modules.matcher.utils:generate_config')
 
 REGEX_COLLECTION_START = lazy_import(
     'invenio.modules.matcher.utils:REGEX_COLLECTION_START')
@@ -357,6 +358,52 @@ class CeleryFeederTest(InvenioTestCase):
         self.assertEqual(results_failure, 2)
 
 
+class ConfigGenerationTests(InvenioTestCase):
+
+    def test_generate_valid_config(self):
+        """Ensure we get what we expect back from :func:`generate_config`"""
+        correct_user_conf = {
+            'CELERY_MAX_QUEUE_LENGTH': 10,
+            'FUZZY_WORDLIMITS': {'245__a': 2},
+            'SEARCH_COLLECTIONS': ['herp', 'derp'],
+            'VALIDATE_RESULTS': False
+        }
+
+        expected = {
+            'CELERY_MAX_QUEUE_LENGTH': 10,
+            'CELERY_SLEEP_TIME': 3,
+            'FUZZY_EMPTY_RESULT_LIMIT': 1,
+            'FUZZY_MATCH_VALIDATION_LIMIT': 0.65,
+            'FUZZY_WORDLIMITS': {'245__a': 2},
+            'LOCAL_SLEEPTIME': 0,
+            'MIN_VALIDATION_COMPARISONS': 2,
+            'REMOTE_SLEEPTIME': 2,
+            'SEARCH_COLLECTIONS': ['herp', 'derp'],
+            'SEARCH_QUERY_STRINGS': [],
+            'SEARCH_RESULT_MATCH_LIMIT': 15,
+            'SEARCH_TIMEOUT_SLEEP_TIME': 30,
+            'SEARCH_TIMEOUT_RETRIES': 3,
+            'VALIDATE_RESULTS': False
+        }
+
+        result = generate_config(correct_user_conf)
+        self.assertEqual(expected, result)
+
+    def test_generate_config_invalid_data(self):
+        """Invalid config data should raise exceptions"""
+        from invenio.modules.matcher.errors import InvalidConfigError
+
+        invalid_one = {'FUZZY_MATCH_VALIDATION_LIMIT': [0.6]}
+        invalid_two = {'VALIDATE_RESULTS': 'No'}
+        invalid_three = {'NOT_A_REAL_OPTION': 'boop'}
+        invalid_four = ['nopes', 'nopes']
+
+        self.assertRaises(InvalidConfigError, generate_config, invalid_one)
+        self.assertRaises(InvalidConfigError, generate_config, invalid_two)
+        self.assertRaises(InvalidConfigError, generate_config, invalid_three)
+        self.assertRaises(InvalidConfigError, generate_config, invalid_four)
+
+
 class LogQueueTest(InvenioTestCase):
 
     def test_log_queue(self):
@@ -402,15 +449,17 @@ class LogQueueTest(InvenioTestCase):
         logger.addHandler(logging.StreamHandler(stream))
 
         mock_log = LogQueue()
-        mock_log.error("#%d test of %s", 9, 'logging')
+        mock_log.error("#%d Matcher Testing %s", 9, 'logging')
 
         deposit_messages(logger, mock_log.message_queue)
         stream.reset()
-        self.assertEqual(stream.read(), "#9 test of logging\n")
+        self.assertEqual(stream.read(), "#9 Matcher Testing logging\n")
 
 
 TEST_SUITE = make_test_suite(LazyReaderTest,
-                             CeleryFeederTest)
+                             CeleryFeederTest,
+                             ConfigGenerationTests,
+                             LogQueueTest)
 
 
 if __name__ == "__main__":

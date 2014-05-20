@@ -20,55 +20,52 @@
     Matcher - a tool that attempts to match a record, or a batch of records,
     against existing records within Invenio; either a local instance or remote.
 
-    Matcher Configuration.
+    Default configuration for Matcher.
+
+    End-user configuration variables are denoted with the prefix defined by
+    the variable `USER_CONFIG_PREFIX` in `utils.py`. Currently this is
+    "MATCHER_DEFAULT_". The user configuration can be overriden by the user at
+    the API level.
+
+    General Matcher configuration can be changed by the instance administrator
+    using `inveniomanage` if needed.
 """
 
-MATCHER_DEFAULT_CONFIG = {
-    "SEARCH_RESULT_MATCH_LIMIT": 15,
-    "MIN_VALIDATION_COMPARISONS": 2,
-    "VALIDATION_RESULT_MODES": ["normal", "final", "joker"],
-    "QUERY_TEMPLATES": {
-        "reportnumber": "reportnumber:[reportnumber]",
-        "title-author": "[title] [author]",
-        "title": "[title]"
-    },
-    "REMOTE_SLEEPTIME": 2,
-    "VALIDATION_COMPARISON_MODES": [
-        "strict",
-        "normal",
-        "lazy",
-        "ignored"
-    ],
-    "FUZZY_WORDLIMITS": {
-        "245__a": 4,
-        "100__a": 2
-    },
-    "LOCAL_SLEEPTIME": 0,
-    "FUZZY_MATCH_VALIDATION_LIMIT": 0.65,
-    "FUZZY_EMPTY_RESULT_LIMIT": 1,
-    "VALIDATION_MATCHING_MODES": [
-        "title",
-        "author",
-        "identifier",
-        "date",
-        "normal"
-    ],
-    "CELERY_MAX_QUEUE_LENGTH": 25,
-    "CELERY_SLEEP_TIME": 3,
-    "VALIDATION": True,
-    "LOGFILE": "/tmp/bibmatch.log",
-    "SEARCH_QUERY_STRINGS": [],
-    "SEARCH_COLLECTIONS": [],
-    "SEARCH_TIMEOUT_SLEEP_TIME": 30,
-    "SEARCH_TIMEOUT_RETRIES": 3
-}
+# ============================================================================
+# --------------------------- USER CONFIGURATION -----------------------------
+# ============================================================================
 
-# Storage area for CLI results
+# General
+MATCHER_DEFAULT_LOCAL_SLEEPTIME = 1
+MATCHER_DEFAULT_REMOTE_SLEEPTIME = 4
+
+# Searching
+MATCHER_DEFAULT_SEARCH_QUERY_STRINGS = []
+MATCHER_DEFAULT_SEARCH_RESULT_MATCH_LIMIT = 15
+MATCHER_DEFAULT_SEARCH_COLLECTIONS = []
+MATCHER_DEFAULT_SEARCH_TIMEOUT_SLEEP_TIME = 30
+MATCHER_DEFAULT_SEARCH_TIMEOUT_RETRIES = 3
+
+# Celery
+MATCHER_DEFAULT_CELERY_MAX_QUEUE_LENGTH = 25
+MATCHER_DEFAULT_CELERY_SLEEP_TIME = 3
+
+# Validation
+MATCHER_DEFAULT_VALIDATE_RESULTS = True
+MATCHER_DEFAULT_FUZZY_MATCH_VALIDATION_LIMIT = 0.65
+MATCHER_DEFAULT_FUZZY_WORDLIMITS = {'245__a': 4, '100__a': 2}
+MATCHER_DEFAULT_FUZZY_EMPTY_RESULT_LIMIT = 1
+MATCHER_DEFAULT_MIN_VALIDATION_COMPARISONS = 2
+
+
+# ============================================================================
+# -------------------------- MATCHER CONFIGURATION ---------------------------
+# ============================================================================
+
+# Command Line Interface Config
 MATCHER_CLI_RESULTS_DIRECTORY = 'matcher_cli'
 MATCHER_CLI_RESULTS_PREFIX = 'matcher_results'
 MATCHER_CLI_RESULTS_AUTO_SAVE = True
-
-# Ambiguous Matching Variables
 MATCHER_CLI_LOOKUP_ATTEMPTS = 3
 MATCHER_CLI_TIMEOUT_WAIT = 30
 MATCHER_CLI_TAG_LIST = {
@@ -85,134 +82,8 @@ MATCHER_CLI_TAG_LIST = {
     ]
 }
 
-MATCHER_LOGFILE = 'matcher.log'
-
-# =============================================================================
-#  Legacy Variables, these should be replaced with the cfg_matcher dictionary
-# TODO: depreciate everything here
-# =============================================================================
-
-## MATCHER_VALIDATION_MATCHING_MODES - list of supported comparison modes
-## during record validation.
-MATCHER_VALIDATION_MATCHING_MODES = ['title', 'author', 'identifier', 'date', 'normal']
-
-## MATCHER_VALIDATION_RESULT_MODES - list of supported result modes
-## during record validation.
-MATCHER_VALIDATION_RESULT_MODES = ['normal', 'final', 'joker', 'fuzzy']
-
-## MATCHER_VALIDATION_COMPARISON_MODES - list of supported parsing modes
-## during record validation.
-MATCHER_VALIDATION_COMPARISON_MODES = ['strict', 'normal', 'lazy', 'ignored']
-
-MATCHER_FUZZY_EMPTY_RESULT_LIMIT = 1
-MATCHER_MIN_VALIDATION_COMPARISONS = 2
-MATCHER_FUZZY_MATCH_VALIDATION_LIMIT = 0.65
-MATCHER_FUZZY_WORDLIMITS = {'100__a': 2, '245__a': 4}
-MATCHER_LOCAL_SLEEPTIME = 0.0
-MATCHER_MATCH_VALIDATION_RULESETS = [
-    ('default',
-        [
-            {
-                'compare_mode': 'lazy',
-                'match_mode': 'title',
-                'result_mode': 'normal',
-                'tags': '245__%,242__%',
-                'threshold': 0.8
-            },
-            {
-                'compare_mode': 'lazy',
-                'match_mode': 'identifier',
-                'result_mode': 'final',
-                'tags': '037__a,088__a',
-                'threshold': 1.0
-            },
-            {
-                'compare_mode': 'normal',
-                'match_mode': 'author',
-                'result_mode': 'normal',
-                'tags': '100__a,700__a',
-                'threshold': 0.8
-            },
-            {
-                'compare_mode': 'lazy',
-                'match_mode': 'title',
-                'result_mode': 'normal',
-                'tags': '773__a',
-                'threshold': 1.0
-            }
-        ]
-    ),
-    ('980__ \\$\\$a(THESIS|Thesis)',
-        [
-            {
-                'compare_mode': 'strict',
-                'match_mode': 'author',
-                'result_mode': 'normal',
-                'tags': '100__a',
-                'threshold': 0.8
-            },
-            {
-                'compare_mode': 'lazy',
-                'match_mode': 'author',
-                'result_mode': 'normal',
-                'tags': '700__a,701__a',
-                'threshold': 1.0
-            },
-            {
-                'compare_mode': 'ignored',
-                'match_mode': 'author',
-                'result_mode': 'normal',
-                'tags': '100__a,700__a',
-                'threshold': 0.8
-            }
-        ]
-    ),
-    ('260__',
-        [
-            {
-                'compare_mode': 'lazy',
-                'match_mode': 'date',
-                'result_mode': 'fuzzy',
-                'tags': '260__c',
-                'threshold': 1.0
-            }
-        ]
-    ),
-    ('0247_',
-        [
-            {
-                'compare_mode': 'lazy',
-                'match_mode': 'identifier',
-                'result_mode': 'final',
-                'tags': '0247_a',
-                'threshold': 1.0
-            }
-        ]
-    ),
-    ('020__',
-        [
-            {
-                'compare_mode': 'lazy',
-                'match_mode': 'identifier',
-                'result_mode': 'joker',
-                'tags': '020__a',
-                'threshold': 1.0
-            }
-        ]
-    )
-]
-
 MATCHER_QUERY_TEMPLATES = {
     'title': '[title]',
     'title-author': '[title] [author]',
     'reportnumber': 'reportnumber:[reportnumber]'
 }
-
-MATCHER_REMOTE_SLEEPTIME = 2.0
-MATCHER_SEARCH_RESULT_MATCH_LIMIT = 15
-
-# CFG_MATCHER_SEARCH_FIELDS = {
-#     'unique-idents': [
-#         ('0247_a', '2=DOI')
-#     ]
-# }
