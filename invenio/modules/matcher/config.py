@@ -44,102 +44,6 @@ MATCHER_DEFAULT_CONFIG = {
         "100__a": 2
     },
     "LOCAL_SLEEPTIME": 0,
-    "MATCH_VALIDATION_RULESETS": {
-        "default": {
-            "rules": [
-                {
-                    "threshold": 0.8,
-                    "match_mode": "title",
-                    "result_mode": "normal",
-                    "compare_mode": "lazy",
-                    "tags": "245__%,242__%"
-                },
-                {
-                    "threshold": 1,
-                    "match_mode": "identifier",
-                    "result_mode": "final",
-                    "compare_mode": "lazy",
-                    "tags": "037__a,088__a"
-                },
-                {
-                    "threshold": 0.8,
-                    "match_mode": "author",
-                    "result_mode": "normal",
-                    "compare_mode": "normal",
-                    "tags": "100__a,700__a"
-                },
-                {
-                    "threshold": 1,
-                    "match_mode": "title",
-                    "result_mode": "normal",
-                    "compare_mode": "lazy",
-                    "tags": "773__a"
-                }
-            ]
-        },
-        "doi": {
-            "rules": [
-                {
-                    "threshold": 1,
-                    "match_mode": "identifier",
-                    "result_mode": "final",
-                    "compare_mode": "lazy",
-                    "tags": "0247_a"
-                }
-            ],
-            "pattern": "0247_"
-        },
-        "isbn": {
-            "rules": [
-                {
-                    "threshold": 1,
-                    "match_mode": "identifier",
-                    "result_mode": "joker",
-                    "compare_mode": "lazy",
-                    "tags": "020__a"
-                }
-            ],
-            "pattern": "020__"
-        },
-        "publication": {
-            "rules": [
-                {
-                    "threshold": 0.8,
-                    "match_mode": "date",
-                    "result_mode": "normal",
-                    "compare_mode": "lazy",
-                    "tags": "260__c"
-                }
-            ],
-            "pattern": "260__"
-        },
-        "thesis": {
-            "rules": [
-                {
-                    "threshold": 0.8,
-                    "match_mode": "author",
-                    "result_mode": "normal",
-                    "compare_mode": "strict",
-                    "tags": "100__a"
-                },
-                {
-                    "threshold": 1,
-                    "match_mode": "author",
-                    "result_mode": "normal",
-                    "compare_mode": "lazy",
-                    "tags": "700__a,701__a"
-                },
-                {
-                    "threshold": 0.8,
-                    "match_mode": "author",
-                    "result_mode": "normal",
-                    "compare_mode": "ignored",
-                    "tags": "100__a,700__a"
-                }
-            ],
-            "pattern": "980__ $$a(THESIS|Thesis)"
-        }
-    },
     "FUZZY_MATCH_VALIDATION_LIMIT": 0.65,
     "FUZZY_EMPTY_RESULT_LIMIT": 1,
     "VALIDATION_MATCHING_MODES": [
@@ -159,8 +63,6 @@ MATCHER_DEFAULT_CONFIG = {
     "SEARCH_TIMEOUT_RETRIES": 3
 }
 
-<<<<<<< HEAD
-=======
 # Storage area for CLI results
 MATCHER_CLI_RESULTS_DIRECTORY = 'matcher_cli'
 MATCHER_CLI_RESULTS_PREFIX = 'matcher_results'
@@ -185,7 +87,6 @@ MATCHER_CLI_TAG_LIST = {
 
 MATCHER_LOGFILE = 'matcher.log'
 
->>>>>>> 3a7e900... matcher: CLI Flask-Script integration
 # =============================================================================
 #  Legacy Variables, these should be replaced with the cfg_matcher dictionary
 # TODO: depreciate everything here
