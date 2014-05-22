@@ -19,7 +19,7 @@
 
 import inspect
 from invenio.ext.registry import DictModuleAutoDiscoverySubRegistry
-from flask.ext.registry import RegistryError, RegistryProxy
+from flask.ext.registry import RegistryError, RegistryProxy, ModuleAutoDiscoveryRegistry
 
 
 class WorkflowsRegistry(DictModuleAutoDiscoverySubRegistry):
@@ -47,7 +47,17 @@ class WorkflowsRegistry(DictModuleAutoDiscoverySubRegistry):
         return class_or_module
 
 
-workflows = RegistryProxy('workflows', WorkflowsRegistry, 'workflows')
+workflowsext = lambda namespace: RegistryProxy(
+    namespace, ModuleAutoDiscoveryRegistry, namespace)
+
+#workflows = RegistryProxy('workflows', WorkflowsRegistry, 'workflows')
+
+
+workflows = RegistryProxy('workflowsext.workflows', WorkflowsRegistry,
+                          'workflows')
+
 actions = RegistryProxy('workflows.actions', WorkflowsRegistry, 'actions')
+
+workflows_test = RegistryProxy('workflows', WorkflowsRegistry, 'workflows')
 
 __all__ = ['actions', 'workflows']
