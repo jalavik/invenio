@@ -184,7 +184,6 @@ var approval = (function ($, holdingpen) {
     };
 
     var mini_approval = function (decision, event, objectid) {
-        console.log("omg");
         jQuery.ajax({
             type: "POST",
             url: url.resolve_action,
