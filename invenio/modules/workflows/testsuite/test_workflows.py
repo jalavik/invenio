@@ -594,31 +594,22 @@ distances from it.
             BibWorkflowObject.id_workflow == init_workflow.uuid
         ).order_by(BibWorkflowObject.id).all()
         self.assertEqual(len(init_objects), 2)
-
         restarted_workflow = start_by_wid(wid=init_workflow.uuid,
                                           module_name="unit_tests")
+
+        self.assertFalse(init_workflow.uuid == restarted_workflow.uuid)
 
         restarted_objects = BibWorkflowObject.query.filter(
             BibWorkflowObject.id_workflow == restarted_workflow.uuid
         ).order_by(BibWorkflowObject.id).all()
-
         # This time we should only have one more initial object
-        self.assertEqual(len(restarted_objects), 3)
+        self.assertEqual(len(restarted_objects), 2)
 
-        # First and last object will be INITIAL
+        # Last object will be INITIAL
         self.assertEqual(restarted_objects[1].version, ObjectVersion.INITIAL)
-
-        self.assertEqual(restarted_objects[1].version,
-                         restarted_objects[2].version)
 
         self.assertEqual(restarted_objects[1].id_parent,
                          restarted_objects[0].id)
-
-        self.assertEqual(restarted_objects[2].id_parent,
-                         restarted_objects[0].id)
-
-        self.assertEqual(restarted_objects[0].get_data(),
-                         restarted_objects[2].get_data())
 
     def _check_workflow_execution(self, objects, initial_data):
         """Test correct workflow execution."""
@@ -690,7 +681,8 @@ class TestWorkflowTasks(WorkflowTasksTestCase):
                               start_point="continue_next")
 
         from invenio.modules.workflows.engine import WorkflowStatus
-
+        from invenio.modules.workflows.models import ObjectVersion
+        self.assertEqual(test_object.version, ObjectVersion.FINAL)
         self.assertEqual(engine.status, WorkflowStatus.COMPLETED)
 
     def test_workflow_without_workflow_object_saved(self):

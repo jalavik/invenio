@@ -137,7 +137,7 @@ def halt_whatever(obj, eng):
 
 def task_reduce_and_halt(obj, eng):
     """Task to substract one to data and stop."""
-    eng.log.info("value" + str(obj.data))
+    eng.log.info("value " + str(obj.data))
     if obj.data > 0:
         obj.data -= 1
         obj.save()

@@ -67,9 +67,10 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
         asyncr = start_delayed('test_workflow', [test_objecte],
                                module_name="unit_tests")
         engineb = asyncr.get(uuid_to_workflow)
-        while engineb.status != WorkflowStatus.COMPLETED:
-            asyncr = continue_oid_delayed(test_objecte.id)
-            engineb = asyncr.get(uuid_to_workflow)
+        # while engineb.status != WorkflowStatus.COMPLETED:
+        asyncr = continue_oid_delayed(test_objecte.id)
+
+        engineb = asyncr.get(uuid_to_workflow)
         self.assertEqual(engineb.status, WorkflowStatus.COMPLETED)
         self.assertEqual(test_objecte.get_data(), 20)
 

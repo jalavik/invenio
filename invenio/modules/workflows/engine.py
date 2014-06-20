@@ -222,12 +222,17 @@ BibWorkflowEngine
 
     def has_completed(self):
         """Return True if workflow is fully completed."""
+        number_of_new_objects = BibWorkflowObject.query.filter(
+            BibWorkflowObject.id_workflow == self.uuid,
+            BibWorkflowObject.version == ObjectVersion.INITIAL
+        ).count()
+
         number_of_objects = BibWorkflowObject.query.filter(
             BibWorkflowObject.id_workflow == self.uuid,
-            BibWorkflowObject.version.in_([ObjectVersion.HALTED,
-                                           ObjectVersion.RUNNING])
+            BibWorkflowObject.version == ObjectVersion.FINAL
         ).count()
-        return number_of_objects == 0
+
+        return number_of_objects == number_of_new_objects
 
     def save(self, status=None):
         """Save the workflow instance to database."""
@@ -316,7 +321,6 @@ BibWorkflowEngine
             obj.save(version=ObjectVersion.RUNNING,
                      id_workflow=self.db_obj.uuid)
             callbacks = self.callback_chooser(obj, self)
-
             if callbacks:
                 try:
                     self.run_callbacks(callbacks, objects, obj)
