@@ -191,12 +191,12 @@ var approval = (function ($, holdingpen) {
                    "action": "approval",
                    "decision": decision},
             success: function (json) {
-                deselectAll();
+                WORKFLOWS_HP_SELECTION.deselectAll();
                 recordsToApprove = [];
                 checkRecordsToApprove();
+                holdingpen.oTable.fnDraw(false);
             }
         });
-        holdingpen.oTable.fnDraw(false);
     };
 
     var deleteRecords = function (bwolist) {
