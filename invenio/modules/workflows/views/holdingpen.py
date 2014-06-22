@@ -370,6 +370,7 @@ def details(objectid):
                            data_preview=formatted_data,
                            workflow_func=extracted_data['workflow_func'],
                            workflow=extracted_data['w_metadata'],
+                           task_result=bwobject.get_tasks_results(),
                            edit_record_action=edit_record_action)
 
 
