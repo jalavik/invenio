@@ -396,6 +396,7 @@ class BibWorkflowObject(db.Model):
         if "_widget" in extra_data:
             del extra_data["_widget"]
         self.set_extra_data(extra_data)
+        self.save()
 
     def start_workflow(self, workflow_name, **kwargs):
         """Run the workflow specified on the object.

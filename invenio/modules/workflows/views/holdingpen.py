@@ -235,8 +235,8 @@ def load_table():
         action_message = bwo.get_action_message()
         if not action_message:
             action_message = ""
-        action = actions.get(action_name, None)
 
+        action = actions.get(action_name, None)
         records_showing += 1
 
         mini_action = getattr(action, "mini_action", None)
