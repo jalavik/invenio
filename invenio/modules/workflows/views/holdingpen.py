@@ -80,17 +80,36 @@ def index():
 @templated('workflows/hp_maintable.html')
 def maintable():
     """Display main table interface of Holdingpen."""
+
+
     bwolist = get_holdingpen_objects()
     action_list = get_action_list(bwolist)
     action_static = []
     for name, action in iteritems(actions):
         if getattr(action, "static", None):
             action_static.extend(action.static)
-    my_tags = current_app.config.get('VERSION_SHOWING', [])
+
+    my_tags = []
+
+    if 'tags' in session:
+        my_tags += session['tags']
+    if 'workflows_version_showing' in session:
+        my_tags += session['workflows_version_showing']
+
+    if 'version' in request.args:
+        try:
+            my_tags += [int(request.args.get('version'))]
+            session["tags"] += [ObjectVersion.MAPPING[int(request.args.get('version'))]]
+        except ValueError:
+            my_tags += [request.args.get('version')]
+            session["tags"] += [request.args.get('version')]
     tags_to_print = ""
     for tag in my_tags:
+        try:
             tags_to_print += ObjectVersion.MAPPING[tag]
-
+        except:
+            if tag:
+                tags_to_print += tag + ','
     return dict(bwolist=bwolist,
                 action_list=action_list,
                 action_static=action_static,
