@@ -101,11 +101,11 @@
                     {{ super() }}
                 {% endblock %}
 
-
+                <li>
                 {% for result in tasks_result %}
-                            {{ result }}
+                                 <il> {{ result['name'] }} : {{ result['result'] }}</il>
                 {% endfor %}
-
+                </li>
             </div>
         </div>
     </div>
