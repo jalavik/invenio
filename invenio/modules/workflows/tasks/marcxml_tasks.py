@@ -491,16 +491,22 @@ def quick_match_record(obj, eng):
                                                  find_record_from_oaiid,
                                                  find_record_from_doi)
 
-    function_dictionnary = {'recid': find_record_from_recid,
-                            'system_number': find_record_from_sysno,
-                            'oaiid': find_record_from_oaiid,
-                            'system_number_external': find_records_from_extoaiid,
-                            'doi': find_record_from_doi}
+    function_dictionnary_emergency = {'recid': find_record_from_recid,
+                                      'system_number': find_record_from_sysno,
+                                      'oaiid': find_record_from_oaiid,
+                                      'system_number_external': find_records_from_extoaiid,
+                                      'doi': find_record_from_doi}
 
     identifiers = {}
 
     try:
         #get our persistent identifier safe easy way
+
+        try:
+            from invenio.modules.records.api import Record
+            function_dictionnary = Record(obj.data.dumps()).persistent_identifiers
+        except:
+            function_dictionnary = function_dictionnary_emergency
 
         for key in function_dictionnary.keys():
             if key in obj.data:
@@ -515,11 +521,16 @@ def quick_match_record(obj, eng):
             obj.extra_data["persistent_ids"] = identifiers
     except KeyError:
         identifiers = {}
+
+
     if "recid" not in identifiers:
         for identifier in identifiers:
-            recid = function_dictionnary[identifier](
-                identifiers[identifier])
-            print(str(recid))
+            try:
+                recid = function_dictionnary_emergency[identifier](
+                    identifiers[identifier])
+            except:
+                recid = None
+
             if recid:
                 if 'recid' not in obj.data:
                     obj.data['recid'] = {'value': recid}

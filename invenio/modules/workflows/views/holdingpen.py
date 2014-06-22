@@ -763,9 +763,18 @@ def get_title(record):
 
 def get_identifiers(record):
     """Get record identifiers."""
-    #FIXME: after solving the bibfield problem use the oaiidentifier
-    if hasattr(record, "get"):
-        return [record.get("system_control_number", {}).get("value", 'No ids')]
-    else:
-        return ' No ids'
+
+    from invenio.modules.records.api import Record
+
+    try:
+        identifiers = Record(record.dumps()).persistent_identifiers
+        final_identifiers = []
+        for i in identifiers:
+            final_identifiers.append(i['value'])
+        return final_identifiers
+    except Exception as e :
+        if hasattr(record, "get"):
+            return [record.get("system_number_external", {}).get("value", 'No ids')]
+        else:
+            return [' No ids']
 
