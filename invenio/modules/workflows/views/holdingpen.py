@@ -95,14 +95,17 @@ def maintable():
         my_tags += session['tags']
     if 'workflows_version_showing' in session:
         my_tags += session['workflows_version_showing']
-
     if 'version' in request.args:
         try:
-            my_tags += [int(request.args.get('version'))]
-            session["tags"] += [ObjectVersion.MAPPING[int(request.args.get('version'))]]
-        except ValueError:
-            my_tags += [request.args.get('version')]
-            session["tags"] += [request.args.get('version')]
+            if ObjectVersion.MAPPING[int(request.args.get('version'))] not in my_tags:
+                my_tags += [int(request.args.get('version'))]
+            if int(request.args.get('version')) not in session["workflows_version_showing"]:
+                session["workflows_version_showing"] += [int(request.args.get('version'))]
+        except Exception as e:
+            if request.args.get('version') not in my_tags:
+                my_tags += [request.args.get('version')]
+            if [request.args.get('version')] not in session["tags"]:
+                session["workflows_version_showing"] += [request.args.get('version')]
     tags_to_print = ""
     for tag in my_tags:
         try:
