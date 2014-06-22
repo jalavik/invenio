@@ -81,7 +81,6 @@ def index():
 def maintable():
     """Display main table interface of Holdingpen."""
 
-
     bwolist = get_holdingpen_objects()
     action_list = get_action_list(bwolist)
     action_static = []
@@ -442,6 +441,8 @@ def delete_multi(bwolist):
 @login_required
 def show_action(objectid):
     """Render the action assigned to a specific record."""
+    from sqlalchemy import or_
+
     bwobject = BibWorkflowObject.query.filter(
         BibWorkflowObject.id == objectid).first_or_404()
 
@@ -456,9 +457,6 @@ def show_action(objectid):
                                   [extracted_data['w_metadata']],
                                   [extracted_data['workflow_func']])
     url, parameters = result
-
-    #### message
-    from sqlalchemy import or_
 
     if bwobject.id_parent:
         hbwobject_db_request = BibWorkflowObject.query.filter(
