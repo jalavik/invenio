@@ -506,9 +506,9 @@ def quick_match_record(obj, eng):
             from invenio.modules.records.api import Record
             function_dictionnary = Record(obj.data.dumps()).persistent_identifiers
         except:
-            function_dictionnary = function_dictionnary_emergency
+            function_dictionnary = ['recid', 'system_number', 'oaiid', 'system_number_external', 'doi']
 
-        for key in function_dictionnary.keys():
+        for key in function_dictionnary:
             if key in obj.data:
                 temp_result = obj.data[key]
                 if isinstance(temp_result, dict):
