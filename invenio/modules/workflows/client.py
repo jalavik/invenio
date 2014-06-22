@@ -82,7 +82,8 @@ def run_workflow(wfe, data, stop_on_halt=False,
             msg = "Error: %r\n%s" % \
                   (exception_triggered, traceback.format_exc())
             wfe.log.error(msg)
-
+            # Sets an error message as a tuple (title, details)
+            wfe.set_error_message((str(exception_triggered), msg))
             # Changing counter should be moved to wfe object
             # together with default exception handling
             wfe.increase_counter_error()
