@@ -360,7 +360,11 @@ def details(objectid):
     except KeyError:
         # Could not load edit_record_action
         edit_record_action = []
-
+    print 'omg'
+    try:
+        print bwobject.get_tasks_results()
+    except Exception as e:
+        print e
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
                            hbwobject=hbwobject_final,
