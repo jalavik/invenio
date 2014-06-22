@@ -504,7 +504,11 @@ def quick_match_record(obj, eng):
 
         try:
             from invenio.modules.records.api import Record
-            function_dictionnary = Record(obj.data.dumps()).persistent_identifiers
+            final_identifiers = Record(obj.data.dumps()).persistent_identifiers
+
+            function_dictionnary = []
+            for i in identifiers:
+                function_dictionnary.append(i.keys())
         except:
             function_dictionnary = ['recid', 'system_number', 'oaiid', 'system_number_external', 'doi']
 
