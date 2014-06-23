@@ -355,7 +355,7 @@ def details(objectid):
                       hbwobject[ObjectVersion.FINAL]
 
     results = []
-    for label, res in bwobject.get_tasks_results():
+    for label, res in bwobject.get_tasks_results().iteritems():
         res_dicts = [item.to_dict() for item in res]
         results.append((label, res_dicts))
 
