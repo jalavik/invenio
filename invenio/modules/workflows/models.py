@@ -396,6 +396,7 @@ class BibWorkflowObject(db.Model):
         if "_widget" in extra_data:
             del extra_data["_widget"]
         self.set_extra_data(extra_data)
+        self.save()
 
     def start_workflow(self, workflow_name, **kwargs):
         """Run the workflow specified on the object.
@@ -487,6 +488,9 @@ class BibWorkflowObject(db.Model):
         from invenio.modules.formatter.engine import format_record
 
         data = self.get_data()
+        if not data:
+            return ''
+
         if formatter:
             # A seperate formatter is supplied
             return formatter(data)
