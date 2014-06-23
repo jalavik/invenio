@@ -212,3 +212,29 @@
             {{ data_preview|safe }}
         </div>
 {% endblock %}
+
+{% block hp_task_results %}
+    {% if task_results %}
+
+      {% for label, results in task_results %}
+        <div class="panel panel-default">
+        <div class="panel-heading">
+        {{ label }}
+        </div>
+        <div class="panel-body">
+        {% for result in results %}
+          <div class="list-group">
+              {% for key, value in result.iteritems() %}
+            <li class="list-group-item">
+              <h4 class="list-group-item-heading">{{ key }}</h4>
+              <p class="list-group-item-text">{{ value }}</p>
+            </li>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+{% endblock %}

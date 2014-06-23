@@ -354,20 +354,10 @@ def details(objectid):
                       hbwobject[ObjectVersion.HALTED] + \
                       hbwobject[ObjectVersion.FINAL]
 
-    try:
-        edit_record_action = actions['edit_record_action']()
-    except KeyError:
-        # Could not load edit_record_action
-        edit_record_action = []
     results = []
-    print 'omg'
-    try:
-        print bwobject.get_tasks_results()
-        A =  bwobject.get_tasks_results()
-        for i in A:
-            results.append(A[i][0].to_dict())
-    except Exception as e:
-        print e
+    for label, res in bwobject.get_tasks_results():
+        res_dicts = [item.to_dict() for item in res]
+        results.append((label, res_dicts))
 
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
@@ -378,8 +368,7 @@ def details(objectid):
                            data_preview=formatted_data,
                            workflow_func=extracted_data['workflow_func'],
                            workflow=extracted_data['w_metadata'],
-                           task_result=bwobject.get_tasks_results(),
-                           edit_record_action=edit_record_action)
+                           task_results=results)
 
 
 @blueprint.route('/restart_record', methods=['GET', 'POST'])
@@ -485,8 +474,14 @@ def show_action(objectid):
                       hbwobject[ObjectVersion.HALTED] + \
                       hbwobject[ObjectVersion.FINAL]
 
+    results = []
+    for label, res in bwobject.get_tasks_results().iteritems():
+        res_dicts = [item.to_dict() for item in res]
+        results.append((label, res_dicts))
+
     parameters["message"] = bwobject.get_action_message()
     parameters["hbwobject"] = hbwobject_final
+    parameters["task_results"] = results
     return render_template(url, **parameters)
 
 

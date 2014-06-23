@@ -32,7 +32,7 @@ var approval = (function ($, holdingpen) {
                "delete_single": data.url_prefix + "/delete"};
 
         $(".message").hide();
-        $("#batch-btn").popover();
+        //$("#batch-btn").popover();
 
         $(".theform #submitButton").click(function (event) {
             event.preventDefault();
