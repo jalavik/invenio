@@ -19,26 +19,14 @@
 {% extends "workflows/hp_base.html" %}
 {% import 'workflows/utils.html' as utils %}
 
-{% block header%}
-    {{ super() }}
-    {% css url_for('static', filename='css/dataTables.colVis.css') %}
-    {% css url_for('static', filename='css/dataTables.bootstrap.css') %}
-    {% css url_for('static', filename='css/bootstrap-tagsinput.css') %}
-{% endblock header %}
-
-{% js url_for('static', filename='js/jquery.dataTables.js'), '30-datatables', 'uglifyjs' %}
-{% js url_for('static', filename='js/dataTables.colVis.js'), '30-datatables' %}
-{% js url_for('static', filename='js/bootstrap.js'), '30-datatables' %}
-{% js url_for('static', filename='js/dataTables.bootstrap.js'), '30-datatables' %}
-{% js url_for('static', filename='js/bootstrap-tagsinput.js'), '30-datatables' %}
 {% js url_for('workflows.static', filename='js/workflows/hp_maintable.js'), '50-workflows' %}
 {% js url_for('workflows.static', filename='js/workflows/hp_tags.js'), '50-workflows' %}
 {% js url_for('workflows.static', filename='js/workflows/hp_selection.js'), '50-workflows' %}
 {% js url_for('workflows.static', filename='js/workflows/hp_utilities.js'), '50-workflows' %}
+{% js url_for('workflows.static', filename='js/workflows/utilities.js'), '50-workflows' %}
 
-{% for file in action_static %}
-    {% js url_for('workflows.static', filename=file), '50-workflows' %}
-{% endfor %}
+
+{% js url_for('workflows.static', filename='js/workflows/actions/approval.js'), '60-workflows' %}
 
 {% block javascript %}
     {{ super() }}
@@ -52,10 +40,6 @@
             success: function(data) {
                 WORKFLOWS_HOLDINGPEN.init(data);
                 WORKFLOWS_HOLDINGPEN.init_datatable(WORKFLOWS_HP_SELECTION);
-                for (var i = data.actions.length - 1; i >= 0; i--) {
-                    window[data.actions[i]] = window[data.actions[i]](window.jQuery, WORKFLOWS_HOLDINGPEN);
-                    window[data.actions[i]].init(data);
-                };
             }
         });
     });
@@ -63,7 +47,6 @@
 {% endblock javascript %}
 
 {% block hpbody %}
-    <div id="alert-message"></div>
     <nav class="navbar navbar-default navbar-static-top" role="navigation">
       <!-- Brand and toggle get grouped for better mobile display -->
 
