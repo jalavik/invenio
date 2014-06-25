@@ -508,7 +508,7 @@ def quick_match_record(obj, eng):
             function_dictionnary.append(i.keys())
     except Exception as e:
         # if anything goes wrong, assume we need to get it manually.
-        eng.log.error("Problem with getting identifiers: %s"
+        eng.log.error("Problem with getting identifiers: %s\n%s"
                       % (str(e), traceback.format_exc()))
         function_dictionnary = ['recid', 'system_number', 'oaiid', 'system_number_external', 'doi']
 
