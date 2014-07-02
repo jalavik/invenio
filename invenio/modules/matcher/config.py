@@ -154,9 +154,10 @@ MATCHER_DEFAULT_CONFIG = {
     "VALIDATION": True,
     "LOGFILE": "/tmp/bibmatch.log",
     "SEARCH_QUERY_STRINGS": [],
-    "SEARCH_COLLECTIONS": []
+    "SEARCH_COLLECTIONS": [],
+    "SEARCH_TIMEOUT_SLEEP_TIME": 30,
+    "SEARCH_TIMEOUT_RETRIES": 3
 }
-
 
 # =============================================================================
 #  Legacy Variables, these should be replaced with the cfg_matcher dictionary

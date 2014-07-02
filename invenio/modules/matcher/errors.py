@@ -49,3 +49,8 @@ class InvalidConfigError(Exception):
 class CeleryFeederError(Exception):
     """Exception thrown if either part of the CeleryFeeder breaks"""
     pass
+
+
+class BibMatchValidationError(Exception):
+    """Legacy exception, to be removed"""
+    pass
