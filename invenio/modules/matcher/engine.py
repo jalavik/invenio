@@ -24,40 +24,33 @@
     the API instead.
 """
 
-__revision__ = "$Id$"
-
 import sys
 import string
-import os
-import getopt
 import re
+
 from time import sleep
+from six import iteritems
+from socket import timeout as socket_timeout
 
 from invenio.base.globals import cfg
+
+from invenio.utils.connector import InvenioConnectorAuthError
+from invenio.utils.text import translate_to_ascii, xml_entities_to_utf8
+
 from invenio.legacy.bibconvert import api as bibconvert
-from invenio.legacy.bibrecord import (create_records, record_get_field_values,
-                                      record_xml_output,
+from invenio.legacy.bibrecord import (record_get_field_values,
                                       record_modify_controlfield,
                                       record_has_field,
                                       record_add_field)
-from invenio.legacy.search_engine import (get_fieldcodes,
-                                          re_pattern_single_quotes,
+from invenio.legacy.search_engine import (re_pattern_single_quotes,
                                           re_pattern_double_quotes,
                                           re_pattern_regexp_quotes,
                                           re_pattern_spaces_after_colon)
-from invenio.legacy.search_engine.query_parser import SearchQueryParenthesisedParser
+from invenio.legacy.search_engine.query_parser import (
+    SearchQueryParenthesisedParser)
 from invenio.legacy.dbquery import run_sql
-from invenio.legacy.bibrecord.scripts.textmarc2xmlmarc import transform_file
-from invenio.utils.connector import (InvenioConnector,
-                                     InvenioConnectorAuthError)
-from invenio.utils.text import translate_to_ascii, xml_entities_to_utf8
 
-from .config import (MATCHER_FUZZY_WORDLIMITS,
-                     MATCHER_QUERY_TEMPLATES,
-                     MATCHER_FUZZY_EMPTY_RESULT_LIMIT,
-                     MATCHER_LOCAL_SLEEPTIME,
-                     MATCHER_REMOTE_SLEEPTIME,
-                     MATCHER_SEARCH_RESULT_MATCH_LIMIT)
+from .utils import ResultType
 from .validator import (validate_matches,
                         validate_tag, BibMatchValidationError)
 
@@ -83,7 +76,7 @@ class Querystring:
              given record. If any BibConvert formats are specified for this field, these will
              be applied.
     """
-    def __init__(self, operator="OR", clean=False, ascii_mode=False):
+    def __init__(self, config, log, operator="OR", clean=False, ascii_mode=False):
         """
         Creates Querystring instance.
 
@@ -93,6 +86,8 @@ class Querystring:
         @param clean: indicates if queries should be sanitized
         @type clean: bool
         """
+        self.config = config
+        self.log = log
         self.fields = {}
         self.operator = operator.upper()
         self.pattern = ""
@@ -121,12 +116,6 @@ class Querystring:
         @return: (query-string, complete flag)
         @rtype: tuple
         """
-        if qrystr == "":
-            qrystr = "[title]"
-        if "||" in qrystr or not "[" in qrystr:
-            # Assume old style query-strings
-            qrystr = self._convert_qrystr(qrystr)
-
         # FIXME: Convert to lower case, since fuzzy_parser
         # which treats everything lower-case, and will cause problems when
         # retrieving data from the self.fields dict.
@@ -148,19 +137,19 @@ class Querystring:
             # We gather all the values from the self.fields and put them
             # in a list together with any prefix/suffix associated with the field.
             new_query = self.pattern
-            for (field_prefix, field_reference, field_suffix), value_list in self.fields.items():
+            for (field_prefix, field_reference, field_suffix), value_list in iteritems(self.fields):
                 new_values = []
                 for value in value_list:
-                    new_values.append("%s%s%s" % (field_prefix, value, field_suffix))
-                new_query = new_query.replace("%s[%s]%s" % (field_prefix,
-                                                            field_reference,
-                                                            field_suffix),
+                    new_values.append(u"%s%s%s" % (field_prefix, value, field_suffix))
+                new_query = new_query.replace(u"%s[%s]%s" % (field_prefix,
+                                                             field_reference,
+                                                             field_suffix),
                                               operator_delimiter.join(set(new_values)))
             all_queries = [new_query]
         else:
             # operator is OR, which means a more elaborate approach to multi-value fields
             field_tuples = []
-            for key, values in self.fields.items():
+            for key, values in iteritems(self.fields.items):
                 field_list = []
                 for value in values:
                     # We add key here to be able to associate the value later
@@ -171,12 +160,12 @@ class Querystring:
             for query in query_tuples:
                 new_query = self.pattern
                 for (field_prefix, field_reference, field_suffix), value in query:
-                    new_query = new_query.replace("%s[%s]%s" % (field_prefix,
-                                                                field_reference,
-                                                                field_suffix),
-                                                  "%s%s%s" % (field_prefix,
-                                                              value,
-                                                              field_suffix))
+                    new_query = new_query.replace(u"%s[%s]%s" % (field_prefix,
+                                                                 field_reference,
+                                                                 field_suffix),
+                                                  u"%s%s%s" % (field_prefix,
+                                                               value,
+                                                               field_suffix))
                 all_queries.append(new_query)
         # Finally we concatenate all unique queries into one, delimited by chosen operator
         self.query = operator_delimiter.join(set(all_queries))
@@ -224,7 +213,7 @@ class Querystring:
                             # Grab the x+1 longest words in the string and perform boolean OR
                             # for all combinations of x words (boolean AND)
                             # x is determined by the configuration dict and is tag-based. Defaults to 3 words
-                            word_list = get_longest_words(value, limit=MATCHER_FUZZY_WORDLIMITS.get(field_reference, 3)+1)
+                            word_list = get_longest_words(value, limit=self.config['FUZZY_WORDLIMITS'].get(field_reference, 3)+1)
                             for i in range(len(word_list)):
                                 words = list(word_list)
                                 words.pop(i)
@@ -252,7 +241,7 @@ class Querystring:
                             # Grab the x longest words in the string and perform boolean AND for each word
                             # x is determined by the configuration dict and is tag-based. Defaults to 3 words
                             # AND can be overwritten by command line argument -o o
-                            word_list = get_longest_words(value, limit=MATCHER_FUZZY_WORDLIMITS.get(field_reference, 3))
+                            word_list = get_longest_words(value, limit=self.config['FUZZY_WORDLIMITS'].get(field_reference, 3))
                             for word in word_list:
                                 # Create fuzzy query with key + word, including any surrounding elements like quotes, regexp etc.
                                 new_query.append(current_pattern.replace("[%s]" % (field_reference,), word))
@@ -274,16 +263,6 @@ class Querystring:
         query = self.query.replace("''", "")
         query = query.replace('""', "")
         return query
-
-    def _convert_qrystr(self, qrystr):
-        """
-        Converts old-style query-strings into new-style.
-        """
-        fields = qrystr.split("||")
-        converted_query = []
-        for field in fields:
-            converted_query.append("[%s]" % (field,))
-        return self.operator.join(converted_query)
 
     def _extract_fieldvalues(self, record, qrystr):
         """
@@ -342,7 +321,8 @@ class Querystring:
                 tag_structure = validate_tag(field)
                 if tag_structure is not None:
                     tag, ind1, ind2, code = tag_structure
-                    value_list = record_get_field_values(record, tag, ind1, ind2, code)
+                    value_list = [unicode(value, encoding='utf-8') for value in
+                                  record_get_field_values(record, tag, ind1, ind2, code)]
                     if len(value_list) > 0:
                         # Apply any BibConvert formatting functions to each value
                         updated_value_list = self._apply_formats(fieldname, value_list)
@@ -506,7 +486,8 @@ def add_recid(record, recid):
         record_add_field(record, '001', controlfield_value=str(recid))
 
 
-def match_result_output(bibmatch_recid, recID_list, server_url, query, matchmode="no match"):
+def match_result_output(bibmatch_recid, recID_list, server_url, query,
+                        matchmode=ResultType.NEW):
     """
     Generates result as XML comments from passed record and matching parameters.
 
@@ -528,17 +509,17 @@ def match_result_output(bibmatch_recid, recID_list, server_url, query, matchmode
     @rtype str
     @return XML result string
     """
-    result = ["<!-- BibMatch-Matching-Results: -->",
-              "<!-- BibMatch-Matching-Record-Identifier: %s -->" % (bibmatch_recid,)]
+    result = [u"<!-- BibMatch-Matching-Results: -->",
+              u"<!-- BibMatch-Matching-Record-Identifier: %s -->" % (bibmatch_recid,)]
     for recID in recID_list:
-        result.append("<!-- BibMatch-Matching-Found: %s/%s/%s -->"
+        result.append(u"<!-- BibMatch-Matching-Found: %s/%s/%s -->"
                       % (server_url, cfg['CFG_SITE_RECORD'], recID))
-    result.append("<!-- BibMatch-Matching-Mode: %s -->" % (matchmode,))
-    result.append("<!-- BibMatch-Matching-Criteria: %s -->" % (query,))
-    return "\n".join(result)
+    result.append(u"<!-- BibMatch-Matching-Mode: %s -->" % (matchmode,))
+    result.append(u"<!-- BibMatch-Matching-Criteria: %s -->" % (query,))
+    return u"\n".join(result)
 
 
-def match_records(record, config, connector,
+def match_records(record, config, connector, log, index,
                   search_mode=None,
                   operator="and",
                   verbose=1, modify=0,
@@ -605,120 +586,110 @@ def match_records(record, config, connector,
     """
     # Legacy setup
     server_url = connector.server_url
+    server = connector
     sleeptime = config["LOCAL_SLEEPTIME"]
-    validate = config["VALIDATION"]
     collections = config["SEARCH_COLLECTIONS"]
     qrystrs = config["SEARCH_QUERY_STRINGS"]
+    validate = config["VALIDATE_RESULTS"]
+
+    record_counter = index
 
     newrecs = []
     matchedrecs = []
     ambiguousrecs = []
     fuzzyrecs = []
-    MATCHER_LOGGER.info("-- BibMatch starting match of %d records --" % (len(records),))
 
-    ## Go through each record and try to find matches using defined querystrings
-    record_counter = 0
-    for record in records:
-        record_counter += 1
-        if (verbose > 1):
-            sys.stderr.write("\n Processing record: #%d .." % (record_counter,))
+    # At least one (field, querystring) tuple is needed for default search query
+    if not qrystrs:
+        qrystrs = [("", "")]
+    log.info("Matching of record %d: Started" % (record_counter,))
+    [matched_results, ambiguous_results, fuzzy_results] = match_record(
+        config, log,
+        bibmatch_recid=index,
+        record=record,
+        server=server,
+        qrystrs=qrystrs,
+        search_mode=search_mode,
+        operator=operator,
+        verbose=verbose,
+        sleeptime=sleeptime,
+        clean=clean,
+        collections=collections,
+        fuzzy=fuzzy,
+        validate=validate,
+        ascii_mode=ascii_mode
+    )
 
-        # At least one (field, querystring) tuple is needed for default search query
-        if not qrystrs:
-            qrystrs = [("", "")]
-        MATCHER_LOGGER.info("Matching of record %d: Started" % (record_counter,))
-        [matched_results, ambiguous_results, fuzzy_results] = match_record(bibmatch_recid=record_counter,
-                                                                           record=record[0],
-                                                                           server=connector,
-                                                                           qrystrs=qrystrs,
-                                                                           search_mode=search_mode,
-                                                                           operator=operator,
-                                                                           verbose=verbose,
-                                                                           sleeptime=sleeptime,
-                                                                           clean=clean,
-                                                                           collections=collections,
-                                                                           fuzzy=fuzzy,
-                                                                           validate=validate,
-                                                                           ascii_mode=ascii_mode)
-
-        ## Evaluate final results for record
-        # Add matched record iff number found is equal to one, otherwise return fuzzy,
-        # ambiguous or no match
-        if len(matched_results) == 1:
-            results, query = matched_results[0]
-            # If one match, add it as exact match, otherwise ambiguous
-            if len(results) == 1:
-                if modify:
-                    add_recid(record[0], results[0])
-                matchedrecs.append((record[0],
-                                    match_result_output(record_counter,
-                                                        results, server_url,
-                                                        query, "exact-matched")))
-                if (verbose > 1):
-                    sys.stderr.write("Final result: match - %s/record/%s\n" % (server_url, str(results[0])))
-                MATCHER_LOGGER.info("Matching of record %d: Completed as 'match'" % (record_counter,))
-            else:
-                ambiguousrecs.append((record[0],
-                                      match_result_output(record_counter,
-                                                          results, server_url,
-                                                          query, "ambiguous-matched")))
-                if (verbose > 1):
-                    sys.stderr.write("Final result: ambiguous\n")
-                MATCHER_LOGGER.info("Matching of record %d: Completed as 'ambiguous'" % (record_counter,))
+    ## Evaluate final results for record
+    # Add matched record iff number found is equal to one, otherwise return fuzzy,
+    # ambiguous or no match
+    if len(matched_results) == 1:
+        results, query = matched_results[0]
+        # If one match, add it as exact match, otherwise ambiguous
+        if len(results) == 1:
+            if modify:
+                add_recid(record[0], results[0])
+            matchedrecs.append((record[0],
+                                match_result_output(record_counter,
+                                                    results, server_url,
+                                                    query, ResultType.MATCHED)))
+            log.info("Final result: match - %s/record/%s\n", server_url, str(results[0]))
+            log.info("Matching of record %d: Completed as 'match'", record_counter)
         else:
-            if len(fuzzy_results) > 0:
-                # Find common record-id for all fuzzy results and grab first query
-                # as "representative" query
-                query = fuzzy_results[0][1]
-                result_lists = []
-                for res, dummy in fuzzy_results:
-                    result_lists.extend(res)
-                results = set([res for res in result_lists])
-                if len(results) == 1:
-                    fuzzyrecs.append((record[0],
-                                      match_result_output(record_counter,
-                                                          results, server_url,
-                                                          query, "fuzzy-matched")))
-                    if (verbose > 1):
-                        sys.stderr.write("Final result: fuzzy\n")
-                    MATCHER_LOGGER.info("Matching of record %d: Completed as 'fuzzy'" % (record_counter,))
-                else:
-                    ambiguousrecs.append((record[0],
-                                          match_result_output(record_counter,
-                                                              results, server_url,
-                                                              query, "ambiguous-matched")))
-                    if (verbose > 1):
-                        sys.stderr.write("Final result: ambiguous\n")
-                    MATCHER_LOGGER.info("Matching of record %d: Completed as 'ambiguous'" % (record_counter,))
-            elif len(ambiguous_results) > 0:
-                # Find common record-id for all ambiguous results and grab first query
-                # as "representative" query
-                query = ambiguous_results[0][1]
-                result_lists = []
-                for res, dummy in ambiguous_results:
-                    result_lists.extend(res)
-                results = set([res for res in result_lists])
+            ambiguousrecs.append((record[0],
+                                  match_result_output(record_counter,
+                                                      results, server_url,
+                                                      query, ResultType.AMBIGUOUS)))
+            log.info("Final result: ambiguous\n")
+            log.info("Matching of record %d: Completed as 'ambiguous'", record_counter)
+    else:
+        if len(fuzzy_results) > 0:
+            # Find common record-id for all fuzzy results and grab first query
+            # as "representative" query
+            query = fuzzy_results[0][1]
+            result_lists = []
+            for res, dummy in fuzzy_results:
+                result_lists.extend(res)
+            results = set([res for res in result_lists])
+            if len(results) == 1:
+                fuzzyrecs.append((record[0],
+                                  match_result_output(record_counter,
+                                                      results, server_url,
+                                                      query, ResultType.FUZZY)))
+                log.info("Final result: fuzzy\n")
+                log.info("Matching of record %d: Completed as 'fuzzy'", record_counter)
+            else:
                 ambiguousrecs.append((record[0],
                                       match_result_output(record_counter,
                                                           results, server_url,
-                                                          query, "ambiguous-matched")))
-                if (verbose > 1):
-                    sys.stderr.write("Final result: ambiguous\n")
-                MATCHER_LOGGER.info("Matching of record %d: Completed as 'ambiguous'" % (record_counter,))
-            else:
-                newrecs.append((record[0], match_result_output(record_counter, [], server_url, str(qrystrs))))
-                if (verbose > 1):
-                    sys.stderr.write("Final result: new\n")
-                MATCHER_LOGGER.info("Matching of record %d: Completed as 'new'" % (record_counter,))
-    MATCHER_LOGGER.info("-- BibMatch ending match: New(%d), Matched(%d), Ambiguous(%d), Fuzzy(%d) --" %
-                             (len(newrecs), len(matchedrecs), len(ambiguousrecs), len(fuzzyrecs)))
+                                                          query, ResultType.AMBIGUOUS)))
+                log.info("Final result: ambiguous\n")
+                log.info("Matching of record %d: Completed as 'ambiguous'", record_counter)
+        elif len(ambiguous_results) > 0:
+            # Find common record-id for all ambiguous results and grab first query
+            # as "representative" query
+            query = ambiguous_results[0][1]
+            result_lists = []
+            for res, dummy in ambiguous_results:
+                result_lists.extend(res)
+            results = set([res for res in result_lists])
+            ambiguousrecs.append((record[0],
+                                  match_result_output(record_counter,
+                                                      results, server_url,
+                                                      query, ResultType.AMBIGUOUS)))
+            log.info("Final result: ambiguous\n")
+            log.info("Matching of record %d: Completed as 'ambiguous'",record_counter)
+        else:
+            newrecs.append((record[0], match_result_output(record_counter, [], server_url, str(qrystrs))))
+            log.info("Final result: new\n")
+            log.info("Matching of record %d: Completed as 'new'", record_counter)
     return [newrecs, matchedrecs, ambiguousrecs, fuzzyrecs]
 
 
-def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None, operator="and",
-                 verbose=1, sleeptime=MATCHER_LOCAL_SLEEPTIME,
-                 clean=False, collections=[], fuzzy=True, validate=True,
-                 ascii_mode=False):
+def match_record(config, log, bibmatch_recid, record, server, qrystrs=None,
+                 search_mode=None, operator="and", verbose=1,
+                 sleeptime=1, clean=False,
+                 collections=[], fuzzy=True, validate=True, ascii_mode=False):
     """
     Matches a single record.
 
@@ -775,17 +746,16 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
     # Go through each querystring, trying to find a matching record
     # Stops on first valid match, if no exact-match we continue with fuzzy match
     for field, qrystr in qrystrs:
-        querystring = Querystring(operator, clean=clean, ascii_mode=ascii_mode)
+        querystring = Querystring(config, log, operator,
+                                  clean=clean, ascii_mode=ascii_mode)
         query, complete = querystring.create_query(record, qrystr)
         if query == "":
-            if (verbose > 1):
-                sys.stderr.write("\nEmpty query. Skipping...\n")
+            log.info("\nEmpty query. Skipping...\n")
             # Empty query, no point searching database
             continue
         query_list.append((querystring, complete, field))
         if not complete:
-            if (verbose > 1):
-                sys.stderr.write("\nQuery not complete. Flagged as uncertain/ambiguous...\n")
+            log.info("\nQuery not complete. Flagged as uncertain/ambiguous...\n")
 
         # Determine proper search parameters
         if search_mode is not None:
@@ -795,28 +765,35 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
         if (verbose > 8):
             sys.stderr.write("\nSearching with values %s\n" %
                              (search_params,))
-        MATCHER_LOGGER.info("Searching with values %s" % (search_params,))
+        log.info("Searching with values %s" % (search_params,))
         ## Perform the search with retries
         try:
-            result_recids = server.search_with_retry(**search_params)
+            result_recids = server.search_with_retry(
+                sleeptime=config['SEARCH_TIMEOUT_SLEEP_TIME'],
+                retrycount=config['SEARCH_TIMEOUT_RETRIES'],
+                **search_params)
         except InvenioConnectorAuthError as error:
             if verbose > 0:
                 sys.stderr.write("Authentication error when searching: %s"
                                  % (str(error),))
             break
+        except socket_timeout:
+            # We don't want Matcher to die because of InvenioConnector
+            sys.stderr.write("Uncaught socket.timeout exception caught by " +
+                             "Matcher while searching.")
 
         sleep(sleeptime)
 
         ## Check results:
         if len(result_recids) > 0:
             # Matches detected
-            MATCHER_LOGGER.info("Results: %s" % (result_recids[:15],))
+            log.info("Results: %s" % (result_recids[:15],))
 
-            if len(result_recids) > MATCHER_SEARCH_RESULT_MATCH_LIMIT:
+            if len(result_recids) > config['SEARCH_RESULT_MATCH_LIMIT']:
                 # Too many matches, treat as non-match
                 if (verbose > 8):
                     sys.stderr.write("result=More then %d results...\n" %
-                                    (MATCHER_SEARCH_RESULT_MATCH_LIMIT,))
+                                    (config['SEARCH_RESULT_MATCH_LIMIT'],))
                 continue
 
             if (verbose > 8):
@@ -824,7 +801,7 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
 
             if validate:
                 # Validation can be run
-                MATCHER_LOGGER.info("Matching of record %d: Query (%s) found %d records: %s" %
+                log.info("Matching of record %d: Query (%s) found %d records: %s" %
                                          (bibmatch_recid,
                                           query,
                                           len(result_recids),
@@ -836,6 +813,8 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                     exact_matches, fuzzy_matches = validate_matches(bibmatch_recid=bibmatch_recid,
                                                                     record=record,
                                                                     server=server,
+                                                                    config=config,
+                                                                    log=log,
                                                                     result_recids=result_recids,
                                                                     collections=collections,
                                                                     verbose=verbose,
@@ -899,12 +878,11 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                 for current_operator, qry in fuzzy_query_list:
                     current_resultset = None
                     if qry == "":
-                        if (verbose > 1):
-                            sys.stderr.write("\nEmpty query. Skipping...\n")
-                            # Empty query, no point searching database
-                            continue
+                        log.info("\nEmpty query. Skipping...\n")
+                        # Empty query, no point searching database
+                        continue
                     search_params = dict(p=qry, f=field, of='id', c=collections)
-                    MATCHER_LOGGER.info("Fuzzy searching with values %s" % (search_params,))
+                    log.info("Fuzzy searching with values %s" % (search_params,))
                     try:
                         current_resultset = server.search_with_retry(**search_params)
                     except InvenioConnectorAuthError as error:
@@ -912,19 +890,19 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                             sys.stderr.write("Authentication error when searching: %s"
                                              % (str(error),))
                         break
-                    MATCHER_LOGGER.info("Results: %s" % (current_resultset[:15],))
+                    log.info("Results: %s" % (current_resultset[:15],))
                     if (verbose > 8):
-                        if len(current_resultset) > MATCHER_SEARCH_RESULT_MATCH_LIMIT:
+                        if len(current_resultset) > config['SEARCH_RESULT_MATCH_LIMIT']:
                             sys.stderr.write("\nSearching with values %s result=%s\n" %
                                              (search_params, "More then %d results..." %
-                                              (MATCHER_SEARCH_RESULT_MATCH_LIMIT,)))
+                                              (config['SEARCH_RESULT_MATCH_LIMIT'],)))
                         else:
                             sys.stderr.write("\nSearching with values %s result=%s\n"
                                              % (search_params, current_resultset))
                     sleep(sleeptime)
                     if current_resultset is None:
                         continue
-                    if current_resultset == [] and empty_results < MATCHER_FUZZY_EMPTY_RESULT_LIMIT:
+                    if current_resultset == [] and empty_results < config['FUZZY_EMPTY_RESULT_LIMIT']:
                         # Allows some empty results
                         empty_results += 1
                     else:
@@ -939,15 +917,14 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                             result_hitset = list(set(result_hitset) | set(current_resultset))
                 else:
                     # We did not hit a break in the for-loop: we were allowed to search.
-                    if result_hitset and len(result_hitset) > MATCHER_SEARCH_RESULT_MATCH_LIMIT:
-                        if (verbose > 1):
-                            sys.stderr.write("\nToo many results... %d  " % (len(result_hitset)))
+                    if result_hitset and len(result_hitset) > config['SEARCH_RESULT_MATCH_LIMIT']:
+                        log.info("\nToo many results... %d  " % (len(result_hitset)))
                     elif result_hitset:
                         # This was a fuzzy match
                         query_out = " ".join(["%s %s" % (op, qu) for op, qu in fuzzy_query_list])
                         if validate:
                             # We can run validation
-                            MATCHER_LOGGER.info("Matching of record %d: Fuzzy query (%s) found %d records: %s" %
+                            log.info("Matching of record %d: Fuzzy query (%s) found %d records: %s" %
                                                      (bibmatch_recid,
                                                       query_out,
                                                       len(result_hitset),
@@ -958,6 +935,8 @@ def match_record(bibmatch_recid, record, server, qrystrs=None, search_mode=None,
                                 exact_matches, fuzzy_matches = validate_matches(bibmatch_recid=bibmatch_recid,
                                                                                 record=record,
                                                                                 server=server,
+                                                                                config=config,
+                                                                                log=log,
                                                                                 result_recids=result_hitset,
                                                                                 collections=collections,
                                                                                 verbose=verbose,

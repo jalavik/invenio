@@ -23,8 +23,6 @@
     Validation functions to validate possible matches.
 """
 
-__revision__ = "$Id$"
-
 import re
 import sys
 import pprint
@@ -32,29 +30,21 @@ import difflib
 
 from six import iteritems
 
-from invenio.legacy.bibrecord import create_records, record_get_field_values
-from invenio.legacy.bibrecord.scripts.xmlmarc2textmarc import (get_sysno_from_record,
-                                                               create_marc_record)
-from invenio.legacy.bibauthorid.name_utils import (soft_compare_names,
-                                                   string_partition)
 from invenio.utils.text import translate_to_ascii
 
-from .config import (MATCHER_MATCH_VALIDATION_RULESETS,
-                     MATCHER_FUZZY_MATCH_VALIDATION_LIMIT,
-                     MATCHER_MIN_VALIDATION_COMPARISONS,
-                     MATCHER_VALIDATION_MATCHING_MODES,
-                     MATCHER_VALIDATION_RESULT_MODES,
-                     MATCHER_VALIDATION_COMPARISON_MODES)
+from invenio.legacy.bibrecord import create_records, record_get_field_values
+from invenio.legacy.bibrecord.scripts.xmlmarc2textmarc import (
+    get_sysno_from_record,)
+from invenio.legacy.bibauthorid.name_utils import soft_compare_names
+
+from .errors import BibMatchValidationError
+from .utils import transform_record_to_marc
 
 
 re_valid_tag = re.compile("^[0-9]{3}[a-zA-Z0-9_%]{0,3}$")
 
 
-class BibMatchValidationError(Exception):
-    pass
-
-
-def validate_matches(bibmatch_recid, record, server, result_recids,
+def validate_matches(bibmatch_recid, record, server, config, log, result_recids,
                      collections="", verbose=0, ascii_mode=False):
     """
     Perform record validation on a set of matches. This function will
@@ -96,17 +86,12 @@ def validate_matches(bibmatch_recid, record, server, result_recids,
     fuzzy_matches_found = []
 
     # Generate final rule-set by analyzing the record
-    final_ruleset = get_validation_ruleset(record)
+    final_ruleset = get_validation_ruleset(record, config)
     if not final_ruleset:
-        raise BibMatchValidationError("Bad configuration rule-set."
-                                      "Please check that MATCHER_MATCH_VALIDATION_RULESETS"
-                                      " is formed correctly.")
+        raise BibMatchValidationError("Bad validation ruleset configuration")
 
-    if verbose > 8:
-        sys.stderr.write("\nStart record validation:\n\nFinal validation ruleset used:\n")
-        pp = pprint.PrettyPrinter(stream=sys.stderr, indent=2)
-        pp.pprint(final_ruleset)
-    MATCHER_LOGGER.info("Final validation ruleset used: %s" % (final_ruleset,))
+    log.info("\nStart record validation:\n\nFinal validation ruleset used:\n")
+    log.info("Final validation ruleset used: %s" % (final_ruleset,))
 
     # Fetch all records in MARCXML and convert to BibRec
     found_record_list = []
@@ -116,7 +101,7 @@ def validate_matches(bibmatch_recid, record, server, result_recids,
         search_params = dict(p=query, of="xm", c=collections)
     else:
         search_params = dict(p=query, of="xm")
-    MATCHER_LOGGER.info("Fetching records to match: %s" % (str(search_params),))
+    log.info("Fetching records to match: %s" % (str(search_params),))
     result_marcxml_unclean = server.search_with_retry(**search_params)
     result_marcxml = unicode(result_marcxml_unclean, encoding='utf-8')
     # Check if record was found
@@ -136,32 +121,32 @@ def validate_matches(bibmatch_recid, record, server, result_recids,
     current_index = 1
     for matched_record in found_record_list:
         recid = record_get_field_values(matched_record, tag="001")[0]
-        if verbose > 8:
-            sys.stderr.write("\n Validating matched record #%d (%s):\n" %
+        log.info("\n Validating matched record #%d (%s):\n" %
                              (current_index, recid))
-        MATCHER_LOGGER.info("Matching of record %d: Comparing to matched record %s" %
+        log.info("Matching of record %d: Comparing to matched record %s" %
                                  (bibmatch_recid, recid))
         match_ratio, fuzzy = validate_match(record, matched_record, final_ruleset,
-                                            verbose, ascii_mode)
+                                            config, log, verbose, ascii_mode)
 
         if match_ratio == 1.0 and not fuzzy:
             # All matches were a success, this is an exact match
-            MATCHER_LOGGER.info("Matching of record %d: Exact match found -> %s" % (bibmatch_recid, recid))
+            log.info("Matching of record %d: Exact match found -> %s" % (bibmatch_recid, recid))
             matches_found.append(recid)
-        elif match_ratio >= MATCHER_FUZZY_MATCH_VALIDATION_LIMIT or fuzzy:
+        elif match_ratio >= config['FUZZY_MATCH_VALIDATION_LIMIT'] or fuzzy:
             # This means that some matches failed, but some succeeded as well. That's fuzzy...
-            MATCHER_LOGGER.info("Matching of record %d: Fuzzy match found -> %s" %
+            log.info("Matching of record %d: Fuzzy match found -> %s" %
                                      (bibmatch_recid, recid))
             fuzzy_matches_found.append(recid)
         else:
-            MATCHER_LOGGER.info("Matching of record %d: Not a match" % (bibmatch_recid,))
+            log.info("Matching of record %d: Not a match" % (bibmatch_recid,))
         current_index += 1
 
     # Return list of matching record IDs
     return matches_found, fuzzy_matches_found
 
 
-def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=False):
+def validate_match(org_record, matched_record, ruleset, config, log,
+                   verbose=0, ascii_mode=False):
     """
     This function will try to match the original record with matched record.
     This comparison uses various methods defined in configuration and/or
@@ -230,8 +215,7 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
     fuzzy_flag = False
     for field_tags, threshold, compare_mode, match_mode, result_mode in ruleset:
         field_tag_list = field_tags.split(',')
-        if verbose > 8:
-            sys.stderr.write("\nValidating tags: %s in parsing mode '%s' and comparison\
+        log.info("\nValidating tags: %s in parsing mode '%s' and comparison\
  mode '%s' as '%s' result with threshold %0.2f\n"
                              % (field_tag_list, compare_mode, match_mode,
                                 result_mode, threshold))
@@ -253,8 +237,7 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
 
         if (len(original_record_values) == 0 or len(matched_record_values) == 0):
             # Both records do not have values, ignore.
-            if verbose > 8:
-                sys.stderr.write("\nBoth records do not have this field. Continue.\n")
+            log.info("\nBoth records do not have this field. Continue.\n")
             continue
 
         if result_mode != 'joker':
@@ -288,8 +271,7 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
                 continue
             matches_needed = len(original_record_values)
             ignore_order = False
-        if verbose > 8:
-            sys.stderr.write("Total matches needed: %d -> " % (matches_needed,))
+        log.info("Total matches needed: %d -> " % (matches_needed,))
 
         ## 2. MATCH MODE
         comparison_function = None
@@ -314,22 +296,20 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
                                                    matched_record_values,
                                                    ignore_order)
 
-        if verbose > 8:
-            sys.stderr.write("Field comparison values:\n%s\n" % (field_comparisons,))
+        log.info("Field comparison values:\n%s\n", field_comparisons)
 
         # Run comparisons according to match_mode
         current_matching_status, matches = comparison_function(field_comparisons,
                                                                threshold,
                                                                matches_needed)
-        MATCHER_LOGGER.info("-- Comparing fields %s with %s = %d matches of %d" %
+        log.info("-- Comparing fields %s with %s = %d matches of %d" %
                                  (str(original_record_values),
                                   str(matched_record_values),
                                   matches, matches_needed))
 
         ## 3. RESULT MODE
         if current_matching_status:
-            if verbose > 8:
-                sys.stderr.write("Fields matched successfully.\n")
+            log.info("Fields matched successfully.\n")
             if result_mode in ['final', 'joker']:
                 # Matching success. Return 5,5 indicating exact-match when final or joker.
                 return (1.0, False)
@@ -340,8 +320,7 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
                 # Final does not allow failure
                 return (0.0, False)
             elif result_mode == 'joker':
-                if verbose > 8:
-                    sys.stderr.write("Fields not matching. (Joker)\n")
+                log.info("Fields not matching. (Joker)\n")
             elif result_mode == 'fuzzy':
                 if not fuzzy_flag:
                     fuzzy_flag = True
@@ -349,30 +328,12 @@ def validate_match(org_record, matched_record, ruleset, verbose=0, ascii_mode=Fa
                 else:
                     return (0.0, False)
             else:
-                if verbose > 8:
-                    sys.stderr.write("Fields not matching. \n")
-    if (total_number_of_matches < MATCHER_MIN_VALIDATION_COMPARISONS
+                log.info("Fields not matching. \n")
+    if (total_number_of_matches < config['MIN_VALIDATION_COMPARISONS']
        or total_number_of_comparisons == 0):
         return (0.0, fuzzy_flag)
     ratio = total_number_of_matches / float(total_number_of_comparisons)
     return (ratio, fuzzy_flag)
-
-
-def transform_record_to_marc(record, options={'text-marc': 1, 'aleph-marc': 0}):
-    """ This function will transform a given bibrec record into marc using
-    methods from xmlmarc2textmarc in invenio.utils.text. The function returns the
-    record as a MARC string.
-
-    @param record: bibrec structure for record to transform
-    @type record: dict
-
-    @param options: dictionary describing type of MARC record. Defaults to textmarc.
-    @type options: dict
-
-    @return resulting MARC record as string """
-    sysno = get_sysno_from_record(record, options)
-    # Note: Record dict is copied as create_marc_record() perform deletions
-    return create_marc_record(record.copy(), sysno, options)
 
 
 def compare_fieldvalues_normal(field_comparisons, threshold, matches_needed):
@@ -522,8 +483,8 @@ def compare_fieldvalues_identifier(field_comparisons, threshold, matches_needed)
         for value, other_value in comparisons:
             # Value matching - put values in lower case and remove punctuation
             # and trailing zeroes. 'DESY-F35D-97-04' -> 'DESYF35D974'
-            value = re.sub('\D[0]|\W+', "", value.lower())
-            other_value = re.sub('\D[0]|\W+', "", other_value.lower())
+            value = re.sub(r'\D[0]|\W+', "", value.lower())
+            other_value = re.sub(r'\D[0]|\W+', "", other_value.lower())
             diff = difflib.SequenceMatcher(None, value, other_value).ratio()
             if diff >= threshold:
                 matches_found += 1
@@ -648,10 +609,10 @@ def compare_fieldvalues_date(field_comparisons, threshold, matches_needed):
     return matches_found >= matches_needed, matches_found
 
 
-def get_validation_ruleset(record):
+def get_validation_ruleset(record, config):
     """
     This function will iterate over any defined rule-sets in
-    MATCHER_MATCH_VALIDATION_RULESETS, generating a validation
+    config['MATCH_VALIDATION_RULESETS'], generating a validation
     rule-set for use when comparing records.
 
     in the order of appearance. Meaning that the last rules will have
@@ -682,15 +643,15 @@ def get_validation_ruleset(record):
     # Lets parse the rule-set configuration to try to match rule-sets
     # with original record, adding to/overwritin as we go
     validation_ruleset = {}
-    for pattern, rules in MATCHER_MATCH_VALIDATION_RULESETS:
+    for pattern, rules in config['MATCH_VALIDATION_RULESETS']:
         if pattern == "default" or re.search(pattern, original_record_marc) is not None:
             for rule in rules:
                 # Simple validation of rules syntax
-                if rule['compare_mode'] not in MATCHER_VALIDATION_COMPARISON_MODES:
+                if rule['compare_mode'] not in config['VALIDATION_COMPARISON_MODES']:
                     return
-                if rule['match_mode'] not in MATCHER_VALIDATION_MATCHING_MODES:
+                if rule['match_mode'] not in config['VALIDATION_MATCHING_MODES']:
                     return
-                if rule['result_mode'] not in MATCHER_VALIDATION_RESULT_MODES:
+                if rule['result_mode'] not in config['VALIDATION_RESULT_MODES']:
                     return
 
                 try:
@@ -869,7 +830,7 @@ def get_reversed_string_variants(s, sep=','):
     @rtype: tuple
     """
     # Extract the different parts of the name using partition function.
-    left, sep, right = string_partition(s, sep)
+    left, sep, right = s.partition(sep)
     return (left + sep + right, right + sep + left)
 
 
