@@ -18,21 +18,6 @@
 #}
 {% extends "page.html" %}
 
-{% block header%}
-    {{ super() }}
-    {% css url_for('static', filename='css/dataTables.colVis.css') %}
-    {% css url_for('static', filename='css/dataTables.bootstrap.css') %}
-    {% css url_for('static', filename='css/bootstrap-tagsinput.css') %}
-    {% css url_for('static', filename='css/prism.css') %}
-{% endblock header %}
-
-{% js url_for('static', filename='js/jquery.dataTables.js'), '30-datatables', 'uglifyjs' %}
-{% js url_for('static', filename='js/dataTables.colVis.js'), '30-datatables' %}
-{% js url_for('static', filename='js/bootstrap.js'), '30-datatables' %}
-{% js url_for('static', filename='js/dataTables.bootstrap.js'), '30-datatables' %}
-{% js url_for('static', filename='js/bootstrap-tagsinput.js'), '30-datatables' %}
-{% js url_for('static', filename='js/prism.js'), '40-workflows' %}
-
 {% block body %}
 
 	<div id="alert-message"></div>
