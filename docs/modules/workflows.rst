@@ -3,11 +3,10 @@
 Workflows
 =========
 
-..
-    The documentation there is quite broken, please fix it.
+.. automodule:: invenio.modules.workflows
+   :members:
 
-    .. automodule:: invenio.modules.workflows
-       :members:
+..
 
     .. automodule:: invenio.modules.workflows.api
        :members:
