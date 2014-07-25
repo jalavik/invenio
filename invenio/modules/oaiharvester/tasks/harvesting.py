@@ -23,6 +23,7 @@ import os
 import time
 
 from invenio.base.globals import cfg
+from invenio.modules.workflows.utils import pass_properties_to_closure
 
 
 def init_harvesting(obj, eng):
@@ -41,6 +42,7 @@ def init_harvesting(obj, eng):
                       "that the following task could failed or work not as expected")
         obj.extra_data["options"] = {}
     eng.log.info("end of init_harvesting")
+init_harvesting.description = 'Start harvesting'
 
 
 def filtering_oai_pmh_identifier(obj, eng):
@@ -72,6 +74,7 @@ def filtering_oai_pmh_identifier(obj, eng):
             return True
 
 
+@pass_properties_to_closure
 def get_repositories_list(repositories=()):
     """Get repository list in options.
 
@@ -178,6 +181,7 @@ def harvest_records(obj, eng):
             len(harvested_files_list),))
 
 
+@pass_properties_to_closure
 def get_records_from_file(path=None):
     """Allow to retrieve the records from a file."""
     from invenio.legacy.oaiharvest.utils import record_extraction_from_file

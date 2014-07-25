@@ -15,10 +15,11 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-
 """Basic simplified data test functions - NOT FOR XML """
+from ..utils import pass_properties_to_closure
 
 
+@pass_properties_to_closure
 def task_a(a):
     def _task_a(obj, eng):
         """Function task_a docstring"""

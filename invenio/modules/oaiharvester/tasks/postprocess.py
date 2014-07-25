@@ -24,6 +24,7 @@ import random
 import re
 
 from invenio.base.globals import cfg
+from invenio.modules.workflows.utils import pass_properties_to_closure
 
 
 REGEXP_AUTHLIST = re.compile(
@@ -33,6 +34,7 @@ REGEXP_REFS = re.compile(
     re.DOTALL)
 
 
+@pass_properties_to_closure
 def post_process_selected(post_process):
     """Check if post process is selected."""
     def _post_process_selected(obj, eng):
@@ -49,6 +51,7 @@ def post_process_selected(post_process):
     return _post_process_selected
 
 
+@pass_properties_to_closure
 def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
     """Convert a MARC record to another one thanks to the stylesheet.
 
@@ -79,7 +82,7 @@ def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
                           "try to recover by using the default one!")
             stylesheet_to_use = stylesheet
         convert_record(stylesheet_to_use)(obj, eng)
-
+    _convert_record.description = 'Convert record'
     return _convert_record
 
 
@@ -155,8 +158,10 @@ def arxiv_fulltext_download(obj, eng):
     else:
         eng.log.info("There was already a pdf register for this record,"
                      "perhaps a duplicate task in you workflow.")
+arxiv_fulltext_download.description = 'Download fulltext'
 
 
+@pass_properties_to_closure
 def plot_extract(plotextractor_types=("latex",)):
     """Perform the plotextraction step.
 
@@ -286,7 +291,7 @@ def plot_extract(plotextractor_types=("latex",)):
                                         len(converted_image_list))
                     obj.add_task_result("number_of_picture_total",
                                         len(image_list))
-
+    _plot_extract.description = 'Extract plots'
     return _plot_extract
 
 
@@ -340,6 +345,7 @@ def refextract(obj, eng):
             obj.log.info("No references")
     else:
         obj.log.error("Not able to download and process the PDF ")
+refextract.description = 'Extract references'
 
 
 def author_list(obj, eng):
@@ -432,6 +438,7 @@ def author_list(obj, eng):
                 obj.add_task_result("number_of_authors",
                                     new_dict_representation["number_of_authors"])
                 break
+author_list.description = 'Extract authors'
 
 
 def upload_step(obj, eng):
@@ -504,6 +511,7 @@ def upload_step(obj, eng):
             "material harvested from source %s was successfully uploaded" %
             (obj.extra_data["repository"]["name"],))
     eng.log.info("end of upload")
+upload_step.description = 'Upload record'
 
 
 def filter_step(obj, eng):
@@ -538,3 +546,4 @@ def filter_step(obj, eng):
         )
     else:
         obj.log.info(cmd_stdout)
+filter_step.description = "Run filter"

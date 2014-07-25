@@ -64,7 +64,8 @@ def get_default_extra_data():
                           "latest_object": -1,
                           "_action": None,
                           "redis_search": {},
-                          "source": ""}
+                          "source": "",
+                          "_task_history": []}
     return base64.b64encode(cPickle.dumps(extra_data_default))
 
 
@@ -365,12 +366,13 @@ class BibWorkflowObject(db.Model):
         """Get the formatted representation for this object."""
         from .registry import workflows
         try:
-            workflow_definition = workflows[self.get_workflow_name()]
-            formatted_data = workflow_definition().formatter(self,
-                                                             formatter=None,
-                                                             format=of)
+            formatted_data = workflows[self.get_workflow_name()].formatter(
+                self,
+                formatter=None,
+                format=of
+            )
         except (KeyError, AttributeError):
-            # Somehow the workflow does not exist (.name)
+            # Somehow the workflow or formatter does not exist
             from invenio.ext.logging import register_exception
             register_exception(alert_admin=True)
             formatted_data = ""
