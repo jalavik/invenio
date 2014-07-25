@@ -18,6 +18,7 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 import msgpack
+from collections import Iterable
 
 from invenio.ext.cache import cache
 from .registry import workflows
@@ -470,3 +471,70 @@ def get_previous_next_objects(object_list, current_object_id):
         next_object_id = object_list[0]
         previous_object_id = None
     return previous_object_id, next_object_id
+
+
+def is_sublist(list_a, list_b):
+    """ Return True of list_a is a sublist of list_b. """
+    for item in list_a:
+        if item not in list_b:
+            return False
+    return True
+
+
+def find_paths(path, paths, workflow_func):
+    """ Return a list with every possible a workflow can follow. """
+    for index, func in enumerate(workflow_func):
+        if not isinstance(func, Iterable):
+            if func.func_name in ['_foreach', '_simple_for']:
+                path += workflow_func[index + 1]
+            elif func.func_name in ['_workflow_if', 'workflow_else']:
+                if path in paths:
+                    paths.remove(path)
+                alt_path = path + workflow_func[index + 1]
+                paths.append(alt_path)
+            else:
+                path.append(func)
+    if not paths:
+        if any_iterable(path):
+            current_path = []
+            for item in path:
+                if isinstance(item, Iterable):
+                    current_path = find_paths(current_path, paths, item)
+                else:
+                    if all_iterable(current_path):
+                        for element in current_path:
+                            element.append(item)
+                    else:
+                        current_path.append(item)
+        else:
+            paths.append(path)
+    return paths
+
+
+def all_iterable(lst):
+    """ Returns True if all the elements of the list are Iterable. """
+    if not lst:
+        return False
+    for element in lst:
+        if not isinstance(element, Iterable):
+            return False
+    return True
+
+
+def any_iterable(lst):
+    """ Returns True if at least one element of the list is Iterable. """
+    for element in lst:
+        if isinstance(element, Iterable):
+            return True
+    return False
+
+
+def filter_workflow_path(path):
+    """ Removes the operator functions from a workflow path. """
+    return filter(lambda a: a not in ['_workflow_if',
+                                      '_foreach',
+                                      'end_for',
+                                      '_simple_for',
+                                      '_write_something_generic',
+                                      'workflow_else'],
+                  path)
