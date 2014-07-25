@@ -64,7 +64,8 @@ def get_default_extra_data():
                           "latest_object": -1,
                           "_action": None,
                           "redis_search": {},
-                          "source": ""}
+                          "source": "",
+                          "_task_history": []}
     return base64.b64encode(cPickle.dumps(extra_data_default))
 
 

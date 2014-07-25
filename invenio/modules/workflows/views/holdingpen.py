@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-##
 ## This file is part of Invenio.
 ## Copyright (C) 2013, 2014 CERN.
 ##
@@ -43,7 +42,8 @@ from ..models import BibWorkflowObject, Workflow, ObjectVersion
 from ..registry import actions
 from ..utils import (sort_bwolist, extract_data, get_action_list,
                      get_formatted_holdingpen_object,
-                     get_holdingpen_objects)
+                     get_holdingpen_objects, filter_workflow_path,
+                     is_sublist, find_paths)
 from ..api import continue_oid_delayed, start_delayed
 
 blueprint = Blueprint('holdingpen', __name__, url_prefix="/admin/holdingpen",
@@ -121,7 +121,6 @@ def details(objectid):
             db.or_(BibWorkflowObject.id_parent == bwobject.id_parent,
                    BibWorkflowObject.id == bwobject.id_parent,
                    BibWorkflowObject.id == bwobject.id)).all()
-
     else:
         hbwobject_db_request = BibWorkflowObject.query.filter(
             db.or_(BibWorkflowObject.id_parent == bwobject.id,
@@ -151,6 +150,35 @@ def details(objectid):
             template = render_template(result["template"], results=result)
             results.append((result, template))
 
+    workflow_func = extracted_data['workflow_func']
+    last_task = bwobject.get_extra_data()['_last_task_name']
+    try:
+        path_found = False
+        task_history = bwobject.get_extra_data()['_task_history']
+        task_history = filter_workflow_path(task_history)
+        candidate_paths = find_paths([], [], workflow_func)
+        #sorts by length to check first bigger paths
+        candidate_paths = sorted(candidate_paths,
+                                 cmp=lambda a, b: cmp(len(b), len(a)))
+        for path in candidate_paths:
+            path = map(lambda a: a.func_name, path)
+            path = filter_workflow_path(path)
+            if last_task in path:
+                path_found = True
+                temp_path = path[:path.index(last_task)]
+                if is_sublist(temp_path, task_history):
+                    task_history = path
+        if not path_found:
+            task_history = filter(lambda a: not a.startswith('['),
+                                  task_history)
+    except KeyError:
+        task_history = find_paths([], [], workflow_func)
+        for path in task_history:
+            path = map(lambda a: a.func_name, path)
+            if last_task in path:
+                task_history = path
+        task_history = filter_workflow_path(task_history)
+
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
                            rendered_actions=rendered_actions,
@@ -161,7 +189,8 @@ def details(objectid):
                            data_preview=formatted_data,
                            workflow_func=extracted_data['workflow_func'],
                            workflow=extracted_data['w_metadata'],
-                           task_results=results)
+                           task_results=results,
+                           task_history=task_history)
 
 
 @blueprint.route('/fulltext', methods=['GET', 'POST'])
@@ -358,6 +387,7 @@ def load_table():
         mini_action = None
         if action:
             mini_action = getattr(action, "render_mini", None)
+
         extra_data = bwo.get_extra_data()
         record = bwo.get_data()
 
