@@ -17,20 +17,12 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 #}
 
-{% macro function_display(fun, task_counter, version) -%}
-    <!-- {% set comma2 = joiner(",") %} -->
-    {% set i = 0 %}
-    {% set flag = 0 %}
+{% macro function_display(fun, task_counter, version, flag=0, i) -%}
     {% for w in fun %}
-        {% if w is not iterable %}
-            {{ function_display_inner(w, task_counter, version, flag) }}
-            {% if w.func_name == task_counter and version == 2 %}
-                {% set flag = 1 %}
-            {% endif %}
-        {% else %}
-            {{ function_display(w, task_counter, version) }}
+        {{ function_display_inner(w, task_counter, version, flag, i) }}
+        {% if w == task_counter and version == 2 %}
+            {% set flag = 1 %}
         {% endif %}
-            <!-- {{ comma2() }} -->
         {% set i = i + 1 %}
     {% endfor %}
 {%- endmacro %}
@@ -38,25 +30,25 @@
 {% macro function_display_inner(w, task_counter, version, flag) -%}
   </br>
 
-  {% if flag == 0 %}
+    {% if flag == 0 %}
+        {% if w == task_counter and version == 2 %}
+            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}" status="pending">
+                <span class="glyphicon glyphicon-ok-sign"></span>
+                <strong>{{ w }}</strong>
+            </button>
+        {% else %}
+            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}" status="completed">
+                <span class="glyphicon glyphicon-ok-sign"></span>
+                {{ w }}
+            </button>
+        {% endif %}
 
-  <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}">
-    <span class="glyphicon glyphicon-ok-sign"></span>
-    {% if w.func_name == task_counter and version == 2 %}
-        <strong>{{ w.func_name }}</strong>
     {% else %}
-        {{ w.func_name }}
-    {% endif %}
-  </button>
-
-  {% else %}
-
-  <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}">
-    {{ w.func_name }}
-  </button>
-
+        <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}" status="not_started">
+            {{ w }}
+        </button>
   {% endif %}
-  
+
   <div class="modal fade" id="infoModal{{i}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
    <div class="modal-dialog">
       <div class="modal-content">
