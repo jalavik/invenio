@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-##
 ## This file is part of Invenio.
 ## Copyright (C) 2013, 2014 CERN.
 ##
@@ -45,7 +44,8 @@ from ..utils import (sort_bwolist, extract_data, get_action_list,
                      get_formatted_holdingpen_object,
                      get_holdingpen_objects,
                      get_rendered_task_results,
-                     get_previous_next_objects)
+                     get_previous_next_objects,
+                     get_task_history)
 from ..engine import WorkflowStatus
 from ..api import continue_oid_delayed, start_delayed
 
@@ -131,7 +131,6 @@ def details(objectid):
             db.or_(BibWorkflowObject.id_parent == bwobject.id_parent,
                    BibWorkflowObject.id == bwobject.id_parent,
                    BibWorkflowObject.id == bwobject.id)).all()
-
     else:
         hbwobject_db_request = BibWorkflowObject.query.filter(
             db.or_(BibWorkflowObject.id_parent == bwobject.id,
@@ -157,6 +156,12 @@ def details(objectid):
 
     results = get_rendered_task_results(bwobject)
 
+    workflow_func = extracted_data['workflow_func']
+    last_task = bwobject.get_extra_data()['_last_task_name']
+    task_history, last_task = get_task_history(
+        bwobject, workflow_func, last_task
+    )
+
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
                            rendered_actions=rendered_actions,
@@ -165,11 +170,13 @@ def details(objectid):
                            info=extracted_data['info'],
                            log=extracted_data['logtext'],
                            data_preview=formatted_data,
-                           workflow_func=extracted_data['workflow_func'],
                            workflow=extracted_data['w_metadata'],
                            task_results=results,
                            previous_object=previous_object,
-                           next_object=next_object)
+                           next_object=next_object,
+                           task_history=task_history,
+                           workflow_func=workflow_func,
+                           last_task=last_task)
 
 
 @blueprint.route('/files/<int:objectid>/<path:filename>', methods=['POST', 'GET'])
@@ -366,6 +373,7 @@ def load_table():
         mini_action = None
         if action:
             mini_action = getattr(action, "render_mini", None)
+
         extra_data = bwo.get_extra_data()
         record = bwo.get_data()
 

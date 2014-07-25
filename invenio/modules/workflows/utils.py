@@ -20,6 +20,7 @@
 """Various utility functions for use across the workflows module."""
 
 import msgpack
+from collections import Iterable
 
 from invenio.ext.cache import cache
 from .registry import workflows
@@ -295,7 +296,8 @@ def generate_formatted_holdingpen_object(bwo, date_format='%Y-%m-%d %H:%M:%S.%f'
     """Generate a dict with formatted column data from Holding Pen object."""
     workflows_name = bwo.get_workflow_name()
 
-    if workflows_name and hasattr(workflows[workflows_name], 'get_description'):
+    if workflows_name and workflows_name in workflows \
+       and hasattr(workflows[workflows_name], 'get_description'):
         workflow_definition = workflows[workflows_name]
     else:
         workflow_definition = WorkflowBase
@@ -421,6 +423,42 @@ def get_action_list(object_list):
     return action_dict
 
 
+def pass_properties_to_closure(func):
+    """Pass properties to inner function.
+
+    Used by ``workflows`` tasks to make function closures "inherit" the same properties
+    as the parent function in order to properly display it in the Holding Pen interface.
+
+    This function can be used as decorator to copy the properties (docstring, name etc.) to
+    the inner function when creating closures.
+
+    .. code-block:: python
+
+        @pass_properties_to_closure
+        def foo(a):
+            '''Some docs.'''
+            def _foo(b, c):
+                return a + b + c
+            return _foo
+
+    Now `_foo` will have the name `foo` and same docs.
+    """
+    def new_function(*args, **kwds):
+        inner_func = func(*args, **kwds)
+        if callable(inner_func):
+            inner_func.func_name = func.func_name
+            inner_func.func_doc = func.func_doc
+            inner_func.func_dict.update(func.func_dict)
+            return inner_func
+        else:
+            return func
+    # Keeps func's properties
+    new_function.func_name = func.func_name
+    new_function.func_doc = func.func_doc
+    new_function.func_dict.update(func.func_dict)
+    return new_function
+
+
 def get_rendered_task_results(obj):
     """Return a list of rendered results from BibWorkflowObject task results."""
     from flask import render_template
@@ -455,3 +493,146 @@ def get_previous_next_objects(object_list, current_object_id):
         next_object_id = object_list[0]
         previous_object_id = None
     return previous_object_id, next_object_id
+
+
+def is_sublist(list_a, list_b):
+    """Return True of list_a is a sublist of list_b."""
+    for item in list_a:
+        if item not in list_b:
+            return False
+    return True
+
+
+def find_paths(path, paths, workflow_func):
+    """Return a list with every possible a workflow can follow."""
+    for index, func in enumerate(workflow_func):
+        if not isinstance(func, Iterable):
+            if func.func_name in ['foreach', 'simple_for']:
+                path += workflow_func[index + 1]
+            elif func.func_name in ['workflow_if', 'workflow_else']:
+                if path in paths:
+                    paths.remove(path)
+                path.append(func)
+                alt_path = path + workflow_func[index + 1]
+                paths.append(alt_path)
+            else:
+                path.append(func)
+    if not paths:
+        if any_iterable(path):
+            current_path = []
+            for item in path:
+                if isinstance(item, Iterable):
+                    current_path = find_paths(current_path, paths, item)
+                else:
+                    if all_iterable(current_path):
+                        for element in current_path:
+                            element.append(item)
+                    else:
+                        current_path.append(item)
+        else:
+            paths.append(path)
+    return paths
+
+
+def all_iterable(lst):
+    """Return True if all the elements of the list are Iterable."""
+    if not lst:
+        return False
+    for element in lst:
+        if not isinstance(element, Iterable):
+            return False
+    return True
+
+
+def any_iterable(lst):
+    """Return True if at least one element of the list is Iterable."""
+    for element in lst:
+        if isinstance(element, Iterable):
+            return True
+    return False
+
+
+def get_func_info(func):
+    """Retrieve a function's information."""
+    try:
+        return (func.description, func.func_doc,
+                func.func_closure, func.func_code.co_freevars)
+    except AttributeError:
+        doc = func.func_doc
+        if doc:
+            name = doc.split('\n')[0]
+            if len(name) > 50:
+                name = func.func_name
+        else:
+            name = func.func_name
+        return name, doc, func.func_closure, func.func_code.co_freevars
+
+
+def filter_tasks(task_list):
+    """Remove the tasks that either have no attribute hide or hide is True."""
+    return filter(lambda a: not hasattr(a, 'hide') or (
+                  hasattr(a, 'hide') and not a.hide),
+                  task_list)
+
+
+def get_func_names(func_list):
+    """Return function names, go through lists recursively."""
+    func_names = []
+    for item in func_list:
+        if isinstance(item, list):
+            func_names.extend(get_func_names(item))
+        else:
+            func_names.append(item.func_name)
+    return func_names
+
+
+def get_func_infos(func_list):
+    """Return function info, go through lists recursively."""
+    func_names = []
+    for item in func_list:
+        if isinstance(item, list):
+            func_names.extend(get_func_infos(item))
+        else:
+            func_names.append(get_func_info(item))
+    return func_names
+
+
+def get_task_history(bwobject, workflow_func, last_task):
+    """Calculate the path of tasks that the workflow has followed."""
+    def with_task_history(task_history, last_task):
+        candidate_paths = find_paths([], [], workflow_func)
+        #sorts by length to check first bigger paths
+        candidate_paths = sorted(candidate_paths,
+                                 cmp=lambda a, b: cmp(len(b), len(a)))
+        for path in candidate_paths:
+            paths = filter_tasks(path)
+            func_names = get_func_names(paths)
+            index = -1
+            if last_task in func_names:
+                index = func_names.index(last_task)
+                func_names = func_names[:index]
+            if is_sublist(func_names, task_history):
+                task_history = get_func_infos(path)
+                last_task = task_history[index][0]
+                return task_history, last_task
+
+        return [], last_task
+
+    def without(last_task):
+        task_history = find_paths([], [], workflow_func)
+        for path in task_history:
+            path = filter_tasks(path)
+            func_names = map(lambda a: a.func_name, path)
+            if last_task in func_names:
+                index = func_names.index(last_task)
+                task_history = map(get_func_info, path)
+                last_task = task_history[index][0]
+                return task_history, last_task
+
+        return [], last_task
+
+    try:
+        task_history = bwobject.get_extra_data()['_task_history']
+        return with_task_history(task_history, last_task)
+    except KeyError:
+        return without(last_task)

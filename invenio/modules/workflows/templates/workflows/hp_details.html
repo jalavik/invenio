@@ -27,7 +27,6 @@
 
 {% block javascript %}
     {{ super() }}
-
     <script type="text/javascript">
         $(document).ready(function(){
             var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
@@ -122,7 +121,8 @@
                   <div id="workflow-definition" class="collapse">
                       <table class="table table-striped">
                           <tbody>
-                              {{ utils.function_display(workflow_func, bwobject.get_extra_data()['last_task_name'], bwobject.version) }}
+                              <div class="muted"><b>Workflow Tasks:</b></div>
+                              {{ utils.function_display(task_history, workflow_func, last_task, bwobject.version, 0) }}
                           </tbody>
                       </table>
                   </div>

@@ -31,6 +31,7 @@ from invenio.base.globals import cfg
 from invenio.base.wrappers import lazy_import
 from invenio.utils.shell import run_shell_command, Timeout
 from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
+from ..utils import pass_properties_to_closure
 
 bibtask = lazy_import("invenio.legacy.bibsched.bibtask")
 records_api = lazy_import("invenio.modules.records.api")
@@ -108,13 +109,19 @@ def filtering_oai_pmh_identifier(obj, eng):
 
 
 def convert_record_to_bibfield(obj, eng):
-    """Convert a record in data into a 'dictionary' thanks to BibField.
+    """Convert to record from MARCXML.
+
+    Expecting MARCXML, this task converts it using the current configuration to a
+    SmartJSON object.
 
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
     """
     obj.data = convert_marcxml_to_bibfield(obj.data)
     eng.log.info("Field conversion succeeded")
+
+
+convert_record_to_bibfield.description = 'Convert to record from MARCXML'
 
 
 def init_harvesting(obj, eng):
@@ -135,6 +142,10 @@ def init_harvesting(obj, eng):
     eng.log.info("end of init_harvesting")
 
 
+init_harvesting.description = 'Start harvesting'
+
+
+@pass_properties_to_closure
 def get_repositories_list(repositories=()):
     """Get repository list in options.
 
@@ -241,6 +252,7 @@ def harvest_records(obj, eng):
             len(harvested_files_list),))
 
 
+@pass_properties_to_closure
 def get_records_from_file(path=None):
     """Allow to retrieve the records from a file."""
     from invenio.legacy.oaiharvest.utils import record_extraction_from_file
@@ -281,6 +293,7 @@ def get_eng_uuid_harvested(obj, eng):
     return "*" + str(eng.uuid) + "*.harvested"
 
 
+@pass_properties_to_closure
 def get_files_list(path, parameter):
     """Function returning the list of file in a directory."""
     def _get_files_list(obj, eng):
@@ -299,6 +312,7 @@ def get_files_list(path, parameter):
     return _get_files_list
 
 
+@pass_properties_to_closure
 def set_obj_extra_data_key(key, value):
     """Task setting the value of an object extra data key."""
     def _set_obj_extra_data_key(obj, eng):
@@ -315,6 +329,7 @@ def set_obj_extra_data_key(key, value):
     return _set_obj_extra_data_key
 
 
+@pass_properties_to_closure
 def get_obj_extra_data_key(name):
     """Task returning the value of an object extra data key."""
     def _get_obj_extra_data_key(obj, eng):
@@ -323,6 +338,7 @@ def get_obj_extra_data_key(name):
     return _get_obj_extra_data_key
 
 
+@pass_properties_to_closure
 def get_eng_extra_data_key(name):
     """Task returning the value of an engine extra data key."""
     def _get_eng_extra_data_key(obj, eng):
@@ -336,8 +352,9 @@ def get_data(obj, eng):
     return obj.data
 
 
+@pass_properties_to_closure
 def convert_record(stylesheet="oaidc2marcxml.xsl"):
-    """Convert the object data, if XML, using the given stylesheet.
+    """Convert the object data to marcxml using the given stylesheet.
 
     :param stylesheet: which stylesheet to use
     :return: function to convert record
@@ -360,11 +377,13 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
                                                 id_workflow=eng.uuid,
                                                 id_object=obj.id)
 
+    _convert_record.description = 'Convert record to marcxml'
     return _convert_record
 
 
+@pass_properties_to_closure
 def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
-    """Convert a MARC record to another one thanks to the stylesheet.
+    """Convert the object data to marcxml using the given stylesheet.
 
     This function converts a record to a marcxml representation by using a
     style sheet which should be in parameter or which should have been stored
@@ -393,9 +412,11 @@ def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
             stylesheet_to_use = stylesheet
         convert_record(stylesheet_to_use)(obj, eng)
 
+    _convert_record.description = 'Convert record to marcxml'
     return _convert_record
 
 
+@pass_properties_to_closure
 def update_last_update(repository_list):
     """Perform the update of the update date."""
     from invenio.legacy.oaiharvest.dblayer import update_lastrun
@@ -489,6 +510,9 @@ def fulltext_download(obj, eng):
                      "perhaps a duplicate task in you workflow.")
 
 
+fulltext_download.description = 'Download fulltext'
+
+
 def quick_match_record(obj, eng):
     """Retrieve the record Id from a record.
 
@@ -557,6 +581,7 @@ def quick_match_record(obj, eng):
     return False
 
 
+@pass_properties_to_closure
 def upload_record(mode="ir"):
     """Perform the upload step."""
     def _upload_record(obj, eng):
@@ -570,6 +595,7 @@ def upload_record(mode="ir"):
     return _upload_record
 
 
+@pass_properties_to_closure
 def plot_extract(plotextractor_types):
     """Perform the plotextraction step.
 
@@ -690,6 +716,7 @@ def plot_extract(plotextractor_types):
                     obj.add_task_result("number_of_picture_total",
                                         len(image_list))
 
+    _plot_extract.description = 'Extract plots'
     return _plot_extract
 
 
@@ -742,6 +769,9 @@ def refextract(obj, eng):
                                 "workflows/results/refextract.html")
     else:
         obj.log.error("Not able to download and process the PDF ")
+
+
+refextract.description = 'Extract references'
 
 
 def author_list(obj, eng):
@@ -808,8 +838,9 @@ def author_list(obj, eng):
         translate_fieldvalues_from_latex(authorlist_record, '100', code='a')
         translate_fieldvalues_from_latex(authorlist_record, '700', code='a')
 
-        updated_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n' \
-                      + record_xml_output(authorlist_record) + '</collection>'
+        updated_xml = ('<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n'
+                       '{0}</collection>'
+                       ).format(record_xml_output(authorlist_record))
         if not None == updated_xml:
             # We store the path to the directory  the tarball contents live
             # Read and grab MARCXML from plotextractor run
@@ -820,6 +851,9 @@ def author_list(obj, eng):
             obj.add_task_result("authors", new_dict_representation["authors"])
             obj.add_task_result("number_of_authors",
                                 new_dict_representation["number_of_authors"])
+
+
+author_list.description = 'Exctract authors'
 
 
 def upload_step(obj, eng):
@@ -870,9 +904,9 @@ def upload_step(obj, eng):
                                       obj.extra_data["_repository"]["id"],
                                       marcxml_value)
         except Exception as msg:
-            eng.log.error(
-                "An exception during submitting oaiharvest task occured : %s " % (
-                    str(msg)))
+            eng.log.error("An exception during submitting "
+                          "oaiharvest task occured : %s " %
+                          (str(msg)))
             return None
     else:
         eng.log.error("marcxmlfile %s does not exist" % (filepath,))
@@ -887,6 +921,10 @@ def upload_step(obj, eng):
     eng.log.info("end of upload")
 
 
+upload_step.description = 'Record upload'
+
+
+@pass_properties_to_closure
 def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
                 output_mode='text',
                 output_limit=20, spires=False, match_mode='full',
@@ -922,9 +960,11 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
 
+    _bibclassify.description = 'Extract keywords'
     return _bibclassify
 
 
+@pass_properties_to_closure
 def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
                      output_mode='text',
                      output_limit=20, spires=False, match_mode='full',
@@ -938,7 +978,8 @@ def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
             eng.log.error("No RDF found, no bibclassify can run")
             return None
 
-        from invenio.legacy.bibclassify.api import bibclassify_exhaustive_call_text
+        from invenio.legacy.bibclassify.api import \
+            bibclassify_exhaustive_call_text
 
         if "_result" not in obj.extra_data:
             obj.extra_data["_result"] = {}
@@ -946,17 +987,19 @@ def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
         if "title" in obj.data:
             obj.extra_data["_result"]["bibclassify"] = \
                 bibclassify_exhaustive_call_text(
-                [obj.data["title"], obj.data["abstract"]],
-                taxonomy, rebuild_cache,
-                no_cache,
-                output_mode, output_limit,
-                spires,
-                match_mode, with_author_keywords,
-                extract_acronyms, only_core_tags
-            )
+                    [obj.data["title"], obj.data["abstract"]],
+                    taxonomy, rebuild_cache,
+                    no_cache,
+                    output_mode, output_limit,
+                    spires,
+                    match_mode, with_author_keywords,
+                    extract_acronyms, only_core_tags
+                )
             obj.add_task_result("bibclassify",
                                 obj.extra_data["_result"]["bibclassify"])
         else:
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
+
+    _bibclassify.description = 'Extract keywords'
     return _bibclassify
