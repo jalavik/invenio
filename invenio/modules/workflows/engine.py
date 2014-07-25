@@ -446,6 +446,7 @@ BibWorkflowEngine
             self.set_extra_data(self.extra_data)
             obj.set_data(obj.data)
             obj.extra_data["_task_counter"] = self._i[1]
+            obj.extra_data["_task_history"] += [self.get_current_taskname()]
             obj.set_extra_data(obj.extra_data)
 
     def get_current_taskname(self):

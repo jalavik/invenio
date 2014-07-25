@@ -40,6 +40,13 @@ js = Bundle(
     weight=50
 )
 
+css = Bundle(
+    'css/workflows/workflows.css',
+    filters="cleancss",
+    output='workflows.css',
+    weight=50
+)
+
 actions = Bundle(
     'js/workflows/actions/approval.js',
     filters="uglifyjs",
