@@ -21,7 +21,7 @@
 
 {% block header%}
   {{ super() }}
-  {% bundles "workflows.js", "vendors.js", "datatables.js", "vendors.css", "actions.js", "jquery.js" %}
+  {% bundles "workflows.js", "vendors.js", "vendors.css", "datatables.css", "datatables.js", "actions.js", "jquery.js" %}
 {% endblock header %}
 
 {% block javascript %}
@@ -30,14 +30,20 @@
 
   <script type="text/javascript">
     $(document).ready(function(){
-      var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
-      window.jQuery.ajax({
-        url: context_url,
-        success: function(data) {
-          WORKFLOWS_HOLDINGPEN.init(data);
-          WORKFLOWS_HOLDINGPEN.init_datatable(WORKFLOWS_HP_SELECTION);
-        }
-      });
+        require(["jquery",
+                 "holdingpen/main",
+                 "holdingpen/selection",
+                 "holdingpen/tags",
+                 "holdingpen/utilities"], function($, main, selection, tags, utilities) {
+            var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
+            $.ajax({
+                url: context_url,
+                success: function(data) {
+                    main.init(data, selection, tags, utilities);
+                    main.init_datatable(selection);
+                }
+            });
+        });
     });
   </script>
 {% endblock javascript %}

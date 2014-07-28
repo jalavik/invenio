@@ -26,18 +26,30 @@
 {% endblock header %}
 
 {% block javascript %}
-  {{ super() }}
-  <script type="text/javascript">
-    $(document).ready(function(){
-      var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
-      window.jQuery.ajax({
-        url: context_url,
-        success: function(data) {
-          WORKFLOWS_HP_DETAILS.init(data, {{ bwobject.id }});
-        }
-      })
-    });
-  </script>
+
+    {{ super() }}
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+            requirejs.config({
+                baseUrl:'/js',
+                shim: {
+                    "prism": { "exports": "Prism" }
+                }
+            });
+            require(["jquery",
+                     "holdingpen/details"], function($, details) {
+                var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
+                $.ajax({
+                    url: context_url,
+                    success: function(data) {
+                        details.init(data, {{ bwobject.id }});
+                    }
+                });
+            });
+        });
+    </script>
+
 {%- endblock javascript %}
 
 {% block hpbody %}

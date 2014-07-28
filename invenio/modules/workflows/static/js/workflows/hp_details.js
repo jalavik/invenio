@@ -17,7 +17,13 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-var WORKFLOWS_HP_DETAILS = (function ($) {
+requirejs.config({
+    shim: {
+        "prism": { "exports": "Prism" }
+    }
+});
+
+define("holdingpen/details", ["jquery", "prism", "holdingpen/utilities"], function ($, Prism, utilities) {
     var context = {},
         format = "hd",
         bwoid;
@@ -76,7 +82,7 @@ var WORKFLOWS_HP_DETAILS = (function ($) {
                     url: context.holdingpen.url_restart_record,
                     data: {'objectid': this.bwoid},
                     success: function (json) {
-                        WORKFLOWS_UTILITIES.bootstrap_alert('Object restarted', 'info');
+                        utilities.bootstrap_alert('Object restarted', 'info');
                     }
                 });
             });
@@ -86,7 +92,7 @@ var WORKFLOWS_HP_DETAILS = (function ($) {
                     url: context.holdingpen.url_restart_record_prev,
                     data: {'objectid': this.bwoid},
                     success: function (json) {
-                        WORKFLOWS_UTILITIES.bootstrap_alert('Object restarted from previous task', 'info');
+                        utilities.bootstrap_alert('Object restarted from previous task', 'info');
                     }
                 });
             });
@@ -96,7 +102,7 @@ var WORKFLOWS_HP_DETAILS = (function ($) {
                     url: context.holdingpen.url_continue,
                     data: {'objectid': this.bwoid},
                     success: function (json) {
-                        WORKFLOWS_UTILITIES.bootstrap_alert('Object continued from next task', 'info');
+                        utilities.bootstrap_alert('Object continued from next task', 'info');
                     }
                 });
             });
@@ -120,10 +126,10 @@ var WORKFLOWS_HP_DETAILS = (function ($) {
                     data: {'objectid': this.bwoid,
                            'data': form_data},
                     success: function (json) {
-                        WORKFLOWS_UTILITIES.bootstrap_alert('Record successfully edited', 'info');
+                        utilities.bootstrap_alert('Record successfully edited', 'info');
                     }
                 });
             });
         }
     };
-})(window.jQuery);
+});

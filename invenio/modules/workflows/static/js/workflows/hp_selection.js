@@ -18,9 +18,7 @@
  */
 
 
-// DataTables row selection functions
-//***********************************
-var WORKFLOWS_HP_SELECTION = function ($, holdingpen) {
+define("holdingpen/selection", ["jquery", "datatables", "holdingpen/main"], function ($, dummy, holdingpen) {
     var oTable = {},
         oSettings = {},
         hoveredRow = -1;
@@ -304,5 +302,4 @@ var WORKFLOWS_HP_SELECTION = function ($, holdingpen) {
             }
         }
     };
-}($, WORKFLOWS_HOLDINGPEN);
-//***********************************
+});

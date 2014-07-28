@@ -17,13 +17,8 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-var approval = (function ($, holdingpen, utilities) {
+define("holdingpen/actions/approval", ["jquery", "holdingpen/main", "holdingpen/utilities"], function ($, holdingpen, utilities) {
     "use strict";
-
-    $(document).ready(function(){
-        subscribe();
-    });
-
 
     var get_action_values = function(elem) {
         return {
@@ -49,7 +44,7 @@ var approval = (function ($, holdingpen, utilities) {
         $("#maintable").on("click", ".approval-action", function (event) {
             var data = get_action_values($(this));
 
-            jQuery.ajax({
+            $.ajax({
                 type: "POST",
                 url: data.url,
                 data: {"objectid": data.objectid,
@@ -71,7 +66,7 @@ var approval = (function ($, holdingpen, utilities) {
         $("#approval-widget").on("click", ".approval-action", function (event) {
             var data = get_action_values($(this));
 
-            jQuery.ajax({
+            $.ajax({
                 type: "POST",
                 url: data.url,
                 data: {"objectid": data.objectid,
@@ -86,5 +81,10 @@ var approval = (function ($, holdingpen, utilities) {
     return {
         subscribe: subscribe,
     };
-})(window.jQuery, window.WORKFLOWS_HOLDINGPEN, window.WORKFLOWS_UTILITIES);
+});
 
+$(document).ready(function(){
+    require(["holdingpen/actions/approval"], function(action) {
+        action.subscribe();
+    });
+});

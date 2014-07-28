@@ -23,14 +23,13 @@ from invenio.ext.assets import Bundle
 
 
 js = Bundle(
-    'js/workflows/entry_details.js',
-    'js/workflows/hp_details.js',
     'js/workflows/hp_maintable.js',
+    'js/workflows/hp_details.js',
     'js/workflows/hp_selection.js',
     'js/workflows/hp_tags.js',
     'js/workflows/hp_utilities.js',
-    'js/workflows/utilities.js',
     'js/workflows/workflows.js',
+    'js/workflows/entry_details.js',
     filters="uglifyjs",
     output='workflows.js',
     weight=50,
@@ -79,6 +78,6 @@ dataTables_js = Bundle(
     weight=30,
     bower={
         "datatables": "~1.10",
-        "datatables-plugins": "https://github.com/greut/Plugins.git#amdify"
+        "datatables-plugins": "https://github.com/DataTables/Plugins.git"
     }
 )
