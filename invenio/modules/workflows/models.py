@@ -343,13 +343,23 @@ class BibWorkflowObject(db.Model):
         """
         self._extra_data = base64.b64encode(cPickle.dumps(value))
 
+    def get_workflow_name(self):
+        """Return the workflow name for this object."""
+        try:
+            if self.id_workflow:
+                return Workflow.query.get(self.id_workflow).name
+        except AttributeError:
+            # Workflow non-existent
+            pass
+        return
+
     def get_formatted_data(self, of="hd"):
         """Get the formatted representation for this object."""
         from .registry import workflows
         try:
-            workflow_definition = workflows[Workflow.query.get(self.id_workflow).name]
+            workflow_definition = workflows[self.get_workflow_name()]
             formatted_data = workflow_definition().formatter(self, formatter=None, format=of)
-        except AttributeError:
+        except (KeyError, AttributeError):
             # Somehow the workflow does not exist (.name)
             from invenio.ext.logging import register_exception
             register_exception(alert_admin=True)
@@ -798,5 +808,5 @@ class BibWorkflowEngineLog(db.Model):
         db.session.commit()
 
 
-__all__ = ['Workflow', 'BibWorkflowObject',
-           'BibWorkflowObjectLog', 'BibWorkflowEngineLog']
+__all__ = ('Workflow', 'BibWorkflowObject',
+           'BibWorkflowObjectLog', 'BibWorkflowEngineLog')
