@@ -61,7 +61,6 @@
                       <li><a id="delete_btn" class="btn btn-sm btn-block btn-danger" data-toggle="modal" data-target="#confirmationModal" role="button"><i class="icon-trash"></i>Delete</a></li>
                   </ul>
               </li>
-
               <div id="confirmationModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                   <div class="modal-content">
@@ -83,7 +82,33 @@
         </div>
       </nav>
   {% endblock %}
+  {% block previous_next %}
+    <div class="pull-right" id="prevnext">
+    {% if previous_next[0] != None %}
+      <a href="{{ url_for('holdingpen.details', objectid=previous_next[0])}}" class="btn btn-xs btn-primary">
+        <i class="fa fa-arrow-circle-left fa-1"></i>
+        <strong>Previous</strong>
+      </a>
+    {% else %}
+      <span class="btn btn-xs btn-default" disabled="disabled">
+        <i class="fa fa-arrow-circle-left fa-1"></i>
+        <strong>Previous</strong>
+      </span>
+    {% endif %}
+    {% if previous_next[1] != None %}
+      <a href="{{ url_for('holdingpen.details', objectid=previous_next[1])}}" class="btn btn-xs btn-primary">
+        <strong>Next</strong>
+        <i class="fa fa-arrow-circle-right fa-1"></i>
+      </a>
+    {% else %}
+      <span class="btn btn-xs btn-default" disabled="disabled">
+        <strong>Next</strong>
+        <i class="fa fa-arrow-circle-right fa-1"></i>
+      </span>
+    {% endif %}
 
+    </div>
+  {% endblock %}
   <div class="container" style="padding-left:0px;">
       <div class="row">
           <div class="col-md-3">
@@ -234,7 +259,7 @@
 
         {% if 'message' in bwobject.get_extra_data() and
             bwobject.get_action() != None %}
-            <div id="usermessage" class="alert alert-warning alert-dismissable">
+            <div id="usermessage" class="alert alert-warning alert-dismissible">
                 {{bwobject.get_extra_data()['_message']}}
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
             </div>
@@ -274,6 +299,5 @@
         {% endblock %}
         </div>
     </div>
-
 </div>
 {% endblock %}
