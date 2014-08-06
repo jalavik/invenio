@@ -103,7 +103,31 @@ def details(objectid):
     of = "hd"
     bwobject = BibWorkflowObject.query.get(objectid)
     from invenio.ext.sqlalchemy import db
-
+    if 'workflows' in session:
+        objects = session['workflows']
+    else:
+        bwobject_list = get_holdingpen_objects(["2"])
+        objects = []
+        for obj in bwobject_list:
+            version = extract_data(obj)['w_metadata'].status
+            if version == 2:
+                objects.append(obj.id)
+    try:
+        index = objects.index(objectid)
+        try:
+            next_object = objects[index + 1]
+        except IndexError:
+            next_object = None
+        try:
+            if index == 0:
+                previous_object = None
+            else:
+                previous_object = objects[index - 1]
+        except IndexError:
+            previous_object = None
+    except ValueError:
+        next_object = objects[0]
+        previous_object = None
     formatted_data = bwobject.get_formatted_data(of)
     extracted_data = extract_data(bwobject)
 
@@ -155,7 +179,8 @@ def details(objectid):
                            data_preview=formatted_data,
                            workflow_func=extracted_data['workflow_func'],
                            workflow=extracted_data['w_metadata'],
-                           task_results=results)
+                           task_results=results,
+                           previous_next=(previous_object, next_object))
 
 
 @blueprint.route('/files/<int:objectid>/<path:filename>', methods=['POST', 'GET'])
@@ -312,6 +337,8 @@ def load_table():
     session["holdingpen_sEcho"] = int(request.args.get('sEcho', session.get('sEcho', 0))) + 1
 
     bwobject_list = get_holdingpen_objects(tags)
+    record_ids = [o.id for o in bwobject_list]
+    session['workflows'] = record_ids
 
     if (i_sortcol_0 and s_sortdir_0) or ("holdingpen_iSortCol_0" in session and "holdingpen_sSortDir_0" in session):
         if i_sortcol_0:
