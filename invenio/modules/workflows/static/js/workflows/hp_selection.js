@@ -17,8 +17,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
-define("holdingpen/selection", ["jquery", "datatables", "holdingpen/main"], function ($, dummy, holdingpen) {
+define(['jquery', 'js/workflows/hp_maintable'], function ($, holdingpen) {
     var oTable = {},
         oSettings = {},
         hoveredRow = -1;

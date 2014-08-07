@@ -31,10 +31,10 @@
   <script type="text/javascript">
     $(document).ready(function(){
         require(["jquery",
-                 "holdingpen/main",
-                 "holdingpen/selection",
-                 "holdingpen/tags",
-                 "holdingpen/utilities"], function($, main, selection, tags, utilities) {
+                 "js/workflows/hp_maintable",
+                 "js/workflows/hp_selection",
+                 "js/workflows/hp_tags",
+                 "js/workflows/hp_utilities"], function($, main, selection, tags, utilities) {
             var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
             $.ajax({
                 url: context_url,

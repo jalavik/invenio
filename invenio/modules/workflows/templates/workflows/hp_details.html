@@ -31,14 +31,8 @@
 
     <script type="text/javascript">
         $(document).ready(function(){
-            requirejs.config({
-                baseUrl:'/js',
-                shim: {
-                    "prism": { "exports": "Prism" }
-                }
-            });
             require(["jquery",
-                     "holdingpen/details"], function($, details) {
+                     "js/workflows/hp_details"], function($, details) {
                 var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
                 $.ajax({
                     url: context_url,

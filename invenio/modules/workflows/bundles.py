@@ -28,9 +28,8 @@ js = Bundle(
     'js/workflows/hp_selection.js',
     'js/workflows/hp_tags.js',
     'js/workflows/hp_utilities.js',
-    'js/workflows/workflows.js',
-    'js/workflows/entry_details.js',
-    filters="uglifyjs",
+    'js/workflows/init.js',
+    filters="requirejs",
     output='workflows.js',
     weight=50,
 )
@@ -78,6 +77,6 @@ dataTables_js = Bundle(
     weight=30,
     bower={
         "datatables": "~1.10",
-        "datatables-plugins": "https://github.com/DataTables/Plugins.git"
+        "datatables-plugins": "https://github.com/greut/Plugins.git#amdify"
     }
 )

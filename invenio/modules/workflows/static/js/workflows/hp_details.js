@@ -17,13 +17,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-requirejs.config({
-    shim: {
-        "prism": { "exports": "Prism" }
-    }
-});
-
-define("holdingpen/details", ["jquery", "prism", "holdingpen/utilities"], function ($, Prism, utilities) {
+define(['jquery', 'prism', "js/workflows/hp_utilities"], function($, Prism, utilities) {
     var context = {},
         format = "hd",
         bwoid;

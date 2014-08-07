@@ -19,7 +19,7 @@
 
 //Utility functions
 //***********************************
-define("holdingpen/utilities", ["jquery", "datatables", "holdingpen/main"], function ($, dummy, holdingpen) {
+define(['jquery', 'js/workflows/hp_maintable'], function($, holdingpen) {
 
     $.fn.exists = function () {
         return this.length !== 0;

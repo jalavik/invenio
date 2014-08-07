@@ -19,7 +19,7 @@
 
 // Tags functions
 //***********************************
-define("holdingpen/tags", ["jquery", "datatables", "holdingpen/main", "holdingpen/utilities"], function ($, dummy, holdingpen, utilities) {
+define(["jquery", "js/workflows/hp_maintable", "js/workflows/hp_utilities"], function ($, holdingpen, utilities) {
     "use strict";
     var tagList = [];
 
