@@ -21,30 +21,21 @@
 
 {% block header%}
   {{ super() }}
-  {% bundles "workflows.js", "vendors.js", "vendors.css", "datatables.css", "datatables.js", "actions.js", "jquery.js" %}
+  {% bundles "workflows.js", "workflows.css", "jquery.js" %}
 {% endblock header %}
 
 {% block javascript %}
   {{ super() }}
 
-
   <script type="text/javascript">
-    $(document).ready(function(){
-        require(["jquery",
-                 "js/workflows/hp_maintable",
-                 "js/workflows/hp_selection",
-                 "js/workflows/hp_tags",
-                 "js/workflows/hp_utilities"], function($, main, selection, tags, utilities) {
-            var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
-            $.ajax({
-                url: context_url,
-                success: function(data) {
-                    main.init(data, selection, tags, utilities);
-                    main.init_datatable(selection);
-                }
-            });
-        });
-    });
+    require(["jquery", "js/workflows/holdingpen"], function($, Holdingpen) {
+      $(function() {
+        var hp = new Holdingpen({
+          url: "{{ url_for('holdingpen.get_context')|safe }}"
+        })
+        hp.todo();
+      })
+    })
   </script>
 {% endblock javascript %}
 
@@ -90,7 +81,6 @@
     </div>
   </nav>
   <input class="tags" id="tags" type="text" placeholder="{{ _("Add to search") }}" value="{{tags}}"/>
-
   <div class="container">
     <div class="row">
       <table id="maintable" cellpadding="0" cellspacing="0" border="0" class="table table-bordered">

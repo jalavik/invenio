@@ -17,7 +17,16 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-define(["jquery", "js/workflows/hp_maintable", "js/workflows/hp_utilities"], function ($, holdingpen, utilities) {
+
+define(["jquery"], function($) {
+
+    return {
+        subscribe: function() {
+            console.log("TODO FIXME")
+        }
+    }
+
+//define(["jquery", "js/workflows/hp_maintable", "js/workflows/hp_utilities"], function ($, holdingpen, utilities) {
     "use strict";
 
     var get_action_values = function(elem) {
@@ -81,10 +90,4 @@ define(["jquery", "js/workflows/hp_maintable", "js/workflows/hp_utilities"], fun
     return {
         subscribe: subscribe,
     };
-});
-
-$(document).ready(function(){
-    require(["holdingpen/actions/approval"], function(action) {
-        action.subscribe();
-    });
 });

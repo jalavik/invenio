@@ -22,28 +22,22 @@
 
 {% block header%}
   {{ super() }}
-  {% bundles "workflows.js", "vendors.js", "vendors.css", "actions.js", "jquery.js" %}
+  {% bundles "workflows.js", "workflows.css", "jquery.js" %}
 {% endblock header %}
 
 {% block javascript %}
+  {{ super() }}
 
-    {{ super() }}
-
-    <script type="text/javascript">
-        $(document).ready(function(){
-            require(["jquery",
-                     "js/workflows/hp_details"], function($, details) {
-                var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
-                $.ajax({
-                    url: context_url,
-                    success: function(data) {
-                        details.init(data, {{ bwobject.id }});
-                    }
-                });
-            });
-        });
-    </script>
-
+  <script type="text/javascript">
+    require(["jquery", "js/workflows/holdingpen"], function($, Holdingpen) {
+      $(function() {
+        var hp = new Holdingpen({
+          url: "{{ url_for('holdingpen.get_context')|safe }}"
+        })
+        hp.todo();
+      })
+    })
+  </script>
 {%- endblock javascript %}
 
 {% block hpbody %}

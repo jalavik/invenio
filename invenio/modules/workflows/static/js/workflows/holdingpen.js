@@ -17,13 +17,27 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-require(
-    ["jquery",
-     "js/workflows/actions/approval",
-     "js/workflows/holdingpen"],
-    function($, approval) {
-        $(function() {
-            approval.subscribe()
-        })
+
+define(function(require, exports, module) {
+    var $ = require('jquery'),
+        Prism = require('prism')
+
+    require('datatables-plugins')
+
+    function Holdingpen(config) {
+        this.config = config
     }
-)
+
+    Holdingpen.prototype = {
+        constructor: Holdingpen,
+
+        // FIXME: remove me!
+        todo: function() {
+            console.log(this.config.url)
+            console.log($.fn.dataTable)
+            console.log(Prism)
+        }
+    }
+
+    module.exports = Holdingpen
+})

@@ -23,60 +23,30 @@ from invenio.ext.assets import Bundle
 
 
 js = Bundle(
-    'js/workflows/hp_maintable.js',
-    'js/workflows/hp_details.js',
-    'js/workflows/hp_selection.js',
-    'js/workflows/hp_tags.js',
-    'js/workflows/hp_utilities.js',
+    'vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput.js',
     'js/workflows/init.js',
     filters="requirejs",
     output='workflows.js',
     weight=50,
-)
-
-actions = Bundle(
-    'js/workflows/actions/approval.js',
-    filters="uglifyjs",
-    output='actions.js',
-    weight=50
-)
-
-vendors_js = Bundle(
-    'vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput.js',
-    'vendors/prism/prism.js',
-    filters="uglifyjs",
-    output='vendors.js',
-    weight=40,
     bower={
-        "prism": "gh-pages",
-        "bootstrap-tagsinput": "latest"
+        'bootstrap-tagsinput': "latest",
+        "datatables": "latest",
+        "datatables-plugins": "latest",
+        "prism": "gh-pages"
     }
 )
 
-vendors_css = Bundle(
+css = Bundle(
     'vendors/prism/themes/prism.css',
-    filters="cleancss",
-    output='vendors.css',
-    weight=40
-)
-
-dataTables_css = Bundle(
     'vendors/datatables-plugins/integration/bootstrap/3'
     '/dataTables.bootstrap.css',
     filters="less,cleancss",
-    output='datatables.css',
-    weight=30
-)
-
-dataTables_js = Bundle(
-    'vendors/datatables/media/js/jquery.dataTables.js',
-    'vendors/datatables-plugins/integration/bootstrap/3'
-    '/dataTables.bootstrap.js',
-    filters="uglifyjs",
-    output='datatables.js',
+    output='workflows.css',
     weight=30,
     bower={
-        "datatables": "~1.10",
-        "datatables-plugins": "https://github.com/greut/Plugins.git#amdify"
+        'bootstrap-tagsinput': "latest",
+        "datatables": "latest",
+        "datatables-plugins": "latest",
+        "prism": "gh-pages"
     }
 )
