@@ -28,12 +28,31 @@
   {{ super() }}
 
   <script type="text/javascript">
-    require(["jquery", "js/workflows/holdingpen"], function($, Holdingpen) {
+    function Mystuff(holdingpen, config) {
+        this.hp = holdingpen;
+        this.config = config;
+    }
+    Mystuff.prototype.pre_request = function(element) {
+        var elem = $(element);
+
+        // do stuff
+
+        return {
+            url: ...,
+            value: ..,
+            object: ...
+        }
+    }
+    Mystuff.prototype.post_request = function(element, data) {
+        // deal with the data.
+    }
+    require(["jquery", "js/workflows/holdingpen", "js/worflows/actions/approval"], function($, Holdingpen, Approval) {
       $(function() {
         var hp = new Holdingpen({
-          url: "{{ url_for('holdingpen.get_context')|safe }}"
+          url: "{{ url_for('holdingpen.load_table')|safe }}",
+          plugins: [Approval, Mystuff]
         })
-        hp.todo();
+        hp.init();
       })
     })
   </script>
