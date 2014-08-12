@@ -30,8 +30,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from invenio.ext.sqlalchemy import db
 from invenio.base.globals import cfg
 
-from .utils import (WorkflowsTaskResult,
-                    session_manager)
+from .utils import session_manager
 from .logger import get_logger, BibWorkflowLogHandler
 
 
@@ -422,19 +421,7 @@ class BibWorkflowObject(db.Model):
 
     def get_tasks_results(self):
         """Return the complete set of tasks results."""
-        results = self.get_extra_data()["_tasks_results"]
-        results_new = {}
-        for task, res in results.iteritems():
-            result_list = []
-            for result in res:
-                if isinstance(result, dict):
-                    result_list.append(result)
-                else:
-                    result = result.to_dict()
-                    result["template"] = "workflows/results/default.html"
-                    result_list.append(result)
-            results_new[task] = result_list
-        return results_new
+        return self.get_extra_data()["_tasks_results"]
 
     def add_action(self, action, message):
         """Save an action for holdingpen for this object.

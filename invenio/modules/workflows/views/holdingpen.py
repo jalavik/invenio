@@ -149,10 +149,7 @@ def details(objectid):
     for task, res in iteritems(bwobject.get_tasks_results()):
         for result in res:
             template = render_template(result["template"], results=result)
-            if task == "fulltext_download":
-                results.insert(0, (result, template))
-            else:
-                results.append((result, template))
+            results.append((result, template))
 
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,

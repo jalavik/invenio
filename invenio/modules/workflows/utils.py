@@ -139,25 +139,6 @@ class BibWorkflowObjectIdContainer(object):
         return {str(self.__class__): self.__dict__}
 
 
-class WorkflowsTaskResult(object):
-
-    """The class to contain the current task results."""
-
-    def __init__(self, task_name, name, result):
-        """Create a task result passing task_name, name and result."""
-        self.task_name = task_name
-        self.name = name
-        self.result = result
-
-    def to_dict(self):
-        """Return a dictionary representing a full task result."""
-        return {
-            'name': self.name,
-            'task_name': self.task_name,
-            'result': self.result
-        }
-
-
 def get_workflow_definition(name):
     """Try to load the given workflow from the system."""
     from .registry import workflows
