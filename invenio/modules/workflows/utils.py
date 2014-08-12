@@ -486,6 +486,7 @@ def find_paths(path, paths, workflow_func):
             elif func.func_name in ['_workflow_if', 'workflow_else']:
                 if path in paths:
                     paths.remove(path)
+                path.append(func.func_name)
                 alt_path = path + workflow_func[index + 1]
                 paths.append(alt_path)
             else:

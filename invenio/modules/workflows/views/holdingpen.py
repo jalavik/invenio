@@ -184,12 +184,10 @@ def details(objectid):
     except KeyError:
         task_history = find_paths([], [], workflow_func)
         for path in task_history:
-            path = filter(lambda a: not hasattr(a, 'hide'), path)
-            func_names = map(lambda a: a.func_name, path)
-            if last_task in func_names:
-                index = func_names.index(last_task)
-                task_history = map(get_func_info, path)
-                last_task = task_history[index][0]
+            if last_task in path:
+                path = filter(lambda a: not hasattr(a, 'hide'), path)
+                index = path.index(last_task)
+                break
 
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
