@@ -319,6 +319,7 @@ def write_something_generic(message, func):
                 func(temp)
             return None
 
+    _write_something_generic.hide = True
     return _write_something_generic
 
 
@@ -389,6 +390,7 @@ def workflows_reviews(stop_if_error=False, clean=True):
             eng.extra_data["_nb_workflow"] = 0
             eng.extra_data["_nb_workflow_finish"] = 0
 
+    _workflows_reviews.description = 'Workflows reviews'
     return _workflows_reviews
 
 
@@ -409,4 +411,5 @@ def log_info(message):
             message_buffer = message_buffer(obj, eng)
         eng.log.info(message_buffer)
 
+    _log_info.description = "Log info"
     return _log_info
