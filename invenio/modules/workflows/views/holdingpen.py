@@ -42,7 +42,7 @@ from ..models import BibWorkflowObject, Workflow, ObjectVersion
 from ..registry import actions
 from ..utils import (sort_bwolist, extract_data, get_action_list,
                      get_formatted_holdingpen_object,
-                     get_holdingpen_objects, filter_workflow_path,
+                     get_holdingpen_objects,
                      is_sublist, find_paths)
 from ..api import continue_oid_delayed, start_delayed
 
@@ -152,32 +152,44 @@ def details(objectid):
 
     workflow_func = extracted_data['workflow_func']
     last_task = bwobject.get_extra_data()['_last_task_name']
+
+    def get_func_info(func):
+        try:
+            return func.description, func.func_doc
+        except AttributeError:
+            return func.func_name, func.func_doc
+
     try:
         path_found = False
         task_history = bwobject.get_extra_data()['_task_history']
-        task_history = filter_workflow_path(task_history)
+        task_history = filter(lambda a: not hasattr(a, 'hide'), task_history)
         candidate_paths = find_paths([], [], workflow_func)
         #sorts by length to check first bigger paths
         candidate_paths = sorted(candidate_paths,
                                  cmp=lambda a, b: cmp(len(b), len(a)))
         for path in candidate_paths:
-            path = map(lambda a: a.func_name, path)
-            path = filter_workflow_path(path)
-            if last_task in path:
+            path = filter(lambda a: not hasattr(a, 'hide'), path)
+            func_names = map(lambda a: a.func_name, path)
+            if last_task in func_names:
+                index = func_names.index(last_task)
                 path_found = True
-                temp_path = path[:path.index(last_task)]
-                if is_sublist(temp_path, task_history):
-                    task_history = path
+                func_names = func_names[:index]
+                if is_sublist(func_names, task_history):
+                    task_history = map(get_func_info, path)
+                    last_task = task_history[index][0]
         if not path_found:
-            task_history = filter(lambda a: not a.startswith('['),
+            task_history = map(get_func_info, task_history)
+            task_history = filter(lambda a: not a[0].startswith('['),
                                   task_history)
     except KeyError:
         task_history = find_paths([], [], workflow_func)
         for path in task_history:
-            path = map(lambda a: a.func_name, path)
-            if last_task in path:
-                task_history = path
-        task_history = filter_workflow_path(task_history)
+            path = filter(lambda a: not hasattr(a, 'hide'), path)
+            func_names = map(lambda a: a.func_name, path)
+            if last_task in func_names:
+                index = func_names.index(last_task)
+                task_history = map(get_func_info, path)
+                last_task = task_history[index][0]
 
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
@@ -190,7 +202,8 @@ def details(objectid):
                            workflow_func=extracted_data['workflow_func'],
                            workflow=extracted_data['w_metadata'],
                            task_results=results,
-                           task_history=task_history)
+                           task_history=task_history,
+                           last_task=last_task)
 
 
 @blueprint.route('/fulltext', methods=['GET', 'POST'])

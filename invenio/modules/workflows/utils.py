@@ -523,14 +523,3 @@ def any_iterable(lst):
         if isinstance(element, Iterable):
             return True
     return False
-
-
-def filter_workflow_path(path):
-    """ Removes the operator functions from a workflow path. """
-    return filter(lambda a: a not in ['_workflow_if',
-                                      '_foreach',
-                                      'end_for',
-                                      '_simple_for',
-                                      '_write_something_generic',
-                                      'workflow_else'],
-                  path)

@@ -318,6 +318,7 @@ def write_something_generic(message, func):
                 func(temp)
             return None
 
+    _write_something_generic.hide = 'Dont show in details page'
     return _write_something_generic
 
 
@@ -388,6 +389,7 @@ def workflows_reviews(stop_if_error=False, clean=True):
             eng.extra_data["_nb_workflow"] = 0
             eng.extra_data["_nb_workflow_finish"] = 0
 
+    _workflows_reviews.description = 'Workflows reviews'
     return _workflows_reviews
 
 

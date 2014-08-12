@@ -16,61 +16,56 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 #}
+
 {% macro function_display(fun, task_counter, version, flag=0) -%}
     <!-- {% set comma2 = joiner(",") %} -->
-    {% set i = 0 %}
-    {% for w in fun %}        
-        {{ function_display_inner(w, task_counter, version, flag) }}
-        {% if w == task_counter and version == 2 %}
+    {% set id = 0 %}
+    {% for name, doc in fun %}
+        {{ function_display_inner(name, doc, task_counter, version, flag, id) }}
+        {% if name == task_counter and version == 2 %}
             {% set flag = 1 %}
         {% endif %}
             <!-- {{ comma2() }} -->
-        {% set i = i + 1 %}
+        {% set id = id + 1 %}
     {% endfor %}
 {%- endmacro %}
 
-{% macro function_display_inner(w, task_counter, version, flag) -%}
+{% macro function_display_inner(name, doc, task_counter, version, flag, id) -%}
   </br>
 
     {% if flag == 0 %}
-        {% if w == task_counter and version == 2 %}
-            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}" status="pending">
+        {% if name == task_counter and version == 2 %}
+            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{id}}" status="pending">
                 <span class="glyphicon glyphicon-ok-sign"></span>
-                <strong>{{ w }}</strong>
+                <strong>{{ name }}</strong>
             </button>
         {% else %}
-            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}" status="completed">
+            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{id}}" status="completed">
                 <span class="glyphicon glyphicon-ok-sign"></span>
-                {{ w }}
+                {{ name }}
             </button>
-        {% endif %}  
+        {% endif %}
 
     {% else %}
-        <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{i}}" status="not_started">
-            {{ w }}
+        <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{id}}" status="not_started">
+            {{ name }}
         </button>
 
   {% endif %}
-  
-  <div class="modal fade" id="infoModal{{i}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+
+  <div class="modal fade" id="infoModal{{id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
    <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title" id="myModalLabel">{{ w.func_name }}</h4>
+          <h4 class="modal-title" id="myModalLabel">{{ name }}</h4>
         </div>
         <div class="modal-body">
-          {% if w.func_closure is defined %}
-            {% if w.func_closure is iterable %}
-                {% set comma = joiner(", ") %}
-                {% for arg in w.func_closure %}
-                    {{ comma() }}
-                    <b>Parameter: {{ arg.cell_contents }}</b>
-                {% endfor %}
-                </br>
-            {% endif %}
+          {% if doc %}
+            {{ doc }}
+          {% else %}
+            Documentation unavailable
           {% endif %}
-          {{ w.func_doc }}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

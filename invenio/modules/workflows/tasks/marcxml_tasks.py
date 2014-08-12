@@ -118,6 +118,9 @@ def convert_record_to_bibfield(obj, eng):
     eng.log.info("Field conversion succeeded")
 
 
+convert_record_to_bibfield.description = 'Convert marcxml to bibfield'
+
+
 def init_harvesting(obj, eng):
     """Get all the options from previous state.
 
@@ -134,6 +137,9 @@ def init_harvesting(obj, eng):
                       "that the following task could failed or work not as expected")
         obj.extra_data["options"] = {}
     eng.log.info("end of init_harvesting")
+
+
+init_harvesting.description = 'Start harvesting'
 
 
 def get_repositories_list(repositories=()):
@@ -361,6 +367,7 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
                                                 id_workflow=eng.uuid,
                                                 id_object=obj.id)
 
+    _convert_record.description = 'Convert record to marcxml'
     return _convert_record
 
 
@@ -394,6 +401,7 @@ def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
             stylesheet_to_use = stylesheet
         convert_record(stylesheet_to_use)(obj, eng)
 
+    _convert_record.description = 'Convert record to marcxml'
     return _convert_record
 
 
@@ -475,6 +483,9 @@ def fulltext_download(obj, eng):
     else:
         eng.log.info("There was already a pdf register for this record,"
                      "perhaps a duplicate task in you workflow.")
+
+
+fulltext_download.description = 'Download fulltext'
 
 
 def quick_match_record(obj, eng):
@@ -677,6 +688,7 @@ def plot_extract(plotextractor_types):
                     obj.add_task_result("number_of_picture_total",
                                         len(image_list))
 
+    _plot_extract.description = 'Extract plots'
     return _plot_extract
 
 
@@ -729,6 +741,9 @@ def refextract(obj, eng):
                                 "workflows/results/refextract.html")
     else:
         obj.log.error("Not able to download and process the PDF ")
+
+
+refextract.description = 'Extract references'
 
 
 def author_list(obj, eng):
@@ -794,7 +809,7 @@ def author_list(obj, eng):
         translate_fieldvalues_from_latex(authorlist_record, '100', code='a')
         translate_fieldvalues_from_latex(authorlist_record, '700', code='a')
 
-        updated_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n' \
+        updated_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n'\
                       + record_xml_output(authorlist_record) + '</collection>'
         if not None == updated_xml:
             # We store the path to the directory  the tarball contents live
@@ -806,6 +821,9 @@ def author_list(obj, eng):
             obj.add_task_result("authors", new_dict_representation["authors"])
             obj.add_task_result("number_of_authors",
                                 new_dict_representation["number_of_authors"])
+
+
+author_list.description = 'Exctract authors'
 
 
 def upload_step(obj, eng):
@@ -856,9 +874,9 @@ def upload_step(obj, eng):
                                       obj.extra_data["_repository"]["id"],
                                       marcxml_value)
         except Exception as msg:
-            eng.log.error(
-                "An exception during submitting oaiharvest task occured : %s " % (
-                    str(msg)))
+            eng.log.error("An exception during submitting "
+                          "oaiharvest task occured : %s " %
+                          (str(msg)))
             return None
     else:
         eng.log.error("marcxmlfile %s does not exist" % (filepath,))
@@ -871,6 +889,9 @@ def upload_step(obj, eng):
             "material harvested from source %s was successfully uploaded" %
             (obj.extra_data["_repository"]["name"],))
     eng.log.info("end of upload")
+
+
+upload_step.description = 'Record upload'
 
 
 def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
@@ -908,6 +929,7 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
 
+    _bibclassify.description = 'Extract keywords'
     return _bibclassify
 
 
@@ -924,7 +946,8 @@ def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
             eng.log.error("No RDF found, no bibclassify can run")
             return None
 
-        from invenio.legacy.bibclassify.api import bibclassify_exhaustive_call_text
+        from invenio.legacy.bibclassify.api import \
+            bibclassify_exhaustive_call_text
 
         if "_result" not in obj.extra_data:
             obj.extra_data["_result"] = {}
@@ -932,17 +955,19 @@ def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
         if "title" in obj.data:
             obj.extra_data["_result"]["bibclassify"] = \
                 bibclassify_exhaustive_call_text(
-                [obj.data["title"], obj.data["abstract"]],
-                taxonomy, rebuild_cache,
-                no_cache,
-                output_mode, output_limit,
-                spires,
-                match_mode, with_author_keywords,
-                extract_acronyms, only_core_tags
-            )
+                    [obj.data["title"], obj.data["abstract"]],
+                    taxonomy, rebuild_cache,
+                    no_cache,
+                    output_mode, output_limit,
+                    spires,
+                    match_mode, with_author_keywords,
+                    extract_acronyms, only_core_tags
+                )
             obj.add_task_result("bibclassify",
                                 obj.extra_data["_result"]["bibclassify"])
         else:
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
+
+    _bibclassify.description = 'Extract keywords'
     return _bibclassify
