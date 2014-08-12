@@ -247,31 +247,28 @@
         {% endif %}
 
         {% block hp_preview %}
-                Show as:
-                <div class="btn-group" name="object_preview_btn" data-toggle="buttons-radio">
+            Show as:
+            <div class="btn-group" name="object_preview_btn" data-toggle="buttons-radio">
 
-                    <button class="preview btn btn-xs btn-primary active"
-                            data-id="{{ bwobject.id }}"
-                            name="hd">HTML</button>
-                    <button class="preview btn btn-xs btn-primary"
-                            data-id="{{ bwobject.id }}"
-                            name="xm">RAW</button>
-                    <button class="preview btn btn-xs btn-primary"
-                            data-id="{{ bwobject.id }}"
-                            name="tm">MARC</button>
-                </div>
-                <div id="object_preview_container{{bwobject.id}}" class="object_preview_container">
-                    {{ data_preview|safe }}
-                </div>
+                <button class="preview btn btn-xs btn-primary active"
+                        data-id="{{ bwobject.id }}"
+                        name="hd">HTML</button>
+                <button class="preview btn btn-xs btn-primary"
+                        data-id="{{ bwobject.id }}"
+                        name="xm">RAW</button>
+                <button class="preview btn btn-xs btn-primary"
+                        data-id="{{ bwobject.id }}"
+                        name="tm">MARC</button>
+            </div>
+            <div id="object_preview_container{{bwobject.id}}" class="object_preview_container">
+                {{ data_preview|safe }}
+            </div>
         {% endblock %}
 
         {% block hp_task_results %}
             {% if task_results %}
-                {% for results, template in task_results %}
-
-                        {{ template|safe }}
-
-
+                {% for template in task_results %}
+                    {{ template|safe }}
                 {% endfor %}
             {% endif %}
         {% endblock %}

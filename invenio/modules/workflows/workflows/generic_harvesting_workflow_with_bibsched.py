@@ -38,7 +38,8 @@ from invenio.modules.workflows.utils import WorkflowBase
 
 
 class generic_harvesting_workflow_with_bibsched(WorkflowBase):
-    object_type = "Supervising Workflow"
+
+    object_type = "workflow"
 
     @staticmethod
     def get_description(bwo):
@@ -51,39 +52,17 @@ class generic_harvesting_workflow_with_bibsched(WorkflowBase):
             if 'options' in extra_data and 'identifiers' in extra_data["options"]:
                 identifiers = extra_data["options"]["identifiers"]
 
-            if '_tasks_results' in extra_data and '_workflows_reviews' in \
-                    extra_data['_tasks_results']:
-                result_temp = bwo.get_tasks_results()
-                result_temp = result_temp['_workflows_reviews'][0]['result']
-                result_progress = {
-                    'success': (result_temp['finished'] - result_temp['failed']),
-                    'failed': result_temp['failed'],
-                    'success_per': ((result_temp['finished'] - result_temp['failed'])
-                                    * 100 / result_temp['total']),
-                    'failed_per': result_temp['failed'] * 100 / result_temp[
-                        'total'],
-                    'total': result_temp['total']}
-            elif '_tasks_results' in extra_data and '_wait_for_a_workflow_to_complete' in \
-                    extra_data['_tasks_results']:
-                result_temp = bwo.get_tasks_results()
-                result_temp = result_temp['_wait_for_a_workflow_to_complete']
-                result_temp = result_temp[0]['result']
-                result_progress = {
-                    'success': (result_temp['finished'] - result_temp['failed']),
-                    'failed': result_temp['failed'],
-                    'success_per': ((result_temp['finished'] - result_temp['failed'])
-                                    * 100 / result_temp['total']),
-                    'failed_per': result_temp['failed'] * 100 / result_temp[
-                        'total'],
-                    'total': result_temp['total']}
-            else:
-                result_progress = {'success_per': 0, 'failed_per': 0, 'success': 0,
-                                   'failed': 0, 'total': 0}
+            results = bwo.get_tasks_results()
+            result_progress = {}
+
+            if 'review_workflow' in results:
+                result_progress = results['review_workflow'][0]['result']
+            elif 'wait_for_a_workflow_to_complete' in results:
+                result_progress = results['wait_for_a_workflow_to_complete'][0]['result']
 
             current_task = extra_data['_last_task_name']
         except Exception as e:
-            result_progress = {'success_per': 0, 'failed_per': 0, 'success': 0,
-                               'failed': 0, 'total': 0}
+            result_progress = {}
             identifiers = None
             from invenio.modules.workflows.models import ObjectVersion
             if bwo.version == ObjectVersion.INITIAL:
@@ -103,7 +82,7 @@ class generic_harvesting_workflow_with_bibsched(WorkflowBase):
 
     @staticmethod
     def formatter(bwo, **kwargs):
-        return ""
+        return generic_harvesting_workflow_with_bibsched.get_description(bwo)
 
     workflow = [
         write_something_generic("Initialisation", [task_update_progress,
@@ -130,19 +109,19 @@ class generic_harvesting_workflow_with_bibsched(WorkflowBase):
                         [
                             start_workflow("full_doc_process"),
 
-                            write_something_generic(["Workflow started : ",
-                                                     get_nb_workflow_created,
-                                                     " "],
-                                                    [task_update_progress,
-                                                     write_message]),
+                            write_something_generic(
+                                ["Workflow started: ",
+                                 get_nb_workflow_created],
+                                [task_update_progress,
+                                 write_message]),
                         ],
                         workflow_else,
                         [
-                            write_something_generic(["Max Simultaneous Workflow"
-                                                     ", Wait for one to finish"]
-                                ,
-                                                    [task_update_progress,
-                                                     write_message]),
+                            write_something_generic(
+                                ["Max simultaneous workflows reached: ",
+                                 "Waiting for one to finish"],
+                                [task_update_progress,
+                                 write_message]),
                             wait_for_a_workflow_to_complete(0.05),
                             start_workflow("full_doc_process", None),
                             write_something_generic(["Workflow started :",

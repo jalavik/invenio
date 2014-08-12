@@ -17,9 +17,9 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 #}
 <div class="panel-body">
-    <a href="{{ url_for('holdingpen.fulltext', filename=results['result']['url']) }}">
+    <a href="{{ url_for('holdingpen.get_file', objectid=obj.id, filename=results.result.filename) }}">
         <button type="button" class="btn btn-default btn-lg">
-          <span class="glyphicon glyphicon-book"></span> Fulltext
+          <span class="glyphicon glyphicon-book"></span> {{results.name}}
         </button>
     </a>
 </div>
