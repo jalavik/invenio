@@ -487,6 +487,7 @@ def find_paths(path, paths, workflow_func):
             elif func.func_name in ['_workflow_if', 'workflow_else']:
                 if path in paths:
                     paths.remove(path)
+                path.append(func)
                 alt_path = path + workflow_func[index + 1]
                 paths.append(alt_path)
             else:
@@ -526,12 +527,48 @@ def any_iterable(lst):
     return False
 
 
-def filter_workflow_path(path):
-    """ Removes the operator functions from a workflow path. """
-    return filter(lambda a: a not in ['_workflow_if',
-                                      '_foreach',
-                                      'end_for',
-                                      '_simple_for',
-                                      '_write_something_generic',
-                                      'workflow_else'],
-                  path)
+def get_func_info(func):
+    try:
+        return func.description, func.func_doc
+    except AttributeError:
+        return func.func_name, func.func_doc
+
+
+def get_task_history(bwobject, workflow_func, last_task):
+    try:
+        path_found = False
+        task_history = bwobject.get_extra_data()['_task_history']
+        task_history = filter(lambda a: not hasattr(a, 'hide'), task_history)
+        candidate_paths = find_paths([], [], workflow_func)
+        #sorts by length to check first bigger paths
+        candidate_paths = sorted(candidate_paths,
+                                 cmp=lambda a, b: cmp(len(b), len(a)))
+        for path in candidate_paths:
+            path = filter(lambda a: not hasattr(a, 'hide'), path)
+            func_names = map(lambda a: a.func_name, path)
+            if last_task in func_names:
+                index = func_names.index(last_task)
+                path_found = True
+                func_names = func_names[:index]
+                if is_sublist(func_names, task_history):
+                    task_history = map(get_func_info, path)
+                    last_task = task_history[index][0]
+        if not path_found:
+            task_history = candidate_paths[0]
+            task_history = map(get_func_info, task_history)
+    except KeyError:
+        task_history = find_paths([], [], workflow_func)
+        for path in task_history:
+            path = filter(lambda a: not hasattr(a, 'hide'), path)
+            func_names = map(lambda a: a.func_name, path)
+            if last_task in func_names:
+                index = func_names.index(last_task)
+                task_history = map(get_func_info, path)
+                last_task = task_history[index][0]
+                break
+        else:
+            task_history = sorted(task_history,
+                                  cmp=lambda a, b: cmp(len(b), len(a)))
+            task_history = task_history[0]
+            task_history = map(get_func_info, task_history)
+    return task_history
