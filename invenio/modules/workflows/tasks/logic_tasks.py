@@ -92,6 +92,7 @@ def foreach(get_list_function=None, savename=None, cache_data=False, order="ASC"
             new_vector[coordonatex] = coordonatey + 2
             eng.setPosition(eng.getCurrObjId(), new_vector)
 
+    _foreach.hide = True
     return _foreach
 
 
@@ -143,6 +144,7 @@ def simple_for(inita, enda, incrementa, variable_name=None):
             new_vector[coordonatex] = coordonatey + 2
             eng.setPosition(eng.getCurrObjId(), new_vector)
 
+    _simple_for.hide = True
     return _simple_for
 
 
@@ -153,6 +155,9 @@ def end_for(obj, eng):
     new_vector = eng.getCurrTaskId()
     new_vector[coordonatex] = coordonatey - 3
     eng.setPosition(eng.getCurrObjId(), new_vector)
+
+
+end_for.hide = True
 
 
 def execute_if(fun, *args):
@@ -196,6 +201,7 @@ def workflow_if(cond, neg=False):
             new_vector[coordonatex] = coordonatey + 1
             eng.setPosition(eng.getCurrObjId(), new_vector)
 
+    _workflow_if.hide = True
     return _workflow_if
 
 
@@ -217,6 +223,9 @@ def workflow_else(obj, eng):
         new_vector = eng.getCurrTaskId()
         new_vector[coordonatex] = coordonatey + 1
         eng.setPosition(eng.getCurrObjId(), new_vector)
+
+
+workflow_else.hide = True
 
 
 def compare_logic(a, b, op):

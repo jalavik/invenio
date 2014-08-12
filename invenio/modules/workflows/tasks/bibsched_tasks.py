@@ -19,6 +19,7 @@
 The Bibsched logic is separate from other tasks, the goal is to allow
 to run a workflow in another way than with Bibsched.
 """
+from ..utils import pass_properties_to_closure
 
 
 def task_update_progress(msg):
