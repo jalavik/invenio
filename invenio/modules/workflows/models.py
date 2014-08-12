@@ -30,8 +30,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from invenio.ext.sqlalchemy import db
 from invenio.base.globals import cfg
 
-from .utils import (WorkflowsTaskResult,
-                    session_manager)
+from .utils import session_manager
 from .logger import get_logger, BibWorkflowLogHandler
 
 
@@ -249,6 +248,7 @@ class BibWorkflowObject(db.Model):
     .. code-block:: python
 
         obj = BibWorkflowObject()
+        obj.save()
 
     Or, like this:
 
@@ -256,7 +256,7 @@ class BibWorkflowObject(db.Model):
 
         obj = BibWorkflowObject.create_object()
 
-    This object provides some handy functions such as:
+    BibWorkflowObject provides some handy functions such as:
 
     .. code-block:: python
 
@@ -264,7 +264,7 @@ class BibWorkflowObject(db.Model):
         obj.get_data() == "<xml ..... />"
         obj.set_extra_data({"param": value})
         obj.get_extra_data() == {"param": value}
-        obj.add_task_result(name="myresult", result=1)
+        obj.add_task_result("myresult", {"result": 1})
 
     Then to finally save the object
 
@@ -402,58 +402,93 @@ class BibWorkflowObject(db.Model):
         return not self.__eq__(other)
 
     def add_task_result(self, name, result, template="workflows/results/default.html"):
-        """Save a task result.
+        """Add a new task result defined by name.
 
-        Adds given task results to extra_data in order to be accessed
-        and displayed later on by Holding Pen templates.
+        The name is the dictionary key used to group similar types of
+        results as well as a possible label for the result.
+
+        The result is a dictionary given as context to the template
+        when rendered. The result given here is added to a list of results
+        for this name.
 
         :param name: The name of the task in human friendly way.
-                     It is used as a label for the result rendering.
+                     It is used as a key and label for the result rendering.
         :type name: string
 
-        :param result: The output of the task
-        :type result: If no template is specified must be a dict.
+        :param result: The result to store - passed to render_template().
+        :type result: dict
 
-        :param template: The location of the template to render
-                         the result.
+        :param template: The location of the template to render the result.
         :type template: string
         """
-        extra_data = self.get_extra_data()
-        task_name = extra_data["_last_task_name"]
-        result = {"name": name,
-                  "result": result,
-                  "template": template
-                  }
-        if task_name in extra_data["_tasks_results"]:
-            extra_data["_tasks_results"][task_name].append(result)
+        extra_data = getattr(self, "extra_data", self.get_extra_data())
+        result = {
+            "name": name,
+            "result": result,
+            "template": template
+        }
+        if name in extra_data["_tasks_results"]:
+            extra_data["_tasks_results"][name].append(result)
         else:
-            extra_data["_tasks_results"][task_name] = [result]
+            extra_data["_tasks_results"][name] = [result]
+        self.set_extra_data(extra_data)
+
+    def update_task_results(self, name, results):
+        """Update tasks result defined by name.
+
+        The name is the dictionary key used to group similar types of
+        results as well as a possible label for the result.
+
+        This functions allows you to update (replace) the results associated
+        with a name with given list of results where each result is
+        structured like this:
+
+        .. code-block:: python
+
+                result = {
+                   "name": name,
+                   "result": result,
+                   "template": template
+                }
+
+        :param name: The name of the task in human friendly way.
+                     It is used as a key and label for the result rendering.
+        :type name: string
+
+        :param result: The result to store - passed to render_template().
+        :type result: dict
+
+        :param template: The location of the template to render the result.
+        :type template: string
+        """
+        extra_data = getattr(self, "extra_data", self.get_extra_data())
+        extra_data["_tasks_results"][name] = results
         self.set_extra_data(extra_data)
 
     def get_tasks_results(self):
-        """Return the complete set of tasks results."""
-        results = self.get_extra_data()["_tasks_results"]
-        results_new = {}
-        for task, res in results.iteritems():
-            result_list = []
-            for result in res:
-                if isinstance(result, dict):
-                    result_list.append(result)
-                else:
-                    result = result.to_dict()
-                    result["template"] = "workflows/results/default.html"
-                    result_list.append(result)
-            results_new[task] = result_list
-        return results_new
+        """Return the complete set of tasks results.
 
-    def add_action(self, action, message):
-        """Save an action for holdingpen for this object.
+        The result is given as a dictionary where each result is
+        structured like:
+
+        .. code-block:: python
+
+                result = {
+                   "name": name,
+                   "result": result,
+                   "template": template
+                }
+
+        :return: dictionary of results as {name: [result, ..], ..}
+        """
+        return self.get_extra_data()["_tasks_results"]
+
+    def set_action(self, action, message):
+        """Set the action to be taken for this object.
 
         Assign an special "action" to this object to be taken
-        in consideration in holdingpen. The widget is referred to
+        in consideration in Holding Pen. The widget is referred to
         by a string with the filename minus extension.
-
-        Ex: 'approval' for an action 'approval.py'.
 
         A message is also needed to tell the user the action
         required in a textual way.

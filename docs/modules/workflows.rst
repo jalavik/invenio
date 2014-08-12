@@ -30,6 +30,9 @@ Engine
 Workers
 -------
 
+    .. automodule:: invenio.modules.workflows.worker_engine
+       :members:
+
     .. automodule:: invenio.modules.workflows.worker_result
        :members:
 

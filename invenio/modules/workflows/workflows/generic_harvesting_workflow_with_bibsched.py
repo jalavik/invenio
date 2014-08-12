@@ -51,31 +51,24 @@ class generic_harvesting_workflow_with_bibsched(WorkflowBase):
             if 'options' in extra_data and 'identifiers' in extra_data["options"]:
                 identifiers = extra_data["options"]["identifiers"]
 
-            if '_tasks_results' in extra_data and '_workflows_reviews' in \
-                    extra_data['_tasks_results']:
-                result_temp = bwo.get_tasks_results()
-                result_temp = result_temp['_workflows_reviews'][0]['result']
+            results = bwo.get_tasks_results()
+            result_to_display = None
+
+            if 'review_workflow' in results:
+                result_to_display = results['review_workflow'][0]['result']
+            elif 'wait_for_a_workflow_to_complete' in results:
+                result_to_display = results['wait_for_a_workflow_to_complete'][0]['result']
+
+            if result_to_display:
                 result_progress = {
-                    'success': (result_temp['finished'] - result_temp['failed']),
-                    'failed': result_temp['failed'],
-                    'success_per': ((result_temp['finished'] - result_temp['failed'])
-                                    * 100 / result_temp['total']),
-                    'failed_per': result_temp['failed'] * 100 / result_temp[
+                    'success': (result_to_display['finished'] - result_to_display['failed']),
+                    'failed': result_to_display['failed'],
+                    'success_per': ((result_to_display['finished'] - result_to_display['failed'])
+                                    * 100 / result_to_display['total']),
+                    'failed_per': result_to_display['failed'] * 100 / result_to_display[
                         'total'],
-                    'total': result_temp['total']}
-            elif '_tasks_results' in extra_data and '_wait_for_a_workflow_to_complete' in \
-                    extra_data['_tasks_results']:
-                result_temp = bwo.get_tasks_results()
-                result_temp = result_temp['_wait_for_a_workflow_to_complete']
-                result_temp = result_temp[0]['result']
-                result_progress = {
-                    'success': (result_temp['finished'] - result_temp['failed']),
-                    'failed': result_temp['failed'],
-                    'success_per': ((result_temp['finished'] - result_temp['failed'])
-                                    * 100 / result_temp['total']),
-                    'failed_per': result_temp['failed'] * 100 / result_temp[
-                        'total'],
-                    'total': result_temp['total']}
+                    'total': result_to_display['total']}
+
             else:
                 result_progress = {'success_per': 0, 'failed_per': 0, 'success': 0,
                                    'failed': 0, 'total': 0}

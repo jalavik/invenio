@@ -48,17 +48,18 @@ class generic_harvesting_workflow(WorkflowBase):
         if 'options' in extra_data and 'identifiers' in extra_data["options"]:
             identifiers = extra_data["options"]["identifiers"]
 
-        if '_task_results' in extra_data and '_workflows_reviews' in extra_data['_task_results']:
-            result_temp = bwo.get_tasks_results()
-            result_temp = result_temp['_workflows_reviews'][0]['result']
+        results = bwo.get_tasks_results()
+
+        if 'review_workflow' in results:
+            result_to_display = results['review_workflow'][0]['result']
             result_progress = {
-                'success': (result_temp['total'] - result_temp['failed']),
-                'failed': result_temp['failed'],
-                'success_per': ((result_temp['total'] - result_temp['failed'])
-                                * 100 / result_temp['total']),
-                'failed_per': result_temp['failed'] * 100 / result_temp[
+                'success': (result_to_display['total'] - result_to_display['failed']),
+                'failed': result_to_display['failed'],
+                'success_per': ((result_to_display['total'] - result_to_display['failed'])
+                                * 100 / result_to_display['total']),
+                'failed_per': result_to_display['failed'] * 100 / result_to_display[
                     'total'],
-                'total': result_temp['total']}
+                'total': result_to_display['total']}
         else:
             result_progress = {'success_per': 0, 'failed_per': 0, 'success': 0, 'failed': 0, 'total': 0}
 

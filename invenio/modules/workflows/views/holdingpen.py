@@ -27,7 +27,7 @@ submissions/depositions.
 Note: Currently work-in-progress.
 """
 
-from six import iteritems, text_type
+from six import text_type
 
 from flask import (render_template, Blueprint, request, jsonify,
                    url_for, flash, session, send_file)
@@ -43,7 +43,8 @@ from ..models import BibWorkflowObject, Workflow, ObjectVersion
 from ..registry import actions
 from ..utils import (sort_bwolist, extract_data, get_action_list,
                      get_formatted_holdingpen_object,
-                     get_holdingpen_objects)
+                     get_holdingpen_objects,
+                     get_rendered_task_results)
 from ..api import continue_oid_delayed, start_delayed
 
 blueprint = Blueprint('holdingpen', __name__, url_prefix="/admin/holdingpen",
@@ -142,14 +143,7 @@ def details(objectid):
         hbwobject[ObjectVersion.FINAL]
     )
 
-    results = []
-    for task, res in iteritems(bwobject.get_tasks_results()):
-        for result in res:
-            template = render_template(result["template"], results=result)
-            if task == "fulltext_download":
-                results.insert(0, (result, template))
-            else:
-                results.append((result, template))
+    results = get_rendered_task_results(bwobject)
 
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
@@ -167,7 +161,7 @@ def details(objectid):
 @blueprint.route('/fulltext', methods=['GET', 'POST'])
 @login_required
 def fulltext():
-    """ Sends the fulltext file to user. """
+    """Send the fulltext file to user."""
     filename = request.args.get('filename')
     return send_file(filename)
 
