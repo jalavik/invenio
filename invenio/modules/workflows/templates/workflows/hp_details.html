@@ -79,36 +79,28 @@
                 </div>
               </div>
           </ul>
+{% block previous_next %}
+<div class="navbar-form navbar-right">
+  <a href="{{ url_for('holdingpen.details', objectid=previous_object)}}"
+     class="btn btn-default"
+     {% if previous_object == None %}disabled="disabled"{% endif %}>
+      <span class="glyphicon glyphicon-circle-arrow-left"></span>
+      <strong>Previous</strong>
+  </a>
+
+  <a href="{{ url_for('holdingpen.details', objectid=next_object)}}"
+     class="btn btn-default"
+     {% if next_object == None %}disabled="disabled"{% endif %}>
+        <span class="glyphicon glyphicon-circle-arrow-right"></span>
+        <strong>Next</strong>
+  </a>
+
+</div>
+{% endblock %}
         </div>
       </nav>
   {% endblock %}
-  {% block previous_next %}
-    <div class="pull-right" id="prevnext">
-    {% if previous_next[0] != None %}
-      <a href="{{ url_for('holdingpen.details', objectid=previous_next[0])}}" class="btn btn-xs btn-primary">
-        <i class="fa fa-arrow-circle-left fa-1"></i>
-        <strong>Previous</strong>
-      </a>
-    {% else %}
-      <span class="btn btn-xs btn-default" disabled="disabled">
-        <i class="fa fa-arrow-circle-left fa-1"></i>
-        <strong>Previous</strong>
-      </span>
-    {% endif %}
-    {% if previous_next[1] != None %}
-      <a href="{{ url_for('holdingpen.details', objectid=previous_next[1])}}" class="btn btn-xs btn-primary">
-        <strong>Next</strong>
-        <i class="fa fa-arrow-circle-right fa-1"></i>
-      </a>
-    {% else %}
-      <span class="btn btn-xs btn-default" disabled="disabled">
-        <strong>Next</strong>
-        <i class="fa fa-arrow-circle-right fa-1"></i>
-      </span>
-    {% endif %}
 
-    </div>
-  {% endblock %}
   <div class="container" style="padding-left:0px;">
       <div class="row">
           <div class="col-md-3">
