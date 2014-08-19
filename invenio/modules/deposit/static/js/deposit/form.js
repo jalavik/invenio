@@ -417,6 +417,7 @@ define(function(require, exports, module) {
       request_data[name] = value;
       save_data(url, request_data);
   }
+
   /**
    * Save field value value
    */
@@ -758,7 +759,7 @@ define(function(require, exports, module) {
     //FIXME remove these hacks
     $('#webdeposit_form_accordion').on('hide', function (e) {
       $(e.target).css("overflow","hidden");
-    })
+    });
     $('#webdeposit_form_accordion').on('shown', function (e) {
       $(e.target).css("overflow", "visible");
     })
