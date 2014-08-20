@@ -18,8 +18,10 @@
 """Set of workflow logic tasks."""
 
 from six import callable
+from ..utils import pass_properties_to_closure
 
 
+@pass_properties_to_closure
 def foreach(get_list_function=None, savename=None, cache_data=False, order="ASC"):
     """Simple for each without memory of previous state.
 
@@ -96,6 +98,7 @@ def foreach(get_list_function=None, savename=None, cache_data=False, order="ASC"
     return _foreach
 
 
+@pass_properties_to_closure
 def simple_for(inita, enda, incrementa, variable_name=None):
     """Simple for going from inita to enda by step of incrementa.
 
@@ -160,6 +163,7 @@ def end_for(obj, eng):
 end_for.hide = True
 
 
+@pass_properties_to_closure
 def execute_if(fun, *args):
     """Simple conditional execution task."""
     def _execute_if(obj, eng):
@@ -172,6 +176,7 @@ def execute_if(fun, *args):
     return _execute_if
 
 
+@pass_properties_to_closure
 def workflow_if(cond, neg=False):
     """Simple if statement.
 
@@ -228,6 +233,7 @@ def workflow_else(obj, eng):
 workflow_else.hide = True
 
 
+@pass_properties_to_closure
 def compare_logic(a, b, op):
     """Task that can be used in if or something else to compare two values.
 

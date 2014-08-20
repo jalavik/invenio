@@ -22,6 +22,7 @@ to run a workflow in another way than with Bibsched.
 from ..utils import pass_properties_to_closure
 
 
+@pass_properties_to_closure
 def task_update_progress(msg):
     """Function call to print in the field progress of bibsched.
 
@@ -38,6 +39,7 @@ def task_update_progress(msg):
     return _task_update_progress
 
 
+@pass_properties_to_closure
 def task_update_status(msg):
     """Function call to print in the field status of bibsched.
 

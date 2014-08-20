@@ -22,6 +22,7 @@ from six import callable, string_types
 from time import sleep
 from invenio.modules.workflows.errors import WorkflowError
 from invenio.modules.workflows.models import BibWorkflowEngineLog
+from ..utils import pass_properties_to_closure
 
 
 def interrupt_workflow(obj, eng):
@@ -49,6 +50,7 @@ def get_nb_workflow_created(obj, eng):
         return "0"
 
 
+@pass_properties_to_closure
 def num_workflow_running_greater(num):
     """Correct the problem of saturation.
 
@@ -90,6 +92,7 @@ def get_nb_workflow_running(obj, eng):
         return "0"
 
 
+@pass_properties_to_closure
 def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
     """Run a new asynchronous workflow.
 
@@ -187,6 +190,7 @@ def wait_for_a_workflow_to_complete_obj(obj, eng):
     workflow_result_management(obj.data, eng)
 
 
+@pass_properties_to_closure
 def wait_for_a_workflow_to_complete(scanning_time=0.5):
     """Wait for a children workflow finished processing.
 
@@ -267,6 +271,7 @@ def workflow_result_management(async_result, eng):
         eng.extra_data["_nb_workflow_finish"] += 1
 
 
+@pass_properties_to_closure
 def write_something_generic(message, func):
     """Allow to write a message where you want.
 
@@ -360,6 +365,7 @@ def get_workflows_progress(obj, eng):
         return "No workflows"
 
 
+@pass_properties_to_closure
 def workflows_reviews(stop_if_error=False, clean=True):
     """Give you a little review of you children workflows.
 
@@ -402,6 +408,7 @@ def workflows_reviews(stop_if_error=False, clean=True):
     return _workflows_reviews
 
 
+@pass_properties_to_closure
 def log_info(message):
     """A simple function to log a simple thing.
 

@@ -32,6 +32,7 @@ from invenio.base.wrappers import lazy_import
 from invenio.utils.shell import run_shell_command, Timeout
 from invenio.utils.plotextractor.converter import untar
 from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
+from ..utils import pass_properties_to_closure
 
 bibtask = lazy_import("invenio.legacy.bibsched.bibtask")
 records_api = lazy_import("invenio.modules.records.api")
@@ -145,6 +146,7 @@ def init_harvesting(obj, eng):
 init_harvesting.description = 'Start harvesting'
 
 
+@pass_properties_to_closure
 def get_repositories_list(repositories=()):
     """Get repository list in options.
 
@@ -251,6 +253,7 @@ def harvest_records(obj, eng):
             len(harvested_files_list),))
 
 
+@pass_properties_to_closure
 def get_records_from_file(path=None):
     """Allow to retrieve the records from a file."""
     from invenio.legacy.oaiharvest.utils import record_extraction_from_file
@@ -291,6 +294,7 @@ def get_eng_uuid_harvested(obj, eng):
     return "*" + str(eng.uuid) + "*.harvested"
 
 
+@pass_properties_to_closure
 def get_files_list(path, parameter):
     """Function returning the list of file in a directory."""
     def _get_files_list(obj, eng):
@@ -309,6 +313,7 @@ def get_files_list(path, parameter):
     return _get_files_list
 
 
+@pass_properties_to_closure
 def set_obj_extra_data_key(key, value):
     """Task setting the value of an object extra data key."""
     def _set_obj_extra_data_key(obj, eng):
@@ -325,6 +330,7 @@ def set_obj_extra_data_key(key, value):
     return _set_obj_extra_data_key
 
 
+@pass_properties_to_closure
 def get_obj_extra_data_key(name):
     """Task returning the value of an object extra data key."""
     def _get_obj_extra_data_key(obj, eng):
@@ -333,6 +339,7 @@ def get_obj_extra_data_key(name):
     return _get_obj_extra_data_key
 
 
+@pass_properties_to_closure
 def get_eng_extra_data_key(name):
     """Task returning the value of an engine extra data key."""
     def _get_eng_extra_data_key(obj, eng):
@@ -346,6 +353,7 @@ def get_data(obj, eng):
     return obj.data
 
 
+@pass_properties_to_closure
 def convert_record(stylesheet="oaidc2marcxml.xsl"):
     """Convert the object data, if XML, using the given stylesheet.
 
@@ -374,6 +382,7 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
     return _convert_record
 
 
+@pass_properties_to_closure
 def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
     """Convert a MARC record to another one thanks to the stylesheet.
 
@@ -408,6 +417,7 @@ def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
     return _convert_record
 
 
+@pass_properties_to_closure
 def update_last_update(repository_list):
     """Perform the update of the update date."""
     from invenio.legacy.oaiharvest.dblayer import update_lastrun
@@ -572,6 +582,7 @@ def quick_match_record(obj, eng):
     return False
 
 
+@pass_properties_to_closure
 def upload_record(mode="ir"):
     """Perform the upload step."""
     def _upload_record(obj, eng):
@@ -585,6 +596,7 @@ def upload_record(mode="ir"):
     return _upload_record
 
 
+@pass_properties_to_closure
 def plot_extract(plotextractor_types):
     """Perform the plotextraction step.
 
@@ -911,6 +923,7 @@ def upload_step(obj, eng):
 upload_step.description = 'Record upload'
 
 
+@pass_properties_to_closure
 def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
                 output_mode='text',
                 output_limit=20, spires=False, match_mode='full',
@@ -950,6 +963,7 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
     return _bibclassify
 
 
+@pass_properties_to_closure
 def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
                      output_mode='text',
                      output_limit=20, spires=False, match_mode='full',

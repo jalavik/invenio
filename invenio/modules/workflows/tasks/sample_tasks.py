@@ -18,8 +18,10 @@
 """Collection of tasks used for tests."""
 
 import time
+from ..utils import pass_properties_to_closure
 
 
+@pass_properties_to_closure
 def add_data(data_param):
     """Add data_param to obj.data."""
     def _add_data(obj, eng):
@@ -50,6 +52,7 @@ def call_c():
     raise ZeroDivisionError
 
 
+@pass_properties_to_closure
 def halt_if_data_less_than(threshold):
     """Static task to halt if data is lesser than threshold.
 
@@ -71,6 +74,7 @@ def set_data(data):
     return _set_data
 
 
+@pass_properties_to_closure
 def reduce_data_by_one(times):
     """Task to substract one to data."""
     def _reduce_data_by_one(obj, eng):
@@ -82,6 +86,7 @@ def reduce_data_by_one(times):
     return _reduce_data_by_one
 
 
+@pass_properties_to_closure
 def add_metadata():
     """Task to add metadata."""
     def _add_metadata(obj, eng):
@@ -100,6 +105,7 @@ def task_b(obj, eng):
         obj.add_task_result("task_b", {'a': 12, 'b': 13, 'c': 14})
 
 
+@pass_properties_to_closure
 def sleep_task(t):
     """Task to wait t seconds."""
     def _sleep_task(dummy_obj, eng):
@@ -120,6 +126,7 @@ def halt_if_higher_than_20(obj, eng):
         eng.halt("Value of filed: a in object is higher than 20.")
 
 
+@pass_properties_to_closure
 def subtract(value):
     """Function subtract value from variable."""
     def _subtract(obj, dummy_eng):
