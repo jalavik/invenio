@@ -14,6 +14,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 021111307, USA.
+from ..utils import pass_properties_to_closure
 """Workflows task to communicate with bibsched.
 
 The Bibsched logic is separate from other tasks, the goal is to allow
@@ -21,6 +22,7 @@ to run a workflow in another way than with Bibsched.
 """
 
 
+@pass_properties_to_closure
 def task_update_progress(msg):
     """Function call to print in the field progress of bibsched.
 
@@ -37,6 +39,7 @@ def task_update_progress(msg):
     return _task_update_progress
 
 
+@pass_properties_to_closure
 def task_update_status(msg):
     """Function call to print in the field status of bibsched.
 
