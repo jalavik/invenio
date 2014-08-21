@@ -446,7 +446,6 @@ def pass_properties_to_closure(func):
         if callable(inner_func):
             inner_func.func_name = func.func_name
             inner_func.func_doc = func.func_doc
-            inner_func.func_defaults = func.func_defaults
             inner_func.func_dict.update(func.func_dict)
             return inner_func
         else:
@@ -454,7 +453,6 @@ def pass_properties_to_closure(func):
     # Keeps func's properties
     new_function.func_name = func.func_name
     new_function.func_doc = func.func_doc
-    new_function.func_defaults = func.func_defaults
     new_function.func_dict.update(func.func_dict)
     return new_function
 
@@ -556,9 +554,9 @@ def any_iterable(lst):
 def get_func_info(func):
     """ Retrieves a function's information."""
     try:
-        return func.description, func.func_doc, func.func_closure
+        return func.description, func.func_doc, func.func_closure, func.func_code.co_freevars
     except AttributeError:
-        return func.func_name, func.func_doc, func.func_closure
+        return func.func_name, func.func_doc, func.func_closure, func.func_code.co_freevars
 
 
 def filter_tasks(task_list):
