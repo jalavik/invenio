@@ -355,7 +355,7 @@ def get_data(obj, eng):
 
 @pass_properties_to_closure
 def convert_record(stylesheet="oaidc2marcxml.xsl"):
-    """Convert the object data, if XML, using the given stylesheet.
+    """Convert the object data to marcxml using the given stylesheet.
 
     :param stylesheet: which stylesheet to use
     :return: function to convert record
@@ -384,7 +384,7 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
 
 @pass_properties_to_closure
 def convert_record_with_repository(stylesheet="oaidc2marcxml.xsl"):
-    """Convert a MARC record to another one thanks to the stylesheet.
+    """Convert the object data to marcxml using the given stylesheet.
 
     This function converts a record to a marcxml representation by using a
     style sheet which should be in parameter or which should have been stored

@@ -159,7 +159,6 @@ def details(objectid):
     workflow_func = extracted_data['workflow_func']
     last_task = bwobject.get_extra_data()['_last_task_name']
     task_history = get_task_history(bwobject, workflow_func, last_task)
-    print("LAST TASK", last_task)
 
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
@@ -174,6 +173,7 @@ def details(objectid):
                            previous_object=previous_object,
                            next_object=next_object,
                            task_history=task_history,
+                           workflow_func=workflow_func,
                            last_task=last_task)
 
 
