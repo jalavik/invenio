@@ -46,9 +46,6 @@ define(function(require, exports, module) {
 
   var empty_cssclass = "empty-element";
 
-  // Globals
-  var uploader;
-
   return defineComponent(depositForm);
 
   function depositForm() {
@@ -68,6 +65,7 @@ define(function(require, exports, module) {
         formSaveClass: '.form-save',
         formSubmitClass: '.form-submit',
         dynamicFieldListClass : ".dynamic-field-list",
+        pluploaderClass: ".pluploader"
       });
 
   //
@@ -95,41 +93,26 @@ define(function(require, exports, module) {
       };
   }
 
-  function serialize_files(selector) {
-      var ids, files, result;
-
-      // Extract ids
-      ids = $(selector).find('tr[id]').map(function(){ return $(this).attr('id');});
-      // Build search dict
-      files = {};
-      $.each(uploader.files, function(idx, elem){
-          files[elem.id] = elem;
-      });
-      // Build ordered list of server ids.
-      result = [];
-      $.each(ids, function(idx, id){
-          var file = files[id];
-          if(file !== undefined && file.status == 5) {
-              result.push(file.server_id);
-          }
-      });
-      return result;
-  }
-
   /**
    * Serialize a form
    */
-  function serialize_form(selector){
+  this.serialize_form = function(selector){
       // Sync CKEditor before serializing
       if (typeof CKEDITOR !== 'undefined') {
         $.each(CKEDITOR.instances, function(instance, editor) {
           $("#" + instance).val(editor.getData())
         });
       }
-      var fields = $(selector).serializeArray();
-      // if(uploader !== null){
-      //     fields.push({name: 'files', value: serialize_files('#filelist')});
-      // }
+      var fields = $(selector).serializeArray(),
+          $pluploader = $(this.attr.pluploaderClass);
+
+      if ( $pluploader.length ) {
+        // There is a pluploader instance in the form
+        fields.push({
+          name: 'files',
+          value: $pluploader.data('pluploadWidget').val()
+        });
+      }
       return serialize_object(fields);
   }
 
@@ -419,6 +402,18 @@ define(function(require, exports, module) {
   }
 
   /**
+   * Fired when a form field has to be saved
+   *
+   * @event dataSaveField
+   * @param ev {Event}
+   * @param data {Object}
+   */
+  this.onSaveField = function(ev, data) {
+    save_field(data.save_url, data.name, data.value);
+  }
+
+
+  /**
    * Save field value value
    */
   function save_data(url, request_data, flash_message, success_callback, failure_callback) {
@@ -509,7 +504,7 @@ define(function(require, exports, module) {
       }
       save_data(
            data.url,
-           serialize_form(data.form_selector),
+           this.serialize_form(data.form_selector),
            true,
            function success_callback() {
               window.location.reload();
@@ -734,13 +729,14 @@ define(function(require, exports, module) {
    * @param data {Object}
    */
   this.saveForm = function(ev, data) {
-    save_data(data.url, serialize_form(data.form_selector), data.show);
+    save_data(data.url, this.serialize_form(data.form_selector), data.show);
   }
 
   this.after('initialize', function() {
     // Custom handlers
     this.on('dataFormSave', this.saveForm);
     this.on('dataFormSubmit', this.submitForm);
+    this.on('dataSaveField', this.onSaveField);
 
     this.on(document, "click", {
       formSaveClass: this.onSaveClick,
