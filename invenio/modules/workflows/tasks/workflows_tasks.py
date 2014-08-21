@@ -90,7 +90,8 @@ def get_nb_workflow_running(obj, eng):
         return "0"
 
 
-def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
+def start_workflow(workflow_to_run="default", data=None, copy=True,
+                   pass_object=False, **kwargs):
     """Run a new asynchronous workflow.
 
     This function allow you to run a new asynchronous workflow, this
@@ -112,8 +113,12 @@ def start_workflow(workflow_to_run="default", data=None, copy=True, **kwargs):
 
     def _start_workflow(obj, eng):
 
-        if copy:
+        if pass_object:
+            myobject = obj
+            myobject.version = ObjectVersion.FINAL
+        elif copy:
             myobject = BibWorkflowObject.create_object_revision(obj,
+                                                                id_parent=obj.id,
                                                                 version=ObjectVersion.INITIAL)
         else:
             myobject = BibWorkflowObject()
@@ -392,7 +397,7 @@ def workflows_reviews(stop_if_error=False, clean=True):
 
 
 def log_info(message):
-    """ A simple function to log a simple thing.
+    """A simple function to log a simple thing.
 
     If you want more sophisticated way, thanks to see
     the function write_something_generic.

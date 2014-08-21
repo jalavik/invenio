@@ -113,7 +113,6 @@ def continue_worker(oid, restart_point="continue_next",
                                workflow_object=workflow,
                                **kwargs)
     engine.save()
-    generate_snapshot(workflow_object, engine)
     continue_execution(engine, workflow_object, restart_point,
                        task_offset, **kwargs)
     return engine
