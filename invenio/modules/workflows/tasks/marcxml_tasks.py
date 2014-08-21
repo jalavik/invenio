@@ -110,7 +110,7 @@ def filtering_oai_pmh_identifier(obj, eng):
 
 
 def convert_record_to_bibfield(obj, eng):
-    """Convert a record in data into a 'dictionary' thanks to BibField.
+    """Convert a marcxml record in data into a 'dictionary' thanks to BibField.
 
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object

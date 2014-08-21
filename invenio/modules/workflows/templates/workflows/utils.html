@@ -18,35 +18,37 @@
 #}
 
 {% macro function_display(fun, task_counter, version, flag=0, id) -%}
-    {% for name, doc, closure in fun %}
-        {{ function_display_inner(name, doc, closure, task_counter, version, flag, id) }}
+    <br/>
+    <div class="list-group">
+    {% for name, doc, closure, varnames in fun %}
+        {{ function_display_inner(name, doc, closure, varnames, task_counter, version, flag, id) }}
         {% if name == task_counter and version == 2 %}
             {% set flag = 1 %}
         {% endif %}
         {% set id = id + 1 %}
     {% endfor %}
+    </div>
 {%- endmacro %}
 
-{% macro function_display_inner(name, doc, closure, task_counter, version, flag, id) -%}
-  </br>
+{% macro function_display_inner(name, doc, closure, varnames, task_counter, version, flag, id) -%}
 
     {% if flag == 0 %}
         {% if name == task_counter and version == 2 %}
-            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{id}}" status="pending">
+            <a class="list-group-item list-group-item-warning"  href="#" data-toggle="modal" data-target="#infoModal{{id}}">
                 <span class="glyphicon glyphicon-ok-sign"></span>
                 <strong>{{ name }}</strong>
-            </button>
+            </a>
         {% else %}
-            <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{id}}" status="completed">
+            <a class="list-group-item list-group-item-success"  href="#" data-toggle="modal" data-target="#infoModal{{id}}">
                 <span class="glyphicon glyphicon-ok-sign"></span>
                 {{ name }}
-            </button>
+            </a>
         {% endif %}
 
     {% else %}
-        <button type="button" class="btn btn-default btn-sm" href="#" data-toggle="modal" data-target="#infoModal{{id}}" status="not_started">
+        <a class="list-group-item list-group-item-danger"  href="#" data-toggle="modal" data-target="#infoModal{{id}}">
             {{ name }}
-        </button>
+        </a>
   {% endif %}
 
   <div class="modal fade" id="infoModal{{id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -63,15 +65,13 @@
             Documentation unavailable
           {% endif %}
           <hr/>
-          {% if closure is defined %}
-            {% if closure is iterable %}
-                {% set comma = joiner(", ") %}
-                {% for arg in closure %}
-                    {{ comma() }}
-                    <b>Parameter: {{ arg.cell_contents }}</b>
-                {% endfor %}
-                </br>
-            {% endif %}
+          {% if closure %}
+            <b>Parameters:</b><br/>
+            {% set index = 0 %}
+            {% for arg in closure %}
+              <b>{{ varnames[index] }}:</b> {{ arg.cell_contents }}<br/>
+              {% set index = index + 1 %}
+            {% endfor %}
           {% endif %}
         </div>
         <div class="modal-footer">
