@@ -507,7 +507,6 @@ def find_paths(path, paths, workflow_func):
             if func.func_name in ['foreach', 'simple_for']:
                 path += workflow_func[index + 1]
             elif func.func_name in ['workflow_if', 'workflow_else']:
-                print(func.func_dict)
                 if path in paths:
                     paths.remove(path)
                 path.append(func)
@@ -569,7 +568,6 @@ def filter_tasks(task_list):
 def get_task_history(bwobject, workflow_func, last_task):
     """ Calculates the path of tasks that the workflow has followed."""
     def with_task_history(task_history, last_task):
-        task_history = filter_tasks(task_history)
         candidate_paths = find_paths([], [], workflow_func)
         #sorts by length to check first bigger paths
         candidate_paths = sorted(candidate_paths,
@@ -580,14 +578,11 @@ def get_task_history(bwobject, workflow_func, last_task):
             if last_task in func_names:
                 index = func_names.index(last_task)
                 func_names = func_names[:index]
-                if is_sublist(func_names, task_history):
-                    task_history = map(get_func_info, path)
-                    return task_history
+            if is_sublist(func_names, task_history):
+                task_history = map(get_func_info, path)
+                return task_history
 
-        task_history = candidate_paths[0]
-        task_history = filter_tasks(task_history)
-        task_history = map(get_func_info, task_history)
-        return task_history
+        return []
 
     def without(last_task):
         task_history = find_paths([], [], workflow_func)
@@ -595,16 +590,10 @@ def get_task_history(bwobject, workflow_func, last_task):
             path = filter_tasks(path)
             func_names = map(lambda a: a.func_name, path)
             if last_task in func_names:
-                print("PATH FOUND")
                 task_history = map(get_func_info, path)
                 return task_history
 
-        task_history = sorted(task_history,
-                              cmp=lambda a, b: cmp(len(b), len(a)))
-        task_history = task_history[0]
-        task_history = filter_tasks(task_history)
-        task_history = map(get_func_info, task_history)
-        return task_history
+        return []
 
     try:
         task_history = bwobject.get_extra_data()['_task_history']
