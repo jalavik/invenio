@@ -366,7 +366,23 @@ class BibWorkflowObject(db.Model):
         from .registry import workflows
         try:
             workflow_definition = workflows[self.get_workflow_name()]
-            formatted_data = workflow_definition().formatter(self, formatter=None, format=of)
+            formatted_data = workflow_definition().formatter(self,
+                                                             formatter=None,
+                                                             format=of)
+            if of == "xm":
+                formatted_data = formatted_data.replace('\n', '')
+                formatted_data = formatted_data.replace('<record>',
+                                                        '\n<record>')
+                formatted_data = formatted_data.replace('</record>',
+                                                        '\n</record>')
+                formatted_data = formatted_data.replace('<controlfield',
+                                                        '\n\t<controlfield')
+                formatted_data = formatted_data.replace('<datafield',
+                                                        '\n\t<datafield')
+                formatted_data = formatted_data.replace('<subfield',
+                                                        '\n\t\t<subfield')
+                formatted_data = formatted_data.replace('</datafield>',
+                                                        '\n\t</datafield>')
         except (KeyError, AttributeError):
             # Somehow the workflow does not exist (.name)
             from invenio.ext.logging import register_exception
