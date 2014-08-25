@@ -943,18 +943,19 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
             obj.extra_data["_result"] = {}
 
         if "pdf" in obj.extra_data["_result"]:
-            obj.extra_data["_result"][
-                "bibclassify"] = bibclassify_exhaustive_call(
-                obj.extra_data["_result"]["pdf"],
-                taxonomy, rebuild_cache,
-                no_cache,
-                output_mode, output_limit,
-                spires,
-                match_mode, with_author_keywords,
-                extract_acronyms, only_core_tags
-            )
-            obj.add_task_result("bibclassify",
-                                obj.extra_data["_result"]["bibclassify"])
+            obj.extra_data["_result"]["bibclassify"] =\
+                bibclassify_exhaustive_call(
+                    obj.extra_data["_result"]["pdf"],
+                    taxonomy, rebuild_cache,
+                    no_cache,
+                    output_mode, output_limit,
+                    spires,
+                    match_mode, with_author_keywords,
+                    extract_acronyms, only_core_tags
+                )
+            obj.add_task_result("Bibclassify",
+                                obj.extra_data["_result"]["bibclassify"],
+                                "workflows/results/bibclassify.html")
         else:
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
@@ -994,8 +995,9 @@ def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
                     match_mode, with_author_keywords,
                     extract_acronyms, only_core_tags
                 )
-            obj.add_task_result("bibclassify",
-                                obj.extra_data["_result"]["bibclassify"])
+            obj.add_task_result("Bibclassify fast",
+                                obj.extra_data["_result"]["bibclassify"],
+                                "workflows/results/bibclassify.html")
         else:
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
