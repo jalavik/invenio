@@ -1,0 +1,102 @@
+{#
+## This file is part of Invenio.
+## Copyright (C) 2014 CERN.
+##
+## Invenio is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License as
+## published by the Free Software Foundation; either version 2 of the
+## License, or (at your option) any later version.
+##
+## Invenio is distributed in the hope that it will be useful, but
+## WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Invenio; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        {{ results["name"] }}
+    </div>
+    <div class="panel-body">
+    	<div class="row">
+				{% set result = results["result"]["dict"]["complete_output"] %}
+				{% set categories = results["result"]["dict"]["categories"] %}
+				{% if result["Core keywords"]%}
+				<div class="col-sm-6 col-md-4">
+					<div class="thumbnail">
+						<div class="caption">
+						 	<strong>CORE keywords:<br/></strong>
+						 	{% for keyword, times in result["Core keywords"].iteritems() %}
+						 		{{keyword}}: {{times}} ({{categories[keyword]}})<br/>
+						 	{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+				{% if result["Author keywords"] %}
+				<div class="col-sm-6 col-md-4">
+					<div class="thumbnail">
+						<div class="caption">
+							<strong>Author keywords:<br/></strong>
+							{% for keyword, times in result["Author keywords"].iteritems() %}
+								{{keyword}}: {{times}} ({{categories[keyword]}})<br/>
+						 	{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+				{% if result["Single keywords"] %}
+				<div class="col-sm-6 col-md-4">
+					<div class="thumbnail">
+						<div class="caption">
+							<strong>Single keywords:<br/></strong>
+							{% for keyword, times in result["Single keywords"].iteritems() %}
+								{{keyword}}: {{times}} ({{categories[keyword]}})<br/>
+						 	{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+				{% if result["Composite keywords"] %}
+				<div class="col-sm-6 col-md-4">
+					<div class="thumbnail">
+						<div class="caption">
+							<strong>Composite keywords:<br/></strong>
+							{% for keyword, data in result["Composite keywords"].iteritems() %}
+								{{keyword}}: {{data["numbers"]}}, {{data["details"]}}<br/>
+						 	{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+				{% if result["Acronyms"] %}
+				<div class="col-sm-6 col-md-4">
+					<div class="thumbnail">
+						<div class="caption">
+							<strong>Acronyms:<br/></strong>
+							{% for keyword, times in result["Acronyms"].iteritems() %}
+								{{keyword}}: {{times}} ({{categories[keyword]}})<br/>
+						 	{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+				{% if result["Field codes"] %}
+				<div class="col-sm-6 col-md-4">
+					<div class="thumbnail">
+						<div class="caption">
+							<strong>Field codes:<br/></strong>
+							{% for keyword, times in result["Field codes"].iteritems() %}
+								{{keyword}}: {{times}}<br/>
+						 	{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>

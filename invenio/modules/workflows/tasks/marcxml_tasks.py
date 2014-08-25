@@ -950,8 +950,9 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
                     match_mode, with_author_keywords,
                     extract_acronyms, only_core_tags
                 )
-            obj.add_task_result("bibclassify",
-                                obj.extra_data["_result"]["bibclassify"])
+            obj.add_task_result("Bibclassify",
+                                obj.extra_data["_result"]["bibclassify"],
+                                "workflows/results/bibclassify.html")
         else:
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
@@ -996,8 +997,9 @@ def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
                     match_mode, with_author_keywords,
                     extract_acronyms, only_core_tags
                 )
-            obj.add_task_result("bibclassify",
-                                obj.extra_data["_result"]["bibclassify"])
+            obj.add_task_result("Bibclassify fast",
+                                obj.extra_data["_result"]["bibclassify"],
+                                "workflows/results/bibclassify.html")
         else:
             obj.log.error("No classification done due to missing fulltext."
                           "\n You need to get it before! see fulltext task")
