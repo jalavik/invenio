@@ -922,10 +922,15 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
                 with_author_keywords=False,
                 extract_acronyms=False, only_core_tags=False):
     """Extract keywords and core ones from pdf file if it exists."""
+    if not taxonomy.endswith('.rdf'):
+        taxonomy += '.rdf'
+
     def _bibclassify(obj, eng):
         import os.path
+        from invenio.modules.classifier.registry import taxonomies
 
-        if not os.path.isfile(taxonomy):
+        if not os.path.isfile(taxonomy) and\
+                not taxonomy in taxonomies:
             eng.log.error("No RDF found, no bibclassify can run")
             return None
 
@@ -935,16 +940,16 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
             obj.extra_data["_result"] = {}
 
         if "pdf" in obj.extra_data["_result"]:
-            obj.extra_data["_result"][
-                "bibclassify"] = bibclassify_exhaustive_call(
-                obj.extra_data["_result"]["pdf"],
-                taxonomy, rebuild_cache,
-                no_cache,
-                output_mode, output_limit,
-                spires,
-                match_mode, with_author_keywords,
-                extract_acronyms, only_core_tags
-            )
+            obj.extra_data["_result"]["bibclassify"] =\
+                bibclassify_exhaustive_call(
+                    obj.extra_data["_result"]["pdf"],
+                    taxonomy, rebuild_cache,
+                    no_cache,
+                    output_mode, output_limit,
+                    spires,
+                    match_mode, with_author_keywords,
+                    extract_acronyms, only_core_tags
+                )
             obj.add_task_result("bibclassify",
                                 obj.extra_data["_result"]["bibclassify"])
         else:
@@ -962,10 +967,15 @@ def bibclassify_fast(taxonomy, rebuild_cache=False, no_cache=False,
                      with_author_keywords=False,
                      extract_acronyms=False, only_core_tags=False):
     """Extract keywords and core ones from title and abstract."""
+    if not taxonomy.endswith('.rdf'):
+        taxonomy += '.rdf'
+
     def _bibclassify(obj, eng):
         import os.path
+        from invenio.modules.classifier.registry import taxonomies
 
-        if not os.path.isfile(taxonomy):
+        if not os.path.isfile(taxonomy) and\
+                not taxonomy in taxonomies:
             eng.log.error("No RDF found, no bibclassify can run")
             return None
 

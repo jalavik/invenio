@@ -15,5 +15,8 @@
 {% for i in categories %}
     {{i}}
 {% endfor %}
+{% for result in results %}
+	{{result|safe}}
+{% endfor %}
 </p>
 {% endif %}
