@@ -118,10 +118,9 @@ def start_workflow(workflow_to_run="default", data=None, copy=True,
             myobject.version = ObjectVersion.FINAL
         elif copy:
             myobject = BibWorkflowObject.create_object_revision(obj,
-                                                                id_parent=obj.id,
                                                                 version=ObjectVersion.INITIAL)
         else:
-            myobject = BibWorkflowObject()
+            myobject = BibWorkflowObject.create_object()
 
         if data:
             myobject.set_data(data)
