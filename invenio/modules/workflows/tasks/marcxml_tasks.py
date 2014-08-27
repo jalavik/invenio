@@ -433,6 +433,8 @@ def fulltext_download(obj, eng):
             cfg['CFG_TMPSHAREDDIR'],
             str(eng.uuid)
         )
+        if not os.path.exists(extract_path):
+            os.makedirs(extract_path)
         tarball, pdf = plotextractor_getter.harvest_single(
             obj.data["system_number_external"]["value"],
             extract_path, ["pdf"])
