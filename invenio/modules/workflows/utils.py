@@ -553,9 +553,17 @@ def any_iterable(lst):
 def get_func_info(func):
     """ Retrieves a function's information."""
     try:
-        return func.description, func.func_doc, func.func_closure, func.func_code.co_freevars
+        return (func.description, func.func_doc,
+                func.func_closure, func.func_code.co_freevars)
     except AttributeError:
-        return func.func_name, func.func_doc, func.func_closure, func.func_code.co_freevars
+        doc = func.func_doc
+        if doc:
+            name = doc.split()[0]
+            if len(name) > 50:
+                name = func.func_name
+        else:
+            name = func.func_name
+        return name, doc, func.func_closure, func.func_code.co_freevars
 
 
 def filter_tasks(task_list):
