@@ -67,11 +67,11 @@
           {% if doc %}
             {{ doc }}
           {% else %}
-            _("Documentation unavailable")
+            {{_("Documentation unavailable")}}
           {% endif %}
           <hr/>
           {% if closure %}
-            <b>_("Parameters"):</b><br/>
+            <b>{{_("Parameters")}}:</b><br/>
             {% set index = 0 %}
             {% for arg in closure %}
               <b>{{ varnames[index] }}:</b> {{ arg.cell_contents }}<br/>
@@ -120,11 +120,11 @@
           {% if w.func_doc %}
             {{ w.func_doc }}
           {% else %}
-            _("Documentation unavailable")
+            {{_("Documentation unavailable")}}
           {% endif %}
           <hr/>
           {% if w.func_closure %}
-            <b>_("Parameters"):</b><br/>
+            <b>{{_("Parameters")}}:</b><br/>
             {% set varnames = w.func_code.co_freevars%}
             {% set index = 0 %}
             {% for arg in w.func_closure %}

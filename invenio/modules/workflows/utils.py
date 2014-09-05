@@ -558,7 +558,7 @@ def get_func_info(func):
     except AttributeError:
         doc = func.func_doc
         if doc:
-            name = doc.split()[0]
+            name = doc.split('\n')[0]
             if len(name) > 50:
                 name = func.func_name
         else:
@@ -584,14 +584,16 @@ def get_task_history(bwobject, workflow_func, last_task):
         for path in candidate_paths:
             path = filter_tasks(path)
             func_names = map(lambda a: a.func_name, path)
+            index = -1
             if last_task in func_names:
                 index = func_names.index(last_task)
                 func_names = func_names[:index]
             if is_sublist(func_names, task_history):
                 task_history = map(get_func_info, path)
-                return task_history
+                last_task = task_history[index][0]
+                return task_history, last_task
 
-        return []
+        return [], last_task
 
     def without(last_task):
         task_history = find_paths([], [], workflow_func)
@@ -599,10 +601,12 @@ def get_task_history(bwobject, workflow_func, last_task):
             path = filter_tasks(path)
             func_names = map(lambda a: a.func_name, path)
             if last_task in func_names:
+                index = func_names.index(last_task)
                 task_history = map(get_func_info, path)
-                return task_history
+                last_task = task_history[index][0]
+                return task_history, last_task
 
-        return []
+        return [], last_task
 
     try:
         task_history = bwobject.get_extra_data()['_task_history']

@@ -162,7 +162,9 @@ def details(objectid):
 
     workflow_func = extracted_data['workflow_func']
     last_task = bwobject.get_extra_data()['_last_task_name']
-    task_history = get_task_history(bwobject, workflow_func, last_task)
+    task_history, last_task = get_task_history(
+        bwobject, workflow_func, last_task
+    )
 
     return render_template('workflows/hp_details.html',
                            bwobject=bwobject,
