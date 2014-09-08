@@ -366,26 +366,13 @@ class BibWorkflowObject(db.Model):
         """Get the formatted representation for this object."""
         from .registry import workflows
         try:
-            workflow_definition = workflows[self.get_workflow_name()]
-            formatted_data = workflow_definition().formatter(self,
-                                                             formatter=None,
-                                                             format=of)
-            if of == "xm":
-                formatted_data = formatted_data.replace('\n', '')
-                formatted_data = formatted_data.replace('<record>',
-                                                        '\n<record>')
-                formatted_data = formatted_data.replace('</record>',
-                                                        '\n</record>')
-                formatted_data = formatted_data.replace('<controlfield',
-                                                        '\n\t<controlfield')
-                formatted_data = formatted_data.replace('<datafield',
-                                                        '\n\t<datafield')
-                formatted_data = formatted_data.replace('<subfield',
-                                                        '\n\t\t<subfield')
-                formatted_data = formatted_data.replace('</datafield>',
-                                                        '\n\t</datafield>')
+            formatted_data = workflows[self.get_workflow_name()].formatter(
+                self,
+                formatter=None,
+                format=of
+            )
         except (KeyError, AttributeError):
-            # Somehow the workflow does not exist (.name)
+            # Somehow the workflow or formatter does not exist
             from invenio.ext.logging import register_exception
             register_exception(alert_admin=True)
             formatted_data = ""

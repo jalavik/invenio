@@ -454,6 +454,8 @@ BibWorkflowEngine
             self.set_extra_data(self.extra_data)
             obj.set_data(obj.data)
             obj.extra_data["_task_counter"] = self._i[1]
+            if "_task_history" not in obj.extra_data:
+                obj.extra_data["_task_history"] = []
             obj.extra_data["_task_history"] += [self.get_current_taskname()]
             obj.set_extra_data(obj.extra_data)
 
