@@ -276,7 +276,17 @@
                 {{ data_preview|safe }}
             </div>
         {% endblock %}
-
+        {% block hp_uploaded_files %}
+          {% for file in uploaded_files %}
+            <div class="panel-body">
+                <a href="{{ url_for('holdingpen.get_file_by_id', object_id=bwobject.id, file_id=file.id) }}">
+                    <button type="button" class="btn btn-default btn-lg">
+                      <span class="glyphicon glyphicon-file"></span> {{file.name}}
+                    </button>
+                </a>
+            </div>
+          {% endfor %}
+        {% endblock %}
         {% block hp_task_results %}
             {% if task_results %}
                 {% for template in task_results %}

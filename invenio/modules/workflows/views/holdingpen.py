@@ -30,7 +30,8 @@ import os
 from six import text_type
 
 from flask import (render_template, Blueprint, request, jsonify,
-                   url_for, flash, session, send_from_directory)
+                   url_for, flash, session, send_from_directory,
+                   redirect)
 from flask.ext.login import login_required
 from flask.ext.breadcrumbs import default_breadcrumb_root, register_breadcrumb
 from flask.ext.menu import register_menu
@@ -163,6 +164,11 @@ def details(objectid):
         hbwobject[ObjectVersion.FINAL]
     )
 
+    try:
+        uploaded_files = bwobject.get_data().get('files', [])
+    except AttributeError:
+        uploaded_files = []
+
     results = get_rendered_task_results(bwobject)
 
     workflow_func = extracted_data['workflow_func']
@@ -185,20 +191,58 @@ def details(objectid):
                            next_object=next_object,
                            task_history=task_history,
                            workflow_func=workflow_func,
-                           last_task=last_task)
+                           last_task=last_task,
+                           uploaded_files=uploaded_files)
 
 
-@blueprint.route('/files/<int:objectid>/<path:filename>',
+@blueprint.route('/files/<int:object_id>/<path:filename>',
                  methods=['POST', 'GET'])
 @login_required
-def get_file(objectid=None, filename=None):
-    """Send the requested file to user."""
-    bwobject = BibWorkflowObject.query.get(objectid)
+def get_file_from_task_result(object_id=None, filename=None):
+    """Send the requested file to user from a workflow task result.
+
+    Expects a certain file meta-data structure in task result:
+
+    .. code-block:: python
+
+        {
+            "type": "Fulltext",
+            "filename": "file.pdf",
+            "full_path": "/path/to/file",
+        }
+
+    """
+    bwobject = BibWorkflowObject.query.get(object_id)
     task_results = bwobject.get_tasks_results()
     if filename in task_results and task_results[filename]:
         fileinfo = task_results[filename][0].get("result", dict())
         directory = os.path.split(fileinfo.get("full_path", ""))[0]
         return send_from_directory(directory, filename)
+
+
+@blueprint.route('/files/<int:object_id>/<file_id>',
+                 methods=['POST', 'GET'])
+@login_required
+def get_file_by_id(object_id=None, file_id=None):
+    """Send the requested file to user by file id (DepositionFile).
+
+    Expects the file to have been added using DepositionFile API.
+    """
+    from invenio.modules.deposit.models import Deposition
+
+    bwobject = BibWorkflowObject.query.get(object_id)
+    deposition = Deposition(bwobject)
+
+    deposition_file = deposition.get_file(file_id)
+
+    if deposition_file.is_local():
+        directory, filename = os.path.split(deposition_file.get_syspath())
+        return send_from_directory(
+            directory,
+            filename
+        )
+    else:
+        return redirect(deposition_file.get_url())
 
 
 @blueprint.route('/restart_record', methods=['GET', 'POST'])
