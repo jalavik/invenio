@@ -105,7 +105,7 @@ def arxiv_fulltext_download(obj, eng):
         if not os.path.exists(extract_path):
             os.makedirs(extract_path)
         tarball, pdf = harvest_single(
-            obj.data["system_number_external"]["value"],
+            obj.data["system_control_number"]["value"],
             extract_path, ["pdf"])
         arguments = obj.extra_data["_repository"]["arguments"]
         try:
@@ -210,13 +210,13 @@ def plot_extract(plotextractor_types=("latex",)):
                 if not os.path.exists(extract_path):
                     os.makedirs(extract_path)
                 tarball, pdf = harvest_single(
-                    obj.data["system_number_external"]["value"], extract_path,
+                    obj.data["system_control_number"]["value"], extract_path,
                     ["tarball"])
                 tarball = str(tarball)
                 if tarball is None:
                     raise WorkflowError(
                         str("Error harvesting tarball from id: %s %s" %
-                            (obj.data["system_number_external"]["value"],
+                            (obj.data["system_control_number"]["value"],
                              extract_path)),
                         eng.uuid,
                         id_object=obj.id)
@@ -313,7 +313,7 @@ def refextract(obj, eng):
         if not os.path.exists(extract_path):
             os.makedirs(extract_path)
         tarball, pdf = harvest_single(
-            obj.data["system_number_external"]["value"], extract_path, ["pdf"]
+            obj.data["system_control_number"]["value"], extract_path, ["pdf"]
         )
 
         if pdf is not None:
@@ -363,7 +363,7 @@ def author_list(obj, eng):
     from invenio.utils.plotextractor.converter import untar
     from invenio.utils.shell import Timeout
 
-    identifiers = obj.data["system_number_external"]["value"]
+    identifiers = obj.data["system_control_number"]["value"]
     if "_result" not in obj.extra_data:
         obj.extra_data["_result"] = {}
     if "tarball" not in obj.extra_data["_result"]:
@@ -374,7 +374,7 @@ def author_list(obj, eng):
         if not os.path.exists(extract_path):
             os.makedirs(extract_path)
         tarball, pdf = harvest_single(
-            obj.data["system_number_external"]["value"], extract_path,
+            obj.data["system_control_number"]["value"], extract_path,
             ["tarball"])
         tarball = str(tarball)
         if tarball is None:

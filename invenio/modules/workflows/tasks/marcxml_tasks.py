@@ -24,7 +24,6 @@ import glob
 import traceback
 
 from six import callable
-from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
 from ..utils import pass_properties_to_closure
 
 
@@ -53,6 +52,7 @@ def convert_record_to_bibfield(obj, eng):
     :param obj: Bibworkflow Object to process
     :param eng: BibWorkflowEngine processing the object
     """
+    from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
     obj.data = convert_marcxml_to_bibfield(obj.data)
     eng.log.info("Field conversion succeeded")
 

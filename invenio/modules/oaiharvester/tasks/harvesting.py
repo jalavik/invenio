@@ -42,6 +42,7 @@ def init_harvesting(obj, eng):
                       "that the following task could failed or work not as expected")
         obj.extra_data["options"] = {}
     eng.log.info("end of init_harvesting")
+
 init_harvesting.description = 'Start harvesting'
 
 
