@@ -56,7 +56,7 @@ from invenio.websearch_external_collections import \
      external_collection_sort_engine_by_name
 from invenio.bibtask import task_init, task_get_option, task_set_option, \
     write_message, task_has_option, task_update_progress, \
-    task_sleep_now_if_required
+    task_sleep_now_if_required, task_set_task_param
 import invenio.template
 websearch_templates = invenio.template.load('websearch')
 
@@ -883,6 +883,9 @@ class Collection:
         # last but not least, update the speed-up flag:
         self.calculate_reclist_run_already = 1
 
+    def get_reclist(self):
+        return self.reclist
+
     def update_reclist(self):
         "Update the record universe for given collection; nbrecs, reclist of the collection table."
         if self.update_reclist_run_already:
@@ -1198,6 +1201,8 @@ def task_run_core():
         if not task_has_option("collection"):
             set_cache_last_updated_timestamp(task_run_start_timestamp)
             write_message("Collection cache timestamp is set to %s." % get_cache_last_updated_timestamp(), verbose=3)
+        params = {'recids': coll.get_reclist()}
+        task_set_task_param("post_process_params", params)
     else:
         ## cache up to date, we don't have to run
         write_message("Collection cache is up to date, no need to run.")
