@@ -100,14 +100,15 @@ if sys.hexversion < 0x2040000:
     # pylint: enable=W0622
 
 from invenio.base.globals import cfg
+from invenio.base.wrappers import lazy_import
 
 from invenio.legacy.bibrecord.bibrecord_config import CFG_MARC21_DTD, \
     CFG_BIBRECORD_WARNING_MSGS, CFG_BIBRECORD_DEFAULT_VERBOSE_LEVEL, \
     CFG_BIBRECORD_DEFAULT_CORRECT, CFG_BIBRECORD_PARSERS_AVAILABLE, \
     InvenioBibRecordParserError, InvenioBibRecordFieldError
 from invenio.utils.text import encode_for_xml
-from invenio.legacy.dbquery import run_sql
 
+run_sql = lazy_import("invenio.legacy.dbquery.run_sql")
 
 from intbitset import intbitset
 
