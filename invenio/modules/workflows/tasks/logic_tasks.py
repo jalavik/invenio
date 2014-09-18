@@ -172,7 +172,7 @@ def execute_if(fun, *args):
             if not res:
                 eng.jumpCallForward(1)
         fun(obj, eng)
-
+    _execute_if.hide = True
     return _execute_if
 
 
@@ -207,6 +207,7 @@ def workflow_if(cond, neg=False):
             eng.setPosition(eng.getCurrObjId(), new_vector)
 
     _workflow_if.hide = True
+    _workflow_if.branch = True
     return _workflow_if
 
 
@@ -231,6 +232,7 @@ def workflow_else(obj, eng):
 
 
 workflow_else.hide = True
+workflow_else.branch = True
 
 
 @pass_properties_to_closure
@@ -286,5 +288,5 @@ def compare_logic(a, b, op):
                     return False
         else:
             return False
-
+    _compare_logic.hide = True
     return _compare_logic

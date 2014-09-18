@@ -390,7 +390,7 @@ def extract_data(bwobject):
         workflow_def = get_workflow_definition(extracted_data['w_metadata'].name)
         extracted_data['workflow_func'] = workflow_def
     else:
-        extracted_data['workflow_func'] = [None]
+        extracted_data['workflow_func'] = []
     return extracted_data
 
 
@@ -507,9 +507,9 @@ def find_paths(path, paths, workflow_func):
     """Return a list with every possible a workflow can follow."""
     for index, func in enumerate(workflow_func):
         if not isinstance(func, Iterable):
-            if func.func_name in ['foreach', 'simple_for']:
+            if hasattr(func, "hide") and func.hide:
                 path += workflow_func[index + 1]
-            elif func.func_name in ['workflow_if', 'workflow_else']:
+            elif hasattr(func, "branch") and func.branch:
                 if path in paths:
                     paths.remove(path)
                 path.append(func)
@@ -597,13 +597,10 @@ def get_func_infos(func_list):
     return func_names
 
 
-def get_task_history(bwobject, workflow_func, last_task):
+def get_task_history(bwobject, workflow_definition, last_task):
     """Calculate the path of tasks that the workflow has followed."""
     def with_task_history(task_history, last_task):
-        candidate_paths = find_paths([], [], workflow_func)
-        #sorts by length to check first bigger paths
-        candidate_paths = sorted(candidate_paths,
-                                 cmp=lambda a, b: cmp(len(b), len(a)))
+        candidate_paths = find_paths([], [], workflow_definition)
         for path in candidate_paths:
             paths = filter_tasks(path)
             func_names = get_func_names(paths)
@@ -619,15 +616,16 @@ def get_task_history(bwobject, workflow_func, last_task):
         return [], last_task
 
     def without(last_task):
-        task_history = find_paths([], [], workflow_func)
+        task_history = find_paths([], [], workflow_definition)
         for path in task_history:
-            path = filter_tasks(path)
-            func_names = map(lambda a: a.func_name, path)
-            if last_task in func_names:
-                index = func_names.index(last_task)
-                task_history = map(get_func_info, path)
-                last_task = task_history[index][0]
-                return task_history, last_task
+            if path:
+                path = filter_tasks(path)
+                func_names = [a.func_name for a in path if a]
+                if last_task in func_names:
+                    index = func_names.index(last_task)
+                    task_history = map(get_func_info, path)
+                    last_task = task_history[index][0]
+                    return task_history, last_task
 
         return [], last_task
 
