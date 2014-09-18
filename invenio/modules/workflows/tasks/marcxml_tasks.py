@@ -250,23 +250,22 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
             bibclassify_exhaustive_call,
             bibclassify_exhaustive_call_text
         )
-        from invenio.legacy.bibclassify.errors import TaxonomyError
+        from invenio.modules.classifier.errors import TaxonomyError
 
         data = None
         if fast_mode:
-            if "title" in obj.data and "abstract" in obj.data:
-                data = [obj.data["title"]['main'],
-                        obj.data["abstract"]['abstract']]
-                callback = bibclassify_exhaustive_call_text
-                match_mode = 'full'
+            data = [obj.data.get("title", {}).get("title", ""),
+                    obj.data.get("abstract", {}).get("summary", "")]
+            callback = bibclassify_exhaustive_call_text
         else:
             if "_result" not in obj.extra_data:
                 obj.extra_data["_result"] = {}
             if "pdf" in obj.extra_data["_result"]:
                 data = obj.extra_data["_result"]["pdf"]
                 callback = bibclassify_exhaustive_call
-        if data is None:
+        if not data:
             obj.log.error("No classification done due to missing data.")
+            return
         try:
             result = callback(data, taxonomy, rebuild_cache,
                               no_cache, output_mode, output_limit,
@@ -277,6 +276,6 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
         else:
             result["fast_mode"] = fast_mode
             obj.add_task_result("bibclassify", result,
-                                template="templates/workflows/results/classifier.html")
+                                template="workflows/results/classifier.html")
 
     return _bibclassify
