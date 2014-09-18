@@ -17,22 +17,28 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 #}
 
-{% if message %}
-    {{message}}
-{% endif %}
+{% extends "workflows/styles/styles_base.html" %}
 
-{% if identifiers %}
-<p><b>identifiers</b>:
-{% for i in identifiers %}
-    {{i}}
-{% endfor %}
-</p>
-{% endif %}
+{% block styles_body %}
 
-{% if categories %}
-<p><b>categories</b>:
-{% for i in categories %}
-    {{i}}
-{% endfor %}
-</p>
-{% endif %}
+    {% if message %}
+        {{message}}
+    {% endif %}
+
+    {% if identifiers %}
+    <p><b>identifiers</b>:
+    {% for i in identifiers %}
+        {{i}}
+    {% endfor %}
+    </p>
+    {% endif %}
+
+    {% if categories %}
+    <p><b>categories</b>:
+    {% for i in categories %}
+        {{i}}
+    {% endfor %}
+    </p>
+    {% endif %}
+
+{% endblock %}
