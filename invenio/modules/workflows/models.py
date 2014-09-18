@@ -376,6 +376,17 @@ class BibWorkflowObject(db.Model):
             from invenio.ext.logging import register_exception
             register_exception(alert_admin=True)
             formatted_data = ""
+        if formatted_data:
+            from flask import Markup
+            from pprint import pformat
+
+            if isinstance(formatted_data, dict):
+                formatted_data = pformat(formatted_data)
+            elif of == "xm":
+                formatted_data = Markup.escape(formatted_data)
+            elif of == 'xo':
+                formatted_data = Markup.escape(formatted_data[0])
+
         return formatted_data
 
     def __repr__(self):
