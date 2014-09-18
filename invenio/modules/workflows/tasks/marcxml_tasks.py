@@ -534,7 +534,7 @@ def quick_match_record(obj, eng):
     identifier_function_to_check = {'recid': find_record_from_recid,
                                     'system_number': find_record_from_sysno,
                                     'oaiid': find_record_from_oaiid,
-                                    'system_number_external': find_records_from_extoaiid,
+                                    'system_control_number': find_records_from_extoaiid,
                                     'doi': find_record_from_doi}
 
     record = Record(obj.data.dumps())
@@ -936,23 +936,22 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
             bibclassify_exhaustive_call,
             bibclassify_exhaustive_call_text
         )
-        from invenio.legacy.bibclassify.errors import TaxonomyError
+        from invenio.modules.classifier.errors import TaxonomyError
 
         data = None
         if fast_mode:
-            if "title" in obj.data and "abstract" in obj.data:
-                data = [obj.data["title"]['main'],
-                        obj.data["abstract"]['abstract']]
-                callback = bibclassify_exhaustive_call_text
-                match_mode = 'full'
+            data = [obj.data.get("title", {}).get("title", ""),
+                    obj.data.get("abstract", {}).get("summary", "")]
+            callback = bibclassify_exhaustive_call_text
         else:
             if "_result" not in obj.extra_data:
                 obj.extra_data["_result"] = {}
             if "pdf" in obj.extra_data["_result"]:
                 data = obj.extra_data["_result"]["pdf"]
                 callback = bibclassify_exhaustive_call
-        if data is None:
+        if not data:
             obj.log.error("No classification done due to missing data.")
+            return
         try:
             result = callback(data, taxonomy, rebuild_cache,
                               no_cache, output_mode, output_limit,
@@ -963,7 +962,7 @@ def bibclassify(taxonomy, rebuild_cache=False, no_cache=False,
         else:
             result["fast_mode"] = fast_mode
             obj.add_task_result("bibclassify", result,
-                                template="templates/workflows/results/classifier.html")
+                                template="workflows/results/classifier.html")
 
     _bibclassify.description = 'Extract keywords'
     return _bibclassify

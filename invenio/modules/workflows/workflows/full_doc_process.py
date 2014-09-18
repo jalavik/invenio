@@ -23,7 +23,7 @@ from six import string_types
 from ..tasks.marcxml_tasks import (convert_record_with_repository,
                                    convert_record_to_bibfield,
                                    quick_match_record, upload_step,
-                                   approve_record)
+                                   approve_record, bibclassify)
 from ..tasks.workflows_tasks import log_info
 from ..tasks.logic_tasks import workflow_if, workflow_else
 from invenio.modules.workflows.utils import WorkflowBase
@@ -175,6 +175,9 @@ class full_doc_process(WorkflowBase):
         convert_record_to_bibfield,
         workflow_if(quick_match_record, True),
         [
+            bibclassify(taxonomy="test",
+                        output_mode="dict",
+                        fast_mode=True),
             approve_record,
             upload_step,
         ],
