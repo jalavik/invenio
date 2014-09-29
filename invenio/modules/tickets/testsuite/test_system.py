@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##
 ## This file is part of Invenio.
-## Copyright (C) 2014 CERN.
+## Copyright (C) 2012, 2013 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -17,17 +17,35 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""
-The tickets module allows to connect to external ticketing/issue tracking.
 
-Ticket API
+"""Unit tests for tickets module."""
 
-from invenio.modules.tickets.models import Ticket
+from invenio.testsuite import make_test_suite, run_test_suite, InvenioTestCase
 
 
-Ticket.add()
+class TicketSystemTest(InvenioTestCase):
+
+    """Testing of tickets."""
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_systems_registry(self):
+        """See if adding new systems works."""
+        from ..registry import systems, System
+        type(
+            "test",
+            (System,),
+            {}
+        )
+        self.assertIn("test", [s.name for s in systems])
 
 
+TEST_SUITE = make_test_suite(TicketSystemTest)
 
 
-"""
+if __name__ == "__main__":
+    run_test_suite(TEST_SUITE)

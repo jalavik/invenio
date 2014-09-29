@@ -17,10 +17,7 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""
-Provide a "ticket" interface with a request tracker.
-This is a subclass of BibCatalogSystem
-"""
+"""Provide a "ticket" interface with RT: Request Tracker."""
 
 import os
 import re
@@ -35,8 +32,9 @@ from invenio.config import CFG_BIBCATALOG_SYSTEM, \
                            CFG_BIBCATALOG_SYSTEM_RT_DEFAULT_PWD, \
                            CFG_BIBEDIT_ADD_TICKET_RT_QUEUES
 
+from ..registry import System
 
-class BibCatalogSystemRT(BibCatalogSystem):
+class BibCatalogSystemRT(System):
 
     BIBCATALOG_RT_SERVER = "" # construct this by http://user:password@RT_URL
 

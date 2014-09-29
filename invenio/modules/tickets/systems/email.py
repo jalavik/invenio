@@ -30,6 +30,7 @@ from invenio.utils.shell import escape_shell_arg
 from invenio.legacy.bibcatalog.system import BibCatalogSystem
 from invenio.ext.email import send_email
 from invenio.ext.logging import register_exception
+from ..registry import System
 
 EMAIL_SUBMIT_CONFIGURED = False
 import invenio.config
@@ -40,8 +41,7 @@ if hasattr(invenio.config, 'CFG_BIBCATALOG_SYSTEM') and invenio.config.CFG_BIBCA
         TO_ADDRESS = invenio.config.CFG_BIBCATALOG_SYSTEM_EMAIL_ADDRESS
 
 
-class BibCatalogSystemEmail(BibCatalogSystem):
-    #BIBCATALOG_RT_SERVER = "" #construct this by http://user:password@RT_URL
+class BibCatalogSystemEmail(System):
 
     def check_system(self, uid=None):
         """return an error string if there are problems"""

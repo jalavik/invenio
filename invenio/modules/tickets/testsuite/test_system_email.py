@@ -31,12 +31,8 @@ class BibCatalogSystemEmailTest(MailTestCase):
 
     def setUp(self):
         super(BibCatalogSystemEmailTest, self).setUp()
-        from invenio.legacy.bibcatalog import system_email as bibcatalog_system_email
-        from invenio.config import CFG_SITE_SUPPORT_EMAIL
-        self.email = bibcatalog_system_email.BibCatalogSystemEmail()
-        bibcatalog_system_email.CFG_BIBCATALOG_SYSTEM_TICKETS_EMAIL = CFG_SITE_SUPPORT_EMAIL
-        bibcatalog_system_email.CFG_BIBCATALOG_SYSTEM = 'EMAIL'
-        pass
+        from invenio.modules.tickets.systems.email import BibCatalogSystemEmail
+        self.email = BibCatalogSystemEmail()
 
     def test_email_ticket_search_exception_not_implemented(self):
         """bibcatalog_system_email - execution raises NotImplementedError exception"""

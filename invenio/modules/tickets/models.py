@@ -19,15 +19,31 @@
 
 """
 The tickets module allows to connect to external ticketing/issue tracking.
-
-Ticket API
-
-from invenio.modules.tickets.models import Ticket
-
-
-Ticket.add()
-
-
-
-
 """
+
+from invenio.ext.sqlalchemy import db
+
+
+class Ticket(db.Model):
+
+    """Represent a Ticket record."""
+
+    __tablename__ = 'tickets'
+
+    id = db.Column(
+        db.Integer(15, unsigned=True),
+        nullable=False,
+        primary_key=True,
+        autoincrement=True)
+
+    id_external = db.Column(
+        db.String(36),
+        nullable=False)
+
+    id_model = db.Column(
+        db.String(36),
+        nullable=True)
+
+    json = db.Column(db.JSON, nullable=True)
+
+    type = db.Column(db.Char(100), nullable=True)
