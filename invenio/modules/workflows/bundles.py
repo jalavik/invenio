@@ -22,6 +22,7 @@
 from invenio.ext.assets import Bundle
 
 js = Bundle(
+    'vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput.js',
     'js/workflows/entry_details.js',
     'js/workflows/hp_details.js',
     'js/workflows/hp_maintable.js',
