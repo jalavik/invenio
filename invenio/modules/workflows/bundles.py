@@ -20,13 +20,9 @@
 """Workflows bundles."""
 
 from invenio.ext.assets import Bundle
-from invenio.base.bundles import jquery as _jquery
-
-_jquery.contents.append('vendors/bootstrap-tagsinput/dist/'
-                        'bootstrap-tagsinput.js')
-_jquery.bower['bootstrap-tagsinput'] = "latest"
 
 js = Bundle(
+    'vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput.js',
     'js/workflows/entry_details.js',
     'js/workflows/hp_details.js',
     'js/workflows/hp_maintable.js',
@@ -37,7 +33,10 @@ js = Bundle(
     'js/workflows/workflows.js',
     filters="uglifyjs",
     output='workflows.js',
-    weight=50
+    weight=50,
+    bower={
+        "bootstrap-tagsinput": "latest"
+    }
 )
 
 actions = Bundle(
