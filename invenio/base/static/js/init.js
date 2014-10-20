@@ -27,6 +27,7 @@ require([
     "ui/datepicker",
     "bootstrap",
     "bootstrap-select",
+    "bootstrap-tagsinput",
     "hogan",
     "typeahead",
     "js/translate",

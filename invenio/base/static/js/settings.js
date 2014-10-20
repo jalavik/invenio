@@ -35,6 +35,7 @@ require.config({
     "jquery-jeditable": "vendors/jquery.jeditable/index",
     "moment": "vendors/moment/moment",
     "bootstrap-datetimepicker": "vendors/eonasdan-bootstrap-datetimepicker/src/js/bootstrap-datetimepicker",
+    "bootstrap-tagsinput": "vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput",
     bootstrap: "vendors/bootstrap/dist/js/bootstrap",
   },
   shim: {
@@ -71,6 +72,10 @@ require.config({
     "jquery-jeditable": {
       deps: ["jquery"],
       exports: "$.fn.editable"
+    },
+    "bootstrap-tagsinput": {
+      deps: ["jquery"],
+      exports: "$.fn.tagsinput"
     },
     bootstrap: {
       deps: ["jquery"]
