@@ -35,7 +35,7 @@ require.config({
     "jquery-jeditable": "vendors/jquery.jeditable/index",
     "moment": "vendors/moment/moment",
     "datatables": "vendors/datatables/media/js/jquery.dataTables",
-    "datatables-bootstrap": "vendors/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap",
+    "datatables-plugins": "vendors/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap",
     "bootstrap-datetimepicker": "vendors/eonasdan-bootstrap-datetimepicker/src/js/bootstrap-datetimepicker",
     "bootstrap-tagsinput": "vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput",
     bootstrap: "vendors/bootstrap/dist/js/bootstrap",
@@ -86,7 +86,7 @@ require.config({
     bootstrap: {
       deps: ["jquery"]
     },
-    "datatables-bootstrap": {
+    "datatables-plugins": {
       deps: ["jquery", "bootstrap", "datatables"]
     },
     "bootstrap-datetimepicker": {

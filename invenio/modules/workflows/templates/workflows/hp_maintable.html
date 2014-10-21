@@ -32,7 +32,7 @@
              "js/workflows/holdingpen",
              "js/workflows/actions/approval"],
             function($, HoldingPen, actionWidget) {
-      $(document).ready(function(){
+      $(function(){
         /*var hp = new Holdingpen({
           url: "{{ url_for('holdingpen.load_table')|safe }}",
           plugins: [Approval, Mystuff]
@@ -52,6 +52,7 @@
             action_url: action_url
         });
 
+        $("#maintable").trigger("loadHoldingPenTable");
       });
     });
   </script>

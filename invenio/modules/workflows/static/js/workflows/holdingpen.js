@@ -17,45 +17,44 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+'use strict';
 
-define(function(require, exports, module) {
-  'use strict';
+$(function() {
+  define(
+    [
+      'jquery',
+      'flight/component',
+    ],
+    function($, defineComponent) {
+      return defineComponent(HoldingPen);
 
-  var $ = require('jquery'),
-  defineComponent = require('flight/component')
+      function HoldingPen() {
+        this.defaultAttrs({
+          // URLs
+          load_url: "",
+          context_url: "",
 
-  return defineComponent(HoldingPen);
+        });
 
-  function HoldingPen() {
-    this.defaultAttrs({
-      // URLs
-      load_url: "",
-      context_url: "",
+        this.init_datatables = function() {
+          // DataTables settings
+          var oSettings = {
+            "bFilter": false,
+            "bProcessing": true,
+            "bServerSide": true,
+            "bDestroy": true,
+            "sAjaxSource": this.attr.load_url,
+            "aoColumnDefs": [{'bSortable': false, 'aTargets': [1]},
+                             {'bSearchable': false, 'bVisible': false, 'aTargets': [0]},
+                             {'sWidth': "25%", 'aTargets': [2]},
+                             {'sWidth': "25%", 'aTargets': [3]}],
+          };
+          this.$node.dataTable(oSettings);
+        }
 
-    });
-
-    this.init_datatables = function() {
-      // DataTables settings
-      var oSettings = {
-        "bFilter": false,
-        "bProcessing": true,
-        "bServerSide": true,
-        "bDestroy": true,
-        "sAjaxSource": this.attr.load_url,
-        "aoColumnDefs": [{'bSortable': false, 'aTargets': [1]},
-                         {'bSearchable': false, 'bVisible': false, 'aTargets': [0]},
-                         {'sWidth': "25%", 'aTargets': [2]},
-                         {'sWidth': "25%", 'aTargets': [3]}],
-      };
-      this.$node.dataTable(oSettings);
-    }
-
-    this.after('initialize', function() {
-      // Custom handlers
-      console.log("Loaded HoldingPen");
-      this.init_datatables();
-    });
-
-  }
-  module.exports = HoldingPen;
+        this.after('initialize', function() {
+          this.on("loadHoldingPenTable", this.init_datatables);
+        });
+      }
+  });
 });

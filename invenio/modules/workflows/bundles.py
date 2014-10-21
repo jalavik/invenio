@@ -31,7 +31,7 @@ js = Bundle(
     bower={
         'bootstrap-tagsinput': "latest",
         "datatables": "latest",
-        "datatables-bootstrap": "latest",
+        "datatables-plugins": "latest",
         "prism": "gh-pages",
         "flight": "latest"
     }
@@ -47,7 +47,7 @@ css = Bundle(
     bower={
         'bootstrap-tagsinput': "latest",
         "datatables": "latest",
-        "datatables-bootstrap": "latest",
+        "datatables-plugins": "latest",
         "prism": "gh-pages"
     }
 )
