@@ -19,7 +19,7 @@
 {% extends "workflows/hp_base.html" %}
 {% import 'workflows/utils.html' as utils %}
 
-{% block header%}
+{% block header %}
   {{ super() }}
   {% bundles "workflows.js", "workflows.css", "jquery.js" %}
 {% endblock header %}
@@ -28,34 +28,34 @@
   {{ super() }}
 
   <script type="text/javascript">
-    function Mystuff(holdingpen, config) {
-        this.hp = holdingpen;
-        this.config = config;
-    }
-    Mystuff.prototype.pre_request = function(element) {
-        var elem = $(element);
-
-        // do stuff
-
-        return {
-            url: ...,
-            value: ..,
-            object: ...
-        }
-    }
-    Mystuff.prototype.post_request = function(element, data) {
-        // deal with the data.
-    }
-    require(["jquery", "js/workflows/holdingpen", "js/worflows/actions/approval"], function($, Holdingpen, Approval) {
-      $(function() {
-        var hp = new Holdingpen({
+    require(["jquery",
+             "js/workflows/holdingpen",
+             "js/workflows/actions/approval"],
+            function($, HoldingPen, actionWidget) {
+      $(document).ready(function(){
+        /*var hp = new Holdingpen({
           url: "{{ url_for('holdingpen.load_table')|safe }}",
           plugins: [Approval, Mystuff]
         })
-        hp.init();
-      })
-    })
+        hp.init();*/
+
+        // Loading the Holding Pen with URL from blueprint
+        var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
+        var load_table_url = "{{ url_for('holdingpen.load_table')|safe }}";
+        HoldingPen.attachTo($("#maintable"), {
+            load_url: load_table_url,
+            context_url: context_url
+        });
+        // Loading the actions
+        var action_url = "{{ url_for('holdingpen.resolve_action')|safe }}";
+        actionWidget.attachTo($("#maintable"), {
+            action_url: action_url
+        });
+
+      });
+    });
   </script>
+
 {% endblock javascript %}
 
 {% block hpbody %}
@@ -102,7 +102,11 @@
   <input class="tags" id="tags" type="text" placeholder="{{ _("Add to search") }}" value="{{tags}}"/>
   <div class="container">
     <div class="row">
-      <table id="maintable" cellpadding="0" cellspacing="0" border="0" class="table table-bordered">
+      <table id="maintable"
+             cellpadding="0"
+             cellspacing="0"
+             border="0"
+             class="table table-striped table-bordered">
         <thead>
           <tr>
             <th>{{ _('Id') }}</th>

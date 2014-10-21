@@ -19,25 +19,43 @@
 
 
 define(function(require, exports, module) {
-    var $ = require('jquery'),
-        Prism = require('prism')
+  'use strict';
 
-    require('datatables-plugins')
+  var $ = require('jquery'),
+  defineComponent = require('flight/component')
 
-    function Holdingpen(config) {
-        this.config = config
+  return defineComponent(HoldingPen);
+
+  function HoldingPen() {
+    this.defaultAttrs({
+      // URLs
+      load_url: "",
+      context_url: "",
+
+    });
+
+    this.init_datatables = function() {
+      // DataTables settings
+      var oSettings = {
+        "bFilter": false,
+        "bProcessing": true,
+        "bServerSide": true,
+        "bDestroy": true,
+        "sAjaxSource": this.attr.load_url,
+        "aoColumnDefs": [{'bSortable': false, 'aTargets': [1]},
+                         {'bSearchable': false, 'bVisible': false, 'aTargets': [0]},
+                         {'sWidth': "25%", 'aTargets': [2]},
+                         {'sWidth': "25%", 'aTargets': [3]}],
+      };
+      this.$node.dataTable(oSettings);
     }
 
-    Holdingpen.prototype = {
-        constructor: Holdingpen,
+    this.after('initialize', function() {
+      // Custom handlers
+      console.log("Loaded HoldingPen");
+      this.init_datatables();
+    });
 
-        // FIXME: remove me!
-        todo: function() {
-            console.log(this.config.url)
-            console.log($.fn.dataTable)
-            console.log(Prism)
-        }
-    }
-
-    module.exports = Holdingpen
-})
+  }
+  module.exports = HoldingPen;
+});

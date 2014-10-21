@@ -19,20 +19,21 @@
 
 """Workflows bundles."""
 
-from invenio.ext.assets import Bundle
+from invenio.ext.assets import Bundle, RequireJSFilter
+from invenio.base.bundles import jquery as _j, invenio as _i
 
 
 js = Bundle(
-    'vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput.js',
     'js/workflows/init.js',
-    filters="requirejs",
+    filters=RequireJSFilter(exclude=[_j, _i]),
     output='workflows.js',
     weight=50,
     bower={
         'bootstrap-tagsinput': "latest",
         "datatables": "latest",
-        "datatables-plugins": "latest",
-        "prism": "gh-pages"
+        "datatables-bootstrap": "latest",
+        "prism": "gh-pages",
+        "flight": "latest"
     }
 )
 
@@ -46,7 +47,7 @@ css = Bundle(
     bower={
         'bootstrap-tagsinput': "latest",
         "datatables": "latest",
-        "datatables-plugins": "latest",
+        "datatables-bootstrap": "latest",
         "prism": "gh-pages"
     }
 )

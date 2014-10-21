@@ -18,12 +18,19 @@
  */
 
 require(
-    ["jquery",
-     "js/workflows/actions/approval",
-     "js/workflows/holdingpen"],
-    function($, approval) {
-        $(function() {
-            approval.subscribe()
-        })
-    }
+  [
+    "jquery",
+    "datatables",
+    "datatables-bootstrap",
+    "bootstrap-tagsinput",
+    "js/workflows/holdingpen",
+    "js/workflows/actions/approval"
+  ],
+  function() {
+    // This file is simply here to make sure the above dependencies are
+    // properly loaded and ready to be used by inline scripts.
+    //
+    // Without it, we have to rely on non-anonymous modules.
+    console.info("js/workflows/init is loaded")
+  }
 )

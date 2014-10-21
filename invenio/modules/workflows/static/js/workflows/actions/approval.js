@@ -18,76 +18,55 @@
  */
 
 
-define(["jquery"], function($) {
+define(function(require, exports, module) {
+  'use strict';
 
-    return {
-        subscribe: function() {
-            console.log("TODO FIXME")
+  var $ = require('jquery'),
+  defineComponent = require('flight/component')
+
+  return defineComponent(actionWidget);
+
+  function actionWidget() {
+    this.defaultAttrs({
+      // URLs
+      action_url: "",
+
+      // Selectors
+      actionSelector: ".approval-action",
+    });
+
+
+    this.get_action_values = function (elem) {
+      return {
+        "value": elem.getAttribute("data-value"),
+        "objectid": elem.getAttribute("data-objectid"),
+      }
+    };
+
+    this.post_request = function(data) {
+      console.log(data.message);
+    };
+
+    this.onActionClick = function (event) {
+      var data = this.get_action_values(event.currentTarget);
+      jQuery.ajax({
+        type: "POST",
+        url: this.attr.action_url,
+        data: {
+          "objectid": data.objectid,
+          "value": data.value
+        },
+        success: function(data) {
+          post_request(data);
         }
-    }
-
-//define(["jquery", "js/workflows/hp_maintable", "js/workflows/hp_utilities"], function ($, holdingpen, utilities) {
-    "use strict";
-
-    var get_action_values = function(elem) {
-        return {
-            "url": elem.attr("data-url"),
-            "value": elem.attr("data-value"),
-            "objectid": elem.attr("data-objectid"),
-        }
+      });
     };
 
-    var post_request = function(data) {
-        utilities.bootstrap_alert(data.message, data.category)
-    };
-
-    var subscribe = function () {
-
-        /*
-        * Approval action click event for mini maintable view.
-        *
-        * Binds the click event to every element with class
-        * "approval-action" to handle the resolution of the
-        * action..
-        */
-        $("#maintable").on("click", ".approval-action", function (event) {
-            var data = get_action_values($(this));
-
-            $.ajax({
-                type: "POST",
-                url: data.url,
-                data: {"objectid": data.objectid,
-                       "value": data.value},
-                success: function(data) {
-                    post_request(data);
-                    holdingpen.oTable.fnDraw(false);
-                }
-            });
-        });
-
-        /*
-        * Approval action click event details page view.
-        *
-        * Binds the click event to every element with class
-        * "approval-action" to handle the resolution of the
-        * action..
-        */
-        $("#approval-widget").on("click", ".approval-action", function (event) {
-            var data = get_action_values($(this));
-
-            $.ajax({
-                type: "POST",
-                url: data.url,
-                data: {"objectid": data.objectid,
-                       "value": data.value},
-                success: post_request,
-            });
-        });
-
-
-    };
-
-    return {
-        subscribe: subscribe,
-    };
+    this.after('initialize', function() {
+      // Custom handlers
+      this.on(this.attr.actionSelector,
+              "click",
+              this.onActionClick);
+    });
+  }
 });
