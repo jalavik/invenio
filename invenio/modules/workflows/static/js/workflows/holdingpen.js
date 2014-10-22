@@ -19,7 +19,7 @@
 
 'use strict';
 
-$(function() {
+(function() {
   define(
     [
       'jquery',
@@ -57,4 +57,4 @@ $(function() {
         });
       }
   });
-});
+})();
