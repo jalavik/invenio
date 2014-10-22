@@ -41,6 +41,10 @@ css = Bundle(
     'vendors/prism/themes/prism.css',
     'vendors/datatables-plugins/integration/bootstrap/3'
     '/dataTables.bootstrap.css',
+    'vendors/bootstrap-tagsinput/dist/'
+    'bootstrap-tagsinput.css',
+    'vendors/datatables/media/css/'
+    'jquery.dataTables.css',
     filters="less,cleancss",
     output='workflows.css',
     weight=30,
