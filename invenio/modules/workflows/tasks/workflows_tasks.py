@@ -131,7 +131,7 @@ def start_async_workflow(workflow_to_run,
 
         if preserve_data:
             record_object.set_data(obj.data)
-        workflow_id = start_delayed(workflow_to_run,
+        workflow_id = start_delayed(workflow_to_run(eng),
                                     data=[record_object],
                                     stop_on_error=True,
                                     module_name=eng.module_name,
@@ -432,3 +432,18 @@ def log_info(message):
 
     _log_info.description = "Log info"
     return _log_info
+
+
+def get_record_workflow(eng):
+    """Get the record_workflow defined."""
+    from ..registry import workflows
+    from ..errors import WorkflowDefinitionError
+
+    if eng.name not in workflows:
+        # No workflow with that name exists
+        raise WorkflowDefinitionError("Workflow '%s' does not exist"
+                                      % (eng.name,),
+                                      workflow_name=eng.name)
+    workflow_name = workflows[eng.name].record_workflow
+    eng.log.info("Found workflow '{0}' to execute.".format(workflow_name))
+    return workflow_name
