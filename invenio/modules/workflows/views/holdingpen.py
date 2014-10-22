@@ -94,7 +94,7 @@ def maintable():
     """Display main table interface of Holdingpen."""
     bwolist = get_holdingpen_objects()
     action_list = get_action_list(bwolist)
-    tags = session.get("holdingpen_tags", list())
+    tags = session.get("holdingpen_tags", ["Need action"])
 
     if 'version' in request.args:
         for key, value in ObjectVersion.MAPPING.items():
