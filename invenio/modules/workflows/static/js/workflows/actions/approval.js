@@ -17,24 +17,22 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+'use strict';
 
 define(function(require, exports, module) {
-  'use strict';
 
   var $ = require('jquery'),
-  defineComponent = require('flight/component')
+  defineComponent = require('flight/component'),
+  holdingPen = require("js/workflows/holdingpen");
 
   return defineComponent(actionWidget);
 
   function actionWidget() {
-    this.defaultAttrs({
-      // URLs
-      action_url: "",
 
-      // Selectors
+    this.attributes({
       actionSelector: ".approval-action",
+      action_url: ""
     });
-
 
     this.get_action_values = function (elem) {
       return {
@@ -47,26 +45,27 @@ define(function(require, exports, module) {
       console.log(data.message);
     };
 
-    this.onActionClick = function (event) {
-      var data = this.get_action_values(event.currentTarget);
+    this.onActionClick = function (ev, data) {
+      var payload = this.get_action_values(data.el);
       jQuery.ajax({
         type: "POST",
         url: this.attr.action_url,
         data: {
-          "objectid": data.objectid,
-          "value": data.value
+          "objectid": payload.objectid,
+          "value": payload.value
         },
         success: function(data) {
-          post_request(data);
+          this.post_request(data);
         }
       });
     };
 
     this.after('initialize', function() {
       // Custom handlers
-      this.on(this.attr.actionSelector,
-              "click",
-              this.onActionClick);
+      this.on("click", {
+        actionSelector: this.onActionClick
+      });
+      console.log("Approval init");
     });
   }
 });

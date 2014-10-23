@@ -17,22 +17,35 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-require(
+'use strict';
+
+define(
   [
-    "jquery",
-    "datatables",
-    "datatables-plugins",
-    "bootstrap-tagsinput",
-    "js/workflows/holdingpen",
-    "js/workflows/tags",
-    "js/workflows/tags_menu",
-    "js/workflows/actions/approval"
+    'jquery',
+    'flight/component',
   ],
-  function() {
-    // This file is simply here to make sure the above dependencies are
-    // properly loaded and ready to be used by inline scripts.
-    //
-    // Without it, we have to rely on non-anonymous modules.
-    console.info("js/workflows/init is loaded")
-  }
-)
+  function($, defineComponent) {
+    return defineComponent(HoldingPenTagsMenu);
+
+    function HoldingPenTagsMenu() {
+      this.attributes({
+        versionMenuItemSelector: ".version-selection"
+      });
+
+      this.addTagFromMenu = function(ev, data) {
+        console.log("addTagFromMenu:");
+        console.log(data);
+        console.log(ev);
+        //if ($.inArray(data, tagList) <= -1) {
+        //#    $('#tags').tagsinput('add', $(this)[0].text);
+        //}
+      }
+
+      this.after('initialize', function() {
+        this.on("click", {
+          versionMenuItemSelector: this.addTagFromMenu,
+        });
+        console.log("Tags menu init");
+      });
+    }
+});

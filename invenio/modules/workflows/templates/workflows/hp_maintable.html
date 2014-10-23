@@ -30,15 +30,15 @@
   <script type="text/javascript">
     require(["jquery",
              "js/workflows/holdingpen",
+             "js/workflows/tags",
+             "js/workflows/tags_menu",
              "js/workflows/actions/approval"],
-            function($, HoldingPen, actionWidget) {
+            function($,
+                     HoldingPen,
+                     HoldingPenTags,
+                     HoldingPenTagsMenu,
+                     actionWidget) {
       $(function(){
-        /*var hp = new Holdingpen({
-          url: "{{ url_for('holdingpen.load_table')|safe }}",
-          plugins: [Approval, Mystuff]
-        })
-        hp.init();*/
-
         // Loading the Holding Pen with URL from blueprint
         var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
         var load_table_url = "{{ url_for('holdingpen.load_table')|safe }}";
@@ -46,13 +46,17 @@
             load_url: load_table_url,
             context_url: context_url
         });
+
+        HoldingPenTags.attachTo($("#tags"));
+        HoldingPenTagsMenu.attachTo($("#tags-menu"));
+
         // Loading the actions
         var action_url = "{{ url_for('holdingpen.resolve_action')|safe }}";
         actionWidget.attachTo($("#maintable"), {
             action_url: action_url
         });
 
-        $("#maintable").trigger("loadHoldingPenTable");
+        $("#maintable").trigger("initHoldingPenTable");
       });
     });
   </script>
@@ -80,7 +84,7 @@
         </li>
         <li class="dropdown">
           <a href="#" class="dropdown-toggle dropdown-headline" data-toggle="dropdown">{{ _('Status') }}<b class="caret"></b></a>
-          <ul class="dropdown-menu" role="menu">
+          <ul id="tags-menu" class="dropdown-menu" role="menu">
             <li><a id="version-halted" class="version-selection" name="Need action">{{ _('Need action') }}</a></li>
             <li><a id="version-halted" class="version-selection" name="Waiting">{{ _('Waiting') }}</a></li>
             <li><a id="version-completed" class="version-selection" name="Done">{{ _('Done') }}</a></li>
@@ -100,7 +104,14 @@
       </ul>
     </div>
   </nav>
-  <input class="tags" id="tags" type="text" placeholder="{{ _("Add to search") }}" value="{{tags}}"/>
+
+  <input class="tags"
+         id="tags"
+         type="text"
+         placeholder="{{ _("Add to search") }}"
+         value="{{tags}}"
+         data-role="tagsinput" />
+
   <div class="container">
     <div class="row">
       <table id="maintable"

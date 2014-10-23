@@ -29,31 +29,45 @@
       return defineComponent(HoldingPen);
 
       function HoldingPen() {
-        this.defaultAttrs({
+        this.attributes({
           // URLs
           load_url: "",
           context_url: "",
-
-        });
-
-        this.init_datatables = function() {
-          // DataTables settings
-          var oSettings = {
+          oSettings: {
             "bFilter": false,
             "bProcessing": true,
             "bServerSide": true,
             "bDestroy": true,
-            "sAjaxSource": this.attr.load_url,
             "aoColumnDefs": [{'bSortable': false, 'aTargets': [1]},
                              {'bSearchable': false, 'bVisible': false, 'aTargets': [0]},
                              {'sWidth': "25%", 'aTargets': [2]},
                              {'sWidth': "25%", 'aTargets': [3]}],
-          };
-          this.$node.dataTable(oSettings);
+          }
+        });
+
+        this.init_datatables = function(ev, data) {
+          // DataTables settings
+          this.attr.oSettings["sAjaxSource"] = this.attr.load_url;
+          this.$node.dataTable(this.attr.oSettings);
         }
 
+        this.reloadTable = function (ev, data) {
+          $.ajax({
+              type: "POST",
+              url: this.attr.load_url,
+              data: data,
+              contentType: "application/json;charset=UTF-8",
+              traditional: true,
+              success: function(result) {
+                  this.$node.dataTable().fnDraw(false);
+              }
+          });
+    };
+
         this.after('initialize', function() {
-          this.on("loadHoldingPenTable", this.init_datatables);
+          this.on("initHoldingPenTable", this.init_datatables);
+          this.on("reloadHoldingPenTable", this.reloadTable);
+          console.log("HP init");
         });
       }
   });
