@@ -22,6 +22,7 @@ require(
     "jquery",
     "datatables",
     "datatables-plugins",
+    "datatables-tabletools",
     "bootstrap-tagsinput",
     "js/workflows/holdingpen",
     "js/workflows/tags",

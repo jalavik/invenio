@@ -47,15 +47,16 @@ define(function(require, exports, module) {
 
     this.onActionClick = function (ev, data) {
       var payload = this.get_action_values(data.el);
+      var $this = this;
       jQuery.ajax({
         type: "POST",
-        url: this.attr.action_url,
+        url: $this.attr.action_url,
         data: {
           "objectid": payload.objectid,
           "value": payload.value
         },
         success: function(data) {
-          this.post_request(data);
+          $this.post_request(data);
         }
       });
     };

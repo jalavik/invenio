@@ -24,6 +24,9 @@
     [
       'jquery',
       'flight/component',
+      'datatables',
+      'datatables-plugins',
+      'datatables-tabletools'
     ],
     function($, defineComponent) {
       return defineComponent(HoldingPen);
@@ -34,21 +37,42 @@
           load_url: "",
           context_url: "",
           oSettings: {
-            "bFilter": false,
-            "bProcessing": true,
-            "bServerSide": true,
-            "bDestroy": true,
-            "aoColumnDefs": [{'bSortable': false, 'aTargets': [1]},
-                             {'bSearchable': false, 'bVisible': false, 'aTargets': [0]},
-                             {'sWidth': "25%", 'aTargets': [2]},
-                             {'sWidth': "25%", 'aTargets': [3]}],
+            dom: 'T<"clear">lfrtip',
+            bFilter: false,
+            bProcessing: true,
+            bServerSide: true,
+            bDestroy: true,
+            aoColumnDefs: [
+              {'bSortable': false, 'defaultContent': "", 'aTargets': [0]},
+              {'bSearchable': false, 'bVisible': false, 'aTargets': [1]},
+              {'sWidth': "25%", 'aTargets': [2]},
+              {'sWidth': "25%", 'aTargets': [3]}
+            ],
+            tableTools: {
+              "sRowSelect": "os",
+              "sRowSelector": 'td:first-child',
+              "aButtons": [
+                {
+                  "sExtends": "select_all",
+                  "sButtonClass": "btn btn-default"
+                },
+                {
+                  "sExtends": "select_none",
+                  "sButtonClass": "btn btn-danger"
+                }
+              ]
+            },
+            deferRender: true,
           }
         });
 
         this.init_datatables = function(ev, data) {
-          // DataTables settings
+          // DataTables ajax settings
           this.attr.oSettings["sAjaxSource"] = this.attr.load_url;
-          this.$node.dataTable(this.attr.oSettings);
+          this.$node.DataTable(this.attr.oSettings);
+          // Bootstrap TableTools
+          var tt = $.fn.dataTable.TableTools.fnGetInstance(this.$node.attr("id"));
+          $(tt.fnContainer()).insertBefore('div.dataTables_wrapper');
         }
 
         this.reloadTable = function (ev, data) {

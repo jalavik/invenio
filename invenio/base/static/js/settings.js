@@ -36,6 +36,7 @@ require.config({
     "moment": "vendors/moment/moment",
     "datatables": "vendors/datatables/media/js/jquery.dataTables",
     "datatables-plugins": "vendors/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap",
+    "datatables-tabletools": "vendors/datatables-tabletools/js/dataTables.tableTools",
     "bootstrap-datetimepicker": "vendors/eonasdan-bootstrap-datetimepicker/src/js/bootstrap-datetimepicker",
     "bootstrap-tagsinput": "vendors/bootstrap-tagsinput/src/bootstrap-tagsinput",
     bootstrap: "vendors/bootstrap/dist/js/bootstrap",
@@ -81,13 +82,17 @@ require.config({
     },
     "datatables": {
       deps: ["jquery"],
-      exports: "$.fn.datatables"
+      exports: "$.fn.dataTable"
     },
     bootstrap: {
       deps: ["jquery"]
     },
     "datatables-plugins": {
       deps: ["jquery", "bootstrap", "datatables"]
+    },
+    "datatables-tabletools": {
+      deps: ["jquery", "datatables"],
+      exports: "$.fn.dataTable.TableTools"
     },
     "bootstrap-datetimepicker": {
       deps: ["jquery", "bootstrap", "moment"],
