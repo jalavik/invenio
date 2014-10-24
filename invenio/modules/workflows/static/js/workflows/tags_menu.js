@@ -33,12 +33,10 @@ define(
       });
 
       this.addTagFromMenu = function(ev, data) {
-        console.log("addTagFromMenu:");
-        console.log(data);
-        console.log(ev);
-        //if ($.inArray(data, tagList) <= -1) {
-        //#    $('#tags').tagsinput('add', $(this)[0].text);
-        //}
+        this.trigger(document, "addTagFromMenu", {
+          value: data.el.name,
+          text: data.el.text,
+        });
       }
 
       this.after('initialize', function() {

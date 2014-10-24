@@ -37,7 +37,7 @@ require.config({
     "datatables": "vendors/datatables/media/js/jquery.dataTables",
     "datatables-plugins": "vendors/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap",
     "bootstrap-datetimepicker": "vendors/eonasdan-bootstrap-datetimepicker/src/js/bootstrap-datetimepicker",
-    "bootstrap-tagsinput": "vendors/bootstrap-tagsinput/dist/bootstrap-tagsinput",
+    "bootstrap-tagsinput": "vendors/bootstrap-tagsinput/src/bootstrap-tagsinput",
     bootstrap: "vendors/bootstrap/dist/js/bootstrap",
   },
   shim: {

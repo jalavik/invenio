@@ -29,7 +29,7 @@ js = Bundle(
     output='workflows.js',
     weight=50,
     bower={
-        'bootstrap-tagsinput': "latest",
+        "bootstrap-tagsinput": "git://github.com/inspirehep/bootstrap-tagsinput.git#master",
         "datatables": "latest",
         "datatables-plugins": "latest",
         "prism": "gh-pages",
@@ -39,7 +39,7 @@ js = Bundle(
 
 css = Bundle(
     'vendors/prism/themes/prism.css',
-    'vendors/bootstrap-tagsinput/dist/'
+    'vendors/bootstrap-tagsinput/src/'
     'bootstrap-tagsinput.css',
     'vendors/datatables/media/css/'
     'jquery.dataTables.css',
@@ -49,7 +49,7 @@ css = Bundle(
     output='workflows.css',
     weight=30,
     bower={
-        'bootstrap-tagsinput': "latest",
+        "bootstrap-tagsinput": "git://github.com/inspirehep/bootstrap-tagsinput.git#master",
         "datatables": "latest",
         "datatables-plugins": "latest",
         "prism": "gh-pages"

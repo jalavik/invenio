@@ -27,51 +27,85 @@ define(
   function($, defineComponent) {
     return defineComponent(HoldingPenTags);
 
+    /**
+    * .. js:class:: HoldingPenTags()
+    *
+    * Component for handling the filter/search available through the
+    * bootstrap-tagsinput element.
+    *
+    * :param Array tags: list of tags to add on init.
+    * :param string versionMenuItemSelector: selector for HoldingPenTagsMenu.
+    *
+    */
     function HoldingPenTags() {
       this.attributes({
         // URLs
-        load_url: "",
-        context_url: "",
+        tags: [],
         versionMenuItemSelector: ".version-selection"
       });
 
       this.init_tags = function() {
-        this.$node.tagsinput({
+        var $node = this.$node;
+        $node.tagsinput({
             tagClass: function (item) {
-                switch (item) {
-                case 'In process':
+                switch (item.value) {
+                  case 'In process':
                     return 'label label-warning';
-                case 'Need action':
+                  case 'Need action':
                     return 'label label-danger';
-                case 'Waiting':
+                  case 'Waiting':
                     return 'label label-warning';
-                case 'Done':
+                  case 'Done':
                     return 'label label-success';
-                case 'New':
+                  case 'New':
                     return 'label label-info';
-                case 'Error':
+                  case 'Error':
                     return 'label label-danger';
-                default:
+                  default:
                     return 'badge badge-warning';
                 }
-            }
+            },
+            itemValue: 'value',
+            itemText: 'text'
+        });
+        // Add any existing tags
+        this.attr.tags.map(function(item) {
+          $node.tagsinput('add', item);
         });
       }
 
       this.addTagFromMenu = function(ev, data) {
-        console.log("addTagFromMenu:");
-        console.log(data);
-        console.log(ev);
-        //if ($.inArray(data, tagList) <= -1) {
-        //#    $('#tags').tagsinput('add', $(this)[0].text);
-        //}
+        // Tagsinput already deal with existing tags.
+        this.$node.tagsinput('add', data);
       }
 
+      this.addTagFromFreetext = function(ev) {
+        // ev.item is the freeinput text
+        if (ev.item.length != 0){
+          ev.item = {text: ev.item, value: ev.item};
+          ev.cancel = false;
+        }
+      }
+
+      this.onTagsUpdate = function() {
+        // Extract first only the "real" value (ignore translated ones)
+        var tags = this.$node.tagsinput("items").map(function(currentValue, index, array) {
+          return currentValue.value;
+        })
+
+        var data = {
+          'tags': tags
+        };
+        this.trigger(document, "reloadHoldingPenTable", data);
+      }
+
+
       this.after('initialize', function() {
-        this.on("initHoldingPenTable", this.init_tags);
-        this.on("click", {
-          versionMenuItemSelector: this.addTagFromMenu,
-        });
+        this.on(document, "initHoldingPenTable", this.init_tags);
+        this.on(document, "addTagFromMenu", this.addTagFromMenu);
+        this.on(document, "itemAdded", this.onTagsUpdate);
+        this.on(document, "itemRemoved", this.onTagsUpdate);
+        this.on(document, 'beforeFreeInputItemAdd', this.addTagFromFreetext);
         console.log("Tags init");
       });
     }

@@ -43,20 +43,22 @@
         var context_url = "{{ url_for('holdingpen.get_context')|safe }}";
         var load_table_url = "{{ url_for('holdingpen.load_table')|safe }}";
         HoldingPen.attachTo($("#maintable"), {
-            load_url: load_table_url,
-            context_url: context_url
+          load_url: load_table_url,
+          context_url: context_url
         });
-
-        HoldingPenTags.attachTo($("#tags"));
+        var tags = JSON.parse('{{tags|safe}}');
+        HoldingPenTags.attachTo($("#tags"), {
+          tags: tags,
+        });
         HoldingPenTagsMenu.attachTo($("#tags-menu"));
 
         // Loading the actions
         var action_url = "{{ url_for('holdingpen.resolve_action')|safe }}";
         actionWidget.attachTo($("#maintable"), {
-            action_url: action_url
+          action_url: action_url
         });
 
-        $("#maintable").trigger("initHoldingPenTable");
+        $(document).trigger("initHoldingPenTable");
       });
     });
   </script>
@@ -109,8 +111,7 @@
          id="tags"
          type="text"
          placeholder="{{ _("Add to search") }}"
-         value="{{tags}}"
-         data-role="tagsinput" />
+         value="" />
 
   <div class="container">
     <div class="row">

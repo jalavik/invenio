@@ -52,21 +52,22 @@
         }
 
         this.reloadTable = function (ev, data) {
+          var $node = this.$node;
           $.ajax({
               type: "POST",
               url: this.attr.load_url,
-              data: data,
+              data: JSON.stringify(data),
               contentType: "application/json;charset=UTF-8",
               traditional: true,
               success: function(result) {
-                  this.$node.dataTable().fnDraw(false);
+                  $node.dataTable().fnDraw(false);
               }
           });
     };
 
         this.after('initialize', function() {
-          this.on("initHoldingPenTable", this.init_datatables);
-          this.on("reloadHoldingPenTable", this.reloadTable);
+          this.on(document, "initHoldingPenTable", this.init_datatables);
+          this.on(document, "reloadHoldingPenTable", this.reloadTable);
           console.log("HP init");
         });
       }
