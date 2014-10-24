@@ -73,14 +73,14 @@
         <li class="dropdown">
           <a class="dropdown-toggle dropdown-headline" data-toggle="dropdown" href="#">{{ _('Actions') }}<b class="caret"></b></a>
           <ul class="dropdown-menu">
-            {% if user_list %}
+            {% if action_list %}
               {% set i = 0 %}
               {% for task, object_count in action_list.items() %}
                 <li><a id="task{{i}}" class="task-btn" tabindex="-1" name="{{task}}">{{ task }}: {{ object_count }}</a></li>
                 {% set i = i + 1 %}
               {% endfor %}
             {% else %}
-              <li><a class="task-btn">{{ _('No actions left') }}</a></li>
+              <li><a class="task-btn">{{ _('No actions') }}</a></li>
             {% endif %}
           </ul>
         </li>
@@ -93,12 +93,6 @@
             <li><a id="version-running" class="version-selection" name="In process">{{ _('In process') }}</a></li>
             <li><a id="version-initial" class="version-selection" name="New">{{ _('New') }}</a></li>
             <li><a id="version-error" class="version-selection" name="Error">{{ _('Error') }}</a></li>
-          </ul>
-        </li>
-        <li class="dropdown">
-          <a href="#" class="dropdown-toggle dropdown-headline" data-toggle="dropdown">{{ _('Options') }}<b class="caret"></b></a>
-          <ul class="dropdown-menu" role="menu">
-            <li><a id="option-autorefresh" name="autorefresh-option">{{ _('Auto-refresh') }}</a></li>
           </ul>
         </li>
       </ul>
