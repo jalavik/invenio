@@ -1378,7 +1378,7 @@ class Deposition(object):
         except NoResultFound:
             raise DepositionDoesNotExists(object_id)
 
-        if user and workflow_object.id_user != user.get_id():
+        if user and not user.is_super_admin and workflow_object.id_user != user.get_id():
             raise DepositionDoesNotExists(object_id)
 
         obj = cls(workflow_object)
