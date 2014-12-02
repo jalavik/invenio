@@ -27,6 +27,8 @@ from invenio.modules.pages.models import Page
 
 def template_exists(form, field):
     """ Form validation: check that selected template exists """
+    if not field.data:
+        return
     template_name = "pages/" + field.data
     try:
         current_app.jinja_env.get_template(template_name)
@@ -51,6 +53,7 @@ class PagesAdmin(ModelView):
 
     form_args = dict(
         template_name=dict(
+            default="default.html",
             validators=[template_exists]
         ))
 
