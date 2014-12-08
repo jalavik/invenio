@@ -109,12 +109,12 @@ def references_nb_counts():
         return
 
     from invenio.legacy.bibrecord import record_get_field_instances
-    from invenio.legacy.search_engine import get_field_tags
+    from invenio.modules.search.models import Field
     from invenio.modules.records.api import get_record
 
     if not CFG_CERN_SITE:
         reftag = ""
-        reftags = get_field_tags("reference")
+        reftags = list(Field.get_field_tags("reference"))
         if reftags:
             reftag = reftags[0]
         tmprec = get_record(recid)

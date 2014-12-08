@@ -62,7 +62,7 @@ from invenio.config import \
 from intbitset import intbitset
 from invenio.utils.html import X, EscapedXMLString
 from invenio.legacy.dbquery import run_sql, wash_table_column_name
-from invenio.legacy.search_engine import record_exists, get_all_restricted_recids, get_all_field_values, search_unit_in_bibxxx, get_record, search_pattern
+from invenio.legacy.search_engine import record_exists, get_all_restricted_recids, search_unit_in_bibxxx, get_record, search_pattern
 from invenio.modules.formatter import format_record
 from invenio.legacy.bibrecord import record_get_field_instances
 from invenio.ext.logging import register_exception
@@ -98,6 +98,18 @@ CFG_ERRORS = {
 
 CFG_MIN_DATE = "1970-01-01T00:00:00Z"
 CFG_MAX_DATE = "9999-12-31T23:59:59Z"
+
+
+def get_all_field_values(tag):
+    """
+    Return all existing values stored for a given tag.
+    @param tag: the full tag, e.g. 909C0b
+    @type tag: string
+    @return: the list of values
+    @rtype: list of strings
+    """
+    table = 'bib%02dx' % int(tag[:2])
+    return [row[0] for row in run_sql("SELECT DISTINCT(value) FROM %s WHERE tag=%%s" % table, (tag, ))]
 
 
 def oai_error(argd, errors):
