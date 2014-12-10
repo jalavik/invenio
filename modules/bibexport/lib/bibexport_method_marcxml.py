@@ -42,7 +42,7 @@ in the last month.
 
 from invenio.config import CFG_WEBDIR, CFG_ETCDIR
 from invenio.bibtask import write_message
-from invenio.search_engine import perform_request_search, print_record
+from invenio.search_engine import perform_request_search, search_pattern, print_record
 from ConfigParser import ConfigParser
 import os
 import gzip
@@ -134,7 +134,7 @@ class MARCXMLExporter:
 
     def _get_all_records(self, export_name, export_pattern):
         """Return all records matching the criteria no matter of their modification date."""
-        return perform_request_search(p=export_pattern)
+        return search_pattern(p=export_pattern)
 
     def _save_records_into_file(self, records, file_name, output_directory):
         """Save all the records into file in MARCXML
@@ -146,10 +146,14 @@ class MARCXMLExporter:
         output_file = self._open_output_file(file_name, output_directory)
         self._write_to_output_file(output_file,
                                    '<?xml version="1.0" encoding="UTF-8"?>\n<collection xmlns="http://www.loc.gov/MARC21/slim">\n')
-
+        write_message("Going to export {0} records".format(len(records)))
+        progress = 0
         for record in records:
             marcxml = self._get_record_MARCXML(record)
             output_file.write(marcxml)
+            progress += 1
+            if progress % 100 == 0:
+                write_message("Saved {0}".format(progress))
 
         self._write_to_output_file(output_file, "\n</collection>")
         self._close_output_file(output_file)
@@ -162,7 +166,7 @@ class MARCXMLExporter:
         output_directory - the directory where file will be created"""
 
         path = output_directory + os.sep + file_name + '.gz'
-
+        write_message("Going to save into {0}".format(path))
         try:
             output_file = gzip.GzipFile(filename = path, mode = "w")
             return output_file
