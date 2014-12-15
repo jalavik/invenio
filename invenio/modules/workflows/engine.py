@@ -21,26 +21,14 @@
 
 from __future__ import absolute_import
 
-import base64
 import sys
+
+import base64
 import traceback
-
-from uuid import uuid1 as new_uuid
-
-from invenio.ext.sqlalchemy import db
-
 from six import iteritems, reraise
 from six.moves import cPickle
-
-from workflow.engine import (
-    ContinueNextToken,
-    GenericWorkflowEngine,
-    HaltProcessing,
-    JumpTokenBack,
-    JumpTokenForward,
-    StopProcessing,
-    WorkflowError
-)
+from uuid import uuid1 as new_uuid
+from workflow.engine import GenericWorkflowEngine, TransitionActions, ProcessingFactory, Break, Continue
 
 from .errors import (
     AbortProcessing,
@@ -48,6 +36,7 @@ from .errors import (
     WorkflowDefinitionError,
     WorkflowError as WorkflowErrorClient,
     WorkflowHalt,
+    HaltProcessing,
 )
 from .logger import BibWorkflowLogHandler, get_logger
 from .models import (
@@ -60,6 +49,7 @@ from .signals import (workflow_finished,
                       workflow_halted,
                       workflow_started)
 from .utils import dictproperty
+from invenio.ext.sqlalchemy import db
 
 
 class WorkflowStatus(object):
@@ -139,6 +129,11 @@ class BibWorkflowEngine(GenericWorkflowEngine):
 
         self.set_workflow_by_name(self.db_obj.name)
         self.set_extra_data_params(**kwargs)
+
+    @property
+    def processing_factory(self):
+        """Provide a proccessing factory."""
+        return InvProcessingFactory
 
     def get_extra_data(self):
         """Main method to retrieve data saved to the object."""
@@ -283,24 +278,6 @@ BibWorkflowEngine
 -------------------------------
 """ % (self.db_obj.__str__(),)
 
-    @staticmethod
-    def before_processing(objects, self):
-        """Executed before processing the workflow."""
-        self.save(status=WorkflowStatus.RUNNING)
-        self.set_counter_initial(len(objects))
-        workflow_started.send(self)
-        GenericWorkflowEngine.before_processing(objects, self)
-
-    @staticmethod
-    def after_processing(objects, self):
-        """Action after process to update status."""
-        self._i = [-1, [0]]
-        if self.has_completed():
-            self.save(WorkflowStatus.COMPLETED)
-            workflow_finished.send(self)
-        else:
-            self.save(WorkflowStatus.HALTED)
-
     def has_completed(self):
         """Return True if workflow is fully completed."""
         res = db.session.query(db.func.count(BibWorkflowObject.id)).\
@@ -321,13 +298,6 @@ BibWorkflowEngine
     def set_task_position(self, new_position):
         """Set current task position."""
         self._i[1] = new_position
-
-    def process(self, objects):
-        """Process objects.
-
-        :param objects: objects to process.
-        """
-        super(BibWorkflowEngine, self).process(objects)
 
     def restart(self, obj, task):
         """Restart the workflow engine at given object and task.
@@ -395,130 +365,6 @@ BibWorkflowEngine
 
         self.process(self._objects)
         self._unpickled = False
-
-    @staticmethod
-    def processing_factory(objects, self):
-        """Default processing factory.
-
-        An extended version of the default processing factory
-        with saving objects before successful processing.
-
-        Default processing factory, will process objects in order.
-
-        :param objects: list of objects (passed in by self.process()).
-        :type objects: list
-
-        As the WFE proceeds, it increments the internal counter, the
-        first position is the number of the element. This pointer increases
-        before the object is taken.
-
-        2nd pos is reserved for the array that points to the task position.
-        The number there points to the task that is currently executed;
-        when error happens, it will be there unchanged. The pointer is
-        updated after the task finished running.
-        """
-        self.before_processing(objects, self)
-        i = self._i
-        # negative index not allowed, -1 is special
-        while len(objects) - 1 > i[0] >= -1:
-            i[0] += 1
-            obj = objects[i[0]]
-            obj.reset_error_message()
-            obj.save(version=ObjectVersion.RUNNING,
-                     id_workflow=self.db_obj.uuid)
-            callbacks = self.callback_chooser(obj, self)
-            if callbacks:
-                try:
-                    self.run_callbacks(callbacks, objects, obj)
-                except SkipToken:
-                    msg = "Skipped running this object: '%s' (object: %s)" % \
-                          (str(callbacks), repr(obj))
-                    self.log.debug(msg)
-                    obj.log.debug(msg)
-                    continue
-                except AbortProcessing:
-                    msg = "Processing was aborted: '%s' (object: %s)" % \
-                          (str(callbacks), repr(obj))
-                    self.log.debug(msg)
-                    obj.log.debug(msg)
-                    break
-                except StopProcessing:
-                    msg = "Processing was stopped: '%s' (object: %s)" % \
-                          (str(callbacks), repr(obj))
-                    self.log.debug(msg)
-                    obj.log.debug(msg)
-
-                    # Processing for the object is stopped!
-                    obj.save(version=ObjectVersion.COMPLETED)
-                    self.increase_counter_finished()
-                    break
-                except JumpTokenBack as step:
-                    if step.args[0] > 0:
-                        raise WorkflowError("JumpTokenBack cannot"
-                                            " be positive number")
-                    self.log.debug('Warning, we go back [%s] objects' %
-                                   step.args[0])
-                    i[0] = max(-1, i[0] - 1 + step.args[0])
-                    i[1] = [0]  # reset the callbacks pointer
-
-                    # This object is skipped for some reason. So we're done
-                    obj.save(version=ObjectVersion.COMPLETED)
-                    self.increase_counter_finished()
-                except JumpTokenForward as step:
-                    if step.args[0] < 0:
-                        raise WorkflowError("JumpTokenForward cannot"
-                                            " be negative number")
-                    self.log.debug('We skip [%s] objects' % step.args[0])
-                    i[0] = min(len(objects), i[0] - 1 + step.args[0])
-                    i[1] = [0]  # reset the callbacks pointer
-
-                    # This object is skipped for some reason. So we're done
-                    obj.save(version=ObjectVersion.COMPLETED)
-                    self.increase_counter_finished()
-                except ContinueNextToken:
-                    self.log.debug('Stop processing for this object, '
-                                   'continue with next')
-                    i[1] = [0]  # reset the callbacks pointer
-
-                    # This object is skipped for some reason. So we're done
-                    obj.save(version=ObjectVersion.COMPLETED)
-                    self.increase_counter_finished()
-                    continue
-                except (HaltProcessing, WorkflowHalt) as e:
-                    self.increase_counter_halted()
-
-                    # We keep the extra_data from the object this run
-                    extra_data = obj.get_extra_data()
-                    obj.set_extra_data(extra_data)
-
-                    workflow_halted.send(obj)
-                    if type(e) == WorkflowHalt:
-                        reraise(*sys.exc_info())
-                    else:
-                        raise WorkflowHalt(e)
-                except (WorkflowErrorClient, WorkflowError, Exception) as e:
-                    self.increase_counter_error()
-
-                    # We keep the extra_data from the object this run
-                    extra_data = obj.get_extra_data()
-                    obj.set_extra_data(extra_data)
-
-                    msg = "Error: %r\n%s" % (e, traceback.format_exc())
-
-                    if isinstance(e, WorkflowErrorClient):
-                        reraise(*sys.exc_info())
-                    else:
-                        raise WorkflowErrorClient(
-                            message=msg,
-                            id_workflow=self.uuid,
-                            id_object=self.getCurrObjId(),
-                        )
-
-            # We save each object once it is fully run through
-            obj.save(version=ObjectVersion.COMPLETED)
-            self.increase_counter_finished()
-            i[1] = [0]  # reset the callbacks pointer
-        self.after_processing(objects, self)
 
     def execute_callback(self, callback, obj):
         """Execute the callback (workflow tasks)."""
@@ -645,3 +491,144 @@ BibWorkflowEngine
     def skipToken(self):
         """Skip current workflow object without saving it."""
         raise SkipToken
+
+
+class InvTransitionActions(TransitionActions):
+
+    """Transition actions on engine exceptions for invenio."""
+
+    @staticmethod
+    def SkipToken(obj, eng, e):
+        """Action to take when SkipToken is raised."""
+        msg = "Skipped running this object: '%s' (object: %s)" % \
+            (str(eng.callbacks), repr(obj))
+        eng.log.debug(msg)
+        obj.log.debug(msg)
+        raise Continue
+
+    @staticmethod
+    def AbortProcessing(obj, eng, e):
+        """Action to take when AbortProcessing is raised."""
+        msg = "Processing was aborted: '%s' (object: %s)" % \
+            (str(eng.callbacks), repr(obj))
+        eng.log.debug(msg)
+        obj.log.debug(msg)
+        raise Break
+
+    @staticmethod
+    def StopProcessing(obj, eng, e):
+        """Action to take when StopProcessing is raised."""
+        try:
+            super(InvTransitionActions, InvTransitionActions).StopProcessing(obj, eng, e)
+        except Break:
+            # Processing for the object is stopped!
+            obj.save(version=ObjectVersion.FINAL)
+            eng.increase_counter_finished()
+            raise
+
+    @staticmethod
+    def save_and_inc(obj, eng):
+        # This object is skipped for some reason. So we're done
+        obj.save(version=ObjectVersion.FINAL)
+        eng.increase_counter_finished()
+
+    @staticmethod
+    def JumpTokenBack(obj, eng, e):
+        """Action to take when JumpTokenBack is raised."""
+        super(InvTransitionActions, InvTransitionActions).JumpTokenBack(obj, eng, e)
+        InvTransitionActions.save_and_inc(obj, eng)
+
+    @staticmethod
+    def JumpTokenForward(obj, eng, e):
+        """Action to take when JumpTokenForward is raised."""
+        super(InvTransitionActions, InvTransitionActions).JumpTokenForward(obj, eng, e)
+        InvTransitionActions.save_and_inc(obj, eng)
+
+    @staticmethod
+    def ContinueNextToken(obj, eng, e):
+        """Action to take when ContinueNextToken is raised."""
+        try:
+            super(InvTransitionActions, InvTransitionActions).ContinueNextToken(obj, eng, e)
+        except Continue:
+            InvTransitionActions.save_and_inc(obj, eng)
+            raise
+
+    @staticmethod
+    def pre_halt_cleanup(obj, eng):
+        eng.increase_counter_halted()
+        extra_data = obj.get_extra_data()
+        obj.set_extra_data(extra_data)
+        workflow_halted.send(obj)
+
+        msg = 'Processing was halted at step: %s' % (eng._i,)
+        eng.log.info(msg)
+        obj.log.info(msg)
+
+    @staticmethod
+    def HaltProcessing(obj, eng, e):
+        """Action to take when HaltProcessing is raised."""
+        try:
+            super(InvTransitionActions, InvTransitionActions).HaltProcessing(obj, eng, e)
+        except HaltProcessing:
+            InvTransitionActions.pre_halt_cleanup(obj, eng)
+            raise WorkflowHalt(e)
+
+    @staticmethod
+    def WorkflowHalt(obj, eng, e):
+        """Action to take when WorkflowHalt is raised."""
+        InvTransitionActions.pre_halt_cleanup(obj, eng)
+        reraise(*sys.exc_info())
+
+    @staticmethod
+    def catchall(obj, eng, e):
+        """Action to take when an otherwise unhandled exception is raised."""
+        msg = "Error: %r\n%s" % (e, traceback.format_exc())
+        extra_data = obj.get_extra_data()
+        obj.set_extra_data(extra_data)
+        eng.increase_counter_error()
+        if isinstance(e, WorkflowErrorClient):
+            reraise(*sys.exc_info())
+        else:
+            raise WorkflowErrorClient(
+                message=msg,
+                id_workflow=eng.uuid,
+                id_object=eng.getCurrObjId(),
+            )
+
+
+class InvProcessingFactory(ProcessingFactory):
+
+    """Processing factory for invenio's requirements."""
+
+    @property
+    def transition_exception_mapper(self):
+        """Define our for handling transition exceptions."""
+        return InvTransitionActions
+
+    def before_processing(self, objects):
+        """Executed before processing the workflow."""
+        self.eng.save(status=WorkflowStatus.RUNNING)
+        self.eng.set_counter_initial(len(objects))
+        workflow_started.send(self)
+        super(InvProcessingFactory, self).before_processing(objects)
+
+    def before_object(self, objects, obj):
+        """Action to take before the proccessing of an object begins."""
+        obj.save(version=ObjectVersion.RUNNING,
+                 id_workflow=self.eng.db_obj.uuid)
+
+    def after_object(self, objects, obj):
+        """Action to take once the proccessing of an object completes."""
+        # We save each object once it is fully run through
+        obj.save(version=ObjectVersion.FINAL)
+        self.eng.increase_counter_finished()
+        self.eng.reset_callbacks_pointer()
+
+    def after_processing(self, objects):
+        """Action after process to update status."""
+        super(InvProcessingFactory, self).after_processing(self, objects)
+        if self.eng.has_completed():
+            self.eng.save(WorkflowStatus.COMPLETED)
+            workflow_finished.send(self.eng)
+        else:
+            self.eng.save(WorkflowStatus.HALTED)

@@ -19,6 +19,7 @@
 """Contains standard error messages for workflows module."""
 
 from workflow.engine import HaltProcessing
+from workflow.engine import WorkflowTransition
 
 
 class WorkflowHalt(HaltProcessing):
@@ -31,7 +32,7 @@ class WorkflowHalt(HaltProcessing):
 
     def __init__(self, message, action=None, **kwargs):
         """Instanciate a WorkflowHalt object."""
-        HaltProcessing.__init__(self)
+        super(WorkflowHalt, self).__init__(self)
         self.message = message
         self.action = action
         self.payload = kwargs
@@ -162,11 +163,15 @@ class WorkflowAPIError(Exception):
     pass
 
 
-class SkipToken(Exception):
+class SkipToken(WorkflowTransition):
 
     """Used by workflow engine to skip the current process of an object."""
 
+    pass
 
-class AbortProcessing(Exception):
+
+class AbortProcessing(WorkflowTransition):
 
     """Used by workflow engine to abort the engine execution."""
+
+    pass
