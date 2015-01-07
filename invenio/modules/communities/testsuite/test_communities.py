@@ -38,7 +38,7 @@ from invenio.modules.communities.config import COMMUNITIES_ID_PREFIX, \
     COMMUNITIES_OUTPUTFORMAT_PROVISIONAL
 
 Community = lazy_import('invenio.modules.communities.models:Community')
-Collection = lazy_import('invenio.modules.search.models:Collection')
+Collection = lazy_import('invenio.modules.collections.models:Collection')
 calculate_rank_for_community = lazy_import('invenio.modules.communities.tasks:calculate_rank_for_community')
 
 class CommunityModelTest(InvenioTestCase):
