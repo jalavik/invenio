@@ -34,7 +34,7 @@ class WorkflowOthers(WorkflowTasksTestCase):
 
     def tearDown(self):
         """ Clean up created objects."""
-        from invenio.modules.workflows.models import Workflow
+        from workflow.models import Workflow
         Workflow.get(Workflow.module_name == "unit_tests").delete()
         self.cleanup_registries()
 
@@ -42,12 +42,12 @@ class WorkflowOthers(WorkflowTasksTestCase):
         """Test abastraction layer for celery worker."""
         from invenio.ext.sqlalchemy import db
         from ..utils import BibWorkflowObjectIdContainer
-        from ..models import BibWorkflowObject
+        from workflow.models import DbWorkflowObject
         from ..worker_result import AsynchronousResultWrapper
 
         bwoic = BibWorkflowObjectIdContainer(None)
         self.assertEqual(None, bwoic.get_object())
-        test_object = BibWorkflowObject()
+        test_object = DbWorkflowObject()
         test_object.set_data(45)
         test_object.save()
         bwoic2 = BibWorkflowObjectIdContainer(test_object)
@@ -67,12 +67,12 @@ class WorkflowOthers(WorkflowTasksTestCase):
             start("@thisisnotatrueworkflow@", ["my_false_data"],
                   random_kay_args="value")
         except Exception as e:
-            from invenio.modules.workflows.errors import WorkflowDefinitionError
+            from workflow.errors import WorkflowDefinitionError
             self.assertTrue(isinstance(e, WorkflowDefinitionError))
 
     def test_workflows_exceptions(self):
         """Test for workflows exception."""
-        from invenio.modules.workflows.errors import WorkflowError
+        from workflow.errors import WorkflowError
         from invenio.modules.workflows.api import start
 
         try:

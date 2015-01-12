@@ -128,7 +128,7 @@ def harvest_records(obj, eng):
     """
     from invenio.legacy.oaiharvest.utils import (collect_identifiers,
                                                  harvest_step)
-    from invenio.modules.workflows.errors import WorkflowError
+    from workflow.errors import WorkflowError
 
     harvested_identifier_list = []
 

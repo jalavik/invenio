@@ -54,7 +54,7 @@ def convert_marcxml_to_bibfield(marcxml, model=None):
 
 class BibWorkflowObjectIdContainer(object):
 
-    """Mapping from an ID to BibWorkflowObject.
+    """Mapping from an ID to DbWorkflowObject.
 
     This class is only used to be able to store a workflow ID and
     to retrieve easily the workflow from this ID from another process,
@@ -65,19 +65,19 @@ class BibWorkflowObjectIdContainer(object):
     """
 
     def __init__(self, bibworkflowobject=None):
-        """Initialize the object, optionally passing a BibWorkflowObject."""
+        """Initialize the object, optionally passing a DbWorkflowObject."""
         if bibworkflowobject is not None:
             self.id = bibworkflowobject.id
         else:
             self.id = None
 
     def get_object(self):
-        """Get the BibWorkflowObject from self.id."""
-        from .models import BibWorkflowObject
+        """Get the DbWorkflowObject from self.id."""
+        from workflow.models import DbWorkflowObject
 
         if self.id is not None:
-            return BibWorkflowObject.query.filter(
-                BibWorkflowObject.id == self.id
+            return DbWorkflowObject.query.filter(
+                DbWorkflowObject.id == self.id
             ).one()
         else:
             return None
@@ -204,12 +204,12 @@ def parse_bwids(bwolist):
 
 
 def get_holdingpen_objects(ptags=None):
-    """Get BibWorkflowObject's for display in Holding Pen.
+    """Get DbWorkflowObject's for display in Holding Pen.
 
     Uses DataTable naming for filtering/sorting. Work in progress.
     """
-    from .models import (BibWorkflowObject,
-                         ObjectVersion)
+    from workflow.models import (DbWorkflowObject,
+                                 ObjectVersion)
 
     if ptags is None:
         ptags = ObjectVersion.name_from_version(ObjectVersion.HALTED)
@@ -222,9 +222,9 @@ def get_holdingpen_objects(ptags=None):
             tags_copy.remove(tag)
 
     ssearch = tags_copy
-    bwobject_list = BibWorkflowObject.query.filter(
-        BibWorkflowObject.id_parent == None  # noqa E711
-    ).filter(not version_showing or BibWorkflowObject.version.in_(
+    bwobject_list = DbWorkflowObject.query.filter(
+        DbWorkflowObject.id_parent == None  # noqa E711
+    ).filter(not version_showing or DbWorkflowObject.version.in_(
         version_showing)).all()
 
     if ssearch and ssearch[0]:
@@ -257,7 +257,7 @@ def get_versions_from_tags(tags):
     :param tags: list of tags
     :return: tuple of (versions to show, cleaned tags list)
     """
-    from .models import ObjectVersion
+    from workflow.models import ObjectVersion
 
     tags_copy = tags[:]
     version_showing = []
@@ -354,8 +354,8 @@ def extract_data(bwobject):
     Used for rendering the Record's holdingpen table row and
     details and action page.
     """
-    from .models import (BibWorkflowObject,
-                         Workflow)
+    from workflow.models import (BibWorkflowObject,
+                                 Workflow)
     extracted_data = {}
     if bwobject.id_parent is not None:
         extracted_data['bwparent'] = \

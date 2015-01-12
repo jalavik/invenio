@@ -135,7 +135,7 @@ def convert_record(stylesheet="oaidc2marcxml.xsl"):
     """
     @wraps(convert_record)
     def _convert_record(obj, eng):
-        from invenio.modules.workflows.errors import WorkflowError
+        from workflow.errors import WorkflowError
         from invenio.legacy.bibconvert.xslt_engine import convert
 
         eng.log.info("Starting conversion using %s stylesheet" %

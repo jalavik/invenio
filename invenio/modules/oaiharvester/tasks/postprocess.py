@@ -179,7 +179,7 @@ def plot_extract(plotextractor_types=("latex",)):
         from invenio.utils.plotextractor.converter import convert_images
         from invenio.utils.plotextractor.getter import harvest_single
         from invenio.utils.plotextractor.converter import untar
-        from invenio.modules.workflows.errors import WorkflowError
+        from workflow.errors import WorkflowError
         from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
         from invenio.utils.shell import run_shell_command, Timeout
 
@@ -359,7 +359,7 @@ def author_list(obj, eng):
     from invenio.utils.plotextractor.cli import get_defaults
     from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
     from invenio.utils.plotextractor.getter import harvest_single
-    from invenio.modules.workflows.errors import WorkflowError
+    from workflow.errors import WorkflowError
     from invenio.utils.plotextractor.converter import untar
     from invenio.utils.shell import Timeout
 

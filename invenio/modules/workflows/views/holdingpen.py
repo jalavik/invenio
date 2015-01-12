@@ -17,7 +17,7 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 """
-Holding Pen is a web interface overlay for all BibWorkflowObject's.
+Holding Pen is a web interface overlay for all DbWorkflowObject's.
 
 This area is targeted to catalogers and administrators for inspecting
 and reacting to workflows executions. More importantly, allowing users to deal
@@ -26,9 +26,9 @@ with halted workflows.
 For example, accepting submissions or other tasks.
 """
 
-import json
 import os
 
+import json
 from flask import (
     Blueprint,
     flash,
@@ -42,24 +42,22 @@ from flask import (
 from flask.ext.breadcrumbs import default_breadcrumb_root, register_breadcrumb
 from flask.ext.login import login_required
 from flask.ext.menu import register_menu
+from six import text_type
+from workflow.models import DbWorkflowObject, Workflow, ObjectVersion
 
+from ..acl import viewholdingpen
+from ..api import continue_oid_delayed, start_delayed
+from ..registry import actions, workflows
+from ..utils import (sort_bwolist, extract_data, get_action_list,
+                     get_formatted_holdingpen_object,
+                     get_holdingpen_objects,
+                     get_previous_next_objects,
+                     get_rendered_task_results)
 from invenio.base.decorators import templated, wash_arguments
 from invenio.base.i18n import _
 from invenio.ext.principal import permission_required
 from invenio.utils.date import pretty_date
 
-from six import text_type
-
-from ..acl import viewholdingpen
-from ..api import continue_oid_delayed, start_delayed
-from ..models import BibWorkflowObject, ObjectVersion, Workflow
-from ..registry import actions, workflows
-from ..utils import (extract_data, get_action_list,
-                     get_formatted_holdingpen_object,
-                     get_holdingpen_objects,
-                     get_previous_next_objects,
-                     get_rendered_task_results,
-                     sort_bwolist)
 
 blueprint = Blueprint('holdingpen', __name__, url_prefix="/admin/holdingpen",
                       template_folder='../templates',
@@ -156,7 +154,7 @@ def details(objectid):
     from itertools import groupby
 
     of = "hd"
-    bwobject = BibWorkflowObject.query.get_or_404(objectid)
+    bwobject = DbWorkflowObject.query.get_or_404(objectid)
     previous_object, next_object = get_previous_next_objects(
         session.get("holdingpen_current_ids"),
         objectid
@@ -173,14 +171,14 @@ def details(objectid):
         rendered_actions = {}
 
     if bwobject.id_parent:
-        history_objects_db_request = BibWorkflowObject.query.filter(
-            db.or_(BibWorkflowObject.id_parent == bwobject.id_parent,
-                   BibWorkflowObject.id == bwobject.id_parent,
-                   BibWorkflowObject.id == bwobject.id)).all()
+        history_objects_db_request = DbWorkflowObject.query.filter(
+            db.or_(DbWorkflowObject.id_parent == bwobject.id_parent,
+                   DbWorkflowObject.id == bwobject.id_parent,
+                   DbWorkflowObject.id == bwobject.id)).all()
     else:
-        history_objects_db_request = BibWorkflowObject.query.filter(
-            db.or_(BibWorkflowObject.id_parent == bwobject.id,
-                   BibWorkflowObject.id == bwobject.id)).all()
+        history_objects_db_request = DbWorkflowObject.query.filter(
+            db.or_(DbWorkflowObject.id_parent == bwobject.id,
+                   DbWorkflowObject.id == bwobject.id)).all()
 
     history_objects = {}
     temp = groupby(history_objects_db_request,
@@ -237,7 +235,7 @@ def get_file_from_task_result(object_id=None, filename=None):
         }
 
     """
-    bwobject = BibWorkflowObject.query.get_or_404(object_id)
+    bwobject = DbWorkflowObject.query.get_or_404(object_id)
     task_results = bwobject.get_tasks_results()
     if filename in task_results and task_results[filename]:
         fileinfo = task_results[filename][0].get("result", dict())
@@ -251,7 +249,7 @@ def get_file_from_task_result(object_id=None, filename=None):
 @wash_arguments({'objectid': (int, 0)})
 def restart_record(objectid, start_point='continue_next'):
     """Restart the initial object in its workflow."""
-    bwobject = BibWorkflowObject.query.get_or_404(objectid)
+    bwobject = DbWorkflowObject.query.get_or_404(objectid)
 
     workflow = Workflow.query.filter(
         Workflow.uuid == bwobject.id_workflow).first()
@@ -286,7 +284,7 @@ def restart_record_prev(objectid):
 @wash_arguments({'objectid': (int, 0)})
 def delete_from_db(objectid):
     """Delete the object from the db."""
-    BibWorkflowObject.delete(objectid)
+    DbWorkflowObject.delete(objectid)
     return 'Record Deleted'
 
 
@@ -313,7 +311,7 @@ def resolve_action(objectid):
 
     Will call the resolve() function of the specific action.
     """
-    bwobject = BibWorkflowObject.query.get_or_404(objectid)
+    bwobject = DbWorkflowObject.query.get_or_404(objectid)
     action_name = bwobject.get_action()
     action_form = actions[action_name]
     res = action_form().resolve(bwobject)
@@ -327,7 +325,7 @@ def resolve_action(objectid):
                  'of': (text_type, None)})
 def entry_data_preview(objectid, of):
     """Present the data in a human readble form or in xml code."""
-    bwobject = BibWorkflowObject.query.get_or_404(objectid)
+    bwobject = DbWorkflowObject.query.get_or_404(objectid)
     if not bwobject:
         flash("No object found for %s" % (objectid,))
         return jsonify(data={})
