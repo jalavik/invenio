@@ -55,7 +55,6 @@ class BibWorkflowEngine(DbWorkflowEngine):
         self.setWorkflow(self.workflow_definition.workflow)
 
     # FIXME: Unused. If removed, `self.workflow_definition` is also unused.
-    # Affects: Invenio engine.py:46
     def get_default_data_type(self):
         """Return default data type from workflow definition."""
         return getattr(self.workflow_definition,
