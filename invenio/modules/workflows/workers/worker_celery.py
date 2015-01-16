@@ -17,13 +17,16 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
+from __future__ import print_function
 
+import sys
+
+from workflow.errors import WorkflowWorkerError
+
+from invenio.base.helpers import with_app_context
 from invenio.celery import celery
 from invenio.ext.sqlalchemy.utils import session_manager
-from invenio.base.helpers import with_app_context
-
 from invenio.modules.workflows.worker_result import AsynchronousResultWrapper
-from invenio.modules.workflows.errors import WorkflowWorkerError
 
 
 @celery.task(name='invenio.modules.workflows.workers.worker_celery.run_worker')
@@ -133,4 +136,14 @@ class CeleryResult(AsynchronousResultWrapper):
         if postprocess is None:
             return self.asyncresult.get()
         else:
-            return postprocess(self.asyncresult.get())
+            # Celery saves the traceback as plaintext, so it can only print a
+            # less informative stack. We handle this explicitly by printing the
+            # full traceback to stderr.
+            try:
+                result = self.asyncresult.get()
+            except Exception as e:
+                print(self.asyncresult.traceback, file=sys.stderr)
+                e.args += ('Full traceback above.',)
+                raise e
+            else:
+                return postprocess(result)
