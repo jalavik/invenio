@@ -33,7 +33,7 @@ from invenio.modules.workflows.tasks.workflows_tasks import (
     get_workflow_from_engine_definition
 )
 
-from invenio.modules.workflows.tasks.logic_tasks import (
+from workflow.tasks.logic_tasks import (
     foreach,
     end_for,
     simple_for,
