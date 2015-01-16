@@ -25,7 +25,6 @@ this is the high level API you will want to use.
 
 from werkzeug.utils import import_string, cached_property
 from invenio.base.globals import cfg
-from invenio.base.config import CFG_BIBWORKFLOW_WORKER
 from .utils import BibWorkflowObjectIdContainer
 from workflow.models import DbWorkflowObject
 from workflow.errors import WorkflowWorkerError
@@ -39,6 +38,13 @@ class WorkerBackend(object):
     It will automatically get the worker thanks to the configuration
     when called.
     """
+    @cached_property
+    def worker_modspec(self):
+        return 'invenio.modules.workflows.workers.%s:%s' % (
+            cfg['CFG_BIBWORKFLOW_WORKER'], cfg['CFG_BIBWORKFLOW_WORKER'])
+        # TODO: Raise NotImplementedError
+        # if not self.worker_modspec:
+        #     raise WorkflowWorkerError('No worker configured')
 
     @cached_property
     def worker(self):
@@ -51,18 +57,15 @@ class WorkerBackend(object):
         :return: the worker configured into the configuration file.
         """
         try:
-            return import_string('invenio.modules.workflows.workers.%s:%s' % (
-                cfg['CFG_BIBWORKFLOW_WORKER'], cfg['CFG_BIBWORKFLOW_WORKER']))
+            return import_string(self.worker_modspec)
         except:
             from invenio.ext.logging import register_exception
             ## Let's report about broken plugins
             register_exception(alert_admin=True)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
         """Action on call."""
-        if not self.worker:
-            raise WorkflowWorkerError('No worker configured')
-        return self.worker(*args, **kwargs)
+        return self.worker()
 
 
 WORKER = WorkerBackend()
@@ -120,8 +123,6 @@ def start_delayed(workflow_name, data, **kwargs):
 
     :return: AsynchronousResultWrapper
     """
-    if not CFG_BIBWORKFLOW_WORKER:
-        raise WorkflowWorkerError('No worker configured')
 
     # The goal of this part is to avoid a SQLalchemy decoherence in case
     # some one try to send a Bibworkflow object. To avoid to send the
