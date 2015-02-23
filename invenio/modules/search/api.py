@@ -22,7 +22,7 @@
 import pypeg2
 
 from flask_login import current_user
-from invenio_query_parser.parser import Main
+from invenio_query_parser.contrib.spires.parser import Main
 from werkzeug.utils import cached_property
 
 from .walkers.terms import Terms
@@ -40,10 +40,12 @@ class SearchEngine(object):
     @cached_property
     def query(self):
         """Parse query string using given grammar."""
-        from invenio_query_parser.walkers.pypeg_to_ast import \
+        from invenio_query_parser.contrib.spires.walkers.pypeg_to_ast import \
             PypegConverter
+        from invenio_query_parser.contrib.spires.walkers.spires_to_invenio import \
+            SpiresToInvenio
         tree = pypeg2.parse(self._query, Main, whitespace="")
-        return tree.accept(PypegConverter())
+        return tree.accept(PypegConverter()).accept(SpiresToInvenio())
 
     def search(self, user_info=None, collection=None):
         """Search records."""
