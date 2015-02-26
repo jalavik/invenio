@@ -19,11 +19,17 @@
 
 """Various utility functions for use across the workflows module."""
 
-from invenio.ext.cache import cache
-
 import msgpack
 
+from workflow.engine_db import ObjectVersion
+
+from invenio.ext.cache import cache
+from invenio.base.wrappers import lazy_import
+
 from .registry import workflows
+
+DbWorkflowObject = lazy_import("invenio.modules.workflows.models.DbWorkflowObject")
+Workflow = lazy_import("invenio.modules.workflows.models.Workflow")
 
 
 def convert_marcxml_to_bibfield(marcxml, model=None):
@@ -73,7 +79,7 @@ class BibWorkflowObjectIdContainer(object):
 
     def get_object(self):
         """Get the DbWorkflowObject from self.id."""
-        from workflow.models import DbWorkflowObject
+        from invenio.modules.workflows.models import DbWorkflowObject
 
         if self.id is not None:
             return DbWorkflowObject.query.filter(
@@ -208,9 +214,6 @@ def get_holdingpen_objects(ptags=None):
 
     Uses DataTable naming for filtering/sorting. Work in progress.
     """
-    from workflow.models import (DbWorkflowObject,
-                                 ObjectVersion)
-
     if ptags is None:
         ptags = ObjectVersion.name_from_version(ObjectVersion.HALTED)
 
@@ -257,8 +260,6 @@ def get_versions_from_tags(tags):
     :param tags: list of tags
     :return: tuple of (versions to show, cleaned tags list)
     """
-    from workflow.models import ObjectVersion
-
     tags_copy = tags[:]
     version_showing = []
     for i in range(len(tags_copy) - 1, -1, -1):
@@ -354,12 +355,10 @@ def extract_data(bwobject):
     Used for rendering the Record's holdingpen table row and
     details and action page.
     """
-    from workflow.models import (BibWorkflowObject,
-                                 Workflow)
     extracted_data = {}
     if bwobject.id_parent is not None:
         extracted_data['bwparent'] = \
-            BibWorkflowObject.query.get(bwobject.id_parent)
+            DbWorkflowObject.query.get(bwobject.id_parent)
     else:
         extracted_data['bwparent'] = None
 

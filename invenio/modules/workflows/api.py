@@ -26,8 +26,9 @@ this is the high level API you will want to use.
 from werkzeug.utils import import_string, cached_property
 from invenio.base.globals import cfg
 from .utils import BibWorkflowObjectIdContainer
-from workflow.models import DbWorkflowObject
+from invenio.modules.workflows.models import DbWorkflowObject
 from workflow.errors import WorkflowWorkerError
+from workflow.engine_db import ObjectVersion
 
 
 class WorkerBackend(object):
@@ -317,8 +318,6 @@ def resume_objects_in_workflow(id_workflow, start_point="continue_next",
 
     yield: BibWorkflowEngine that ran the workflow
     """
-    from workflow.models import ObjectVersion
-
     # Resume workflow if there are objects to resume
     objects = DbWorkflowObject.query.filter(
         DbWorkflowObject.id_workflow == id_workflow,

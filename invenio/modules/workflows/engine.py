@@ -21,20 +21,85 @@
 
 from __future__ import absolute_import
 
-from invenio.ext.sqlalchemy import db
-from workflow.engine_db import DbWorkflowEngine
+from uuid import uuid1 as new_uuid
+
+from workflow.engine_db import DbWorkflowEngine, ObjectVersion
 from workflow.errors import WorkflowDefinitionError
+from workflow.logger import DbWorkflowLogHandler, get_logger
+
+from invenio.ext.sqlalchemy import db
+
+from .models import (
+    Workflow,
+    DbWorkflowObject,
+    DbWorkflowEngineLog
+)
 
 
 class BibWorkflowEngine(DbWorkflowEngine):
 
+    """Special engine for Invenio."""
+
     def __init__(self, *args, **kwargs):
+        """Special handling of instantiation of engine."""
         super(BibWorkflowEngine, self).__init__(*args, **kwargs)
         self.set_workflow_by_name(self.db_obj.name)
 
+    @classmethod
+    def with_name(cls, name, id_user=0, module_name="Unknown",
+                  **kwargs):
+        """ Instantiate a DbWorkflowEngine given a name or UUID.
+
+        :param name: name of workflow to run.
+        :type name: str
+
+        :param id_user: id of user to associate with workflow
+        :type id_user: int
+
+        :param module_name: label used to query groups of workflows.
+        :type module_name: str
+        """
+        db_obj = Workflow(
+            name=name,
+            id_user=id_user,
+            module_name=module_name,
+            uuid=new_uuid()
+        )
+        return cls(db_obj, **kwargs)
+
+    @classmethod
+    def from_uuid(cls, uuid, **kwargs):
+        """ Load a workflow from the database given a UUID.
+
+        :param uuid: pass a uuid to an existing workflow.
+        :type uuid: str
+        """
+        db_obj = Workflow.get(Workflow.uuid == uuid).first()
+        if db_obj is None:
+            raise LookupError("No workflow with UUID {} was found".format(uuid))
+        return cls(db_obj, **kwargs)
+
     @property
     def db(self):
+        """Return db object."""
         return db
+
+    def init_logger(self):
+        """Return the appropriate logger instance."""
+        db_handler_obj = DbWorkflowLogHandler(DbWorkflowEngineLog, "uuid")
+        self.log = get_logger(logger_name="workflow.%s" % self.db_obj.uuid,
+                              db_handler_obj=db_handler_obj,
+                              obj=self)
+
+    def has_completed(self):
+        """Return True if workflow is fully completed."""
+        res = self.db.session.query(self.db.func.count(DbWorkflowObject.id)).\
+            filter(DbWorkflowObject.id_workflow == self.uuid).\
+            filter(DbWorkflowObject.version.in_(
+                [ObjectVersion.INITIAL,
+                 ObjectVersion.COMPLETED]
+            )).group_by(DbWorkflowObject.version).all()
+        return len(res) == 2 and res[0] == res[1]
 
     def set_workflow_by_name(self, workflow_name):
         """Configure the workflow to run by the name of this one.

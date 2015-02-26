@@ -20,8 +20,7 @@
 
 import traceback
 from workflow.errors import WorkflowHalt, WorkflowError
-from workflow.models import ObjectVersion
-from workflow.engine_db import WorkflowStatus
+from workflow.engine_db import WorkflowStatus, ObjectVersion
 
 
 def run_workflow(wfe, data, stop_on_halt=False,

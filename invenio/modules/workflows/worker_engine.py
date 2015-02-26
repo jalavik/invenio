@@ -20,7 +20,7 @@
 
 from .client import run_workflow, continue_execution
 from .engine import BibWorkflowEngine
-from workflow.models import DbWorkflowObject, Workflow, ObjectVersion
+from invenio.modules.workflows.models import DbWorkflowObject, Workflow, ObjectVersion
 from workflow.errors import WorkflowObjectVersionError
 
 
