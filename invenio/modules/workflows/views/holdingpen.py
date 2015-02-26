@@ -43,7 +43,7 @@ from flask.ext.breadcrumbs import default_breadcrumb_root, register_breadcrumb
 from flask.ext.login import login_required
 from flask.ext.menu import register_menu
 from six import text_type
-from workflow.models import DbWorkflowObject, Workflow, ObjectVersion
+from workflow.engine_db import ObjectVersion
 
 from ..acl import viewholdingpen
 from ..api import continue_oid_delayed, start_delayed
@@ -53,6 +53,7 @@ from ..utils import (sort_bwolist, extract_data, get_action_list,
                      get_holdingpen_objects,
                      get_previous_next_objects,
                      get_rendered_task_results)
+from ..models import DbWorkflowObject, Workflow
 from invenio.base.decorators import templated, wash_arguments
 from invenio.base.i18n import _
 from invenio.ext.principal import permission_required
