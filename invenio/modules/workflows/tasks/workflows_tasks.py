@@ -22,7 +22,7 @@ from functools import wraps
 from time import sleep
 
 from workflow.errors import WorkflowError
-from workflow.models import DbWorkflowEngineLog
+from ..models import DbWorkflowEngineLog
 
 from six import callable, string_types
 
@@ -122,7 +122,7 @@ def start_async_workflow(workflow_to_run="",
         workflow to run (optional).
     :type get_workflow_from_engine_definition: function
     """
-    from workflow.models import DbWorkflowObject
+    from ..models import DbWorkflowObject
     from invenio.modules.workflows.api import start_delayed
 
     @wraps(start_async_workflow)
