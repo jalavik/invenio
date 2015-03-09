@@ -25,6 +25,7 @@ from six import iteritems
 from uuid import uuid1 as new_uuid
 
 from workflow.engine_db import DbWorkflowEngine, ObjectVersion
+from workflow.engine_db import DbprocessingFactory as DbProcessingFactory
 from workflow.errors import WorkflowDefinitionError
 from workflow.logger import DbWorkflowLogHandler, get_logger
 
@@ -94,6 +95,28 @@ class BibWorkflowEngine(DbWorkflowEngine):
         """Return db object."""
         return db
 
+
+    @property
+    def processing_factory(self):
+        """Provide a proccessing factory."""
+        return InvProcessingFactory
+
+    @property
+    def uuid(self):
+        """Return the uuid."""
+        return self.db_obj.uuid
+
+    @property
+    def id_user(self):
+        """Return the user id."""
+        return self.db_obj.id_user
+
+    @property
+    def module_name(self):
+        """Return the module name."""
+        return self.db_obj.module_name
+
+
     def get_extra_data(self):
         """Main method to retrieve data saved to the object."""
         return cPickle.loads(base64.b64decode(self.db_obj._extra_data))
@@ -144,18 +167,24 @@ class BibWorkflowEngine(DbWorkflowEngine):
     def execute_callback(self, callback, obj):
         """Execute the callback (workflow tasks)."""
         # What is this I don't even.
-        obj.data = obj.get_data()
-        obj.extra_data = obj.get_extra_data()
         self.extra_data = self.get_extra_data()
         self.log.debug("Executing callback %s" % (repr(callback),))
+
+        # obj.load()
+        obj.data = obj.get_data()
+        obj.extra_data = obj.get_extra_data()
         try:
-            callback(obj, self)
+            callback(obj, self)  # make mutation explicit
         finally:
             self.set_extra_data(self.extra_data)
+
+            # obj.save
             obj.set_data(obj.data)
-            obj.extra_data["_task_counter"] = self._i[1]
+
+            obj.extra_data["_task_counter"] = self.state.task_pos
             obj.extra_data["_last_task_name"] = callback.func_name
             obj.update_task_history(callback)
+
             obj.set_extra_data(obj.extra_data)
 
     def init_logger(self):
@@ -199,3 +228,9 @@ class BibWorkflowEngine(DbWorkflowEngine):
         return getattr(self.workflow_definition,
                        "object_type",
                        "")
+
+class InvProcessingFactory(DbProcessingFactory):
+    def before_object(self, eng, objects, obj):
+        """Action to take before the proccessing of an object begins."""
+        obj.reset_error_message()
+        super(InvProcessingFactory, self).before_object(eng, objects, obj)

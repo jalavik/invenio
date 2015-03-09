@@ -35,13 +35,13 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
 
     def tearDown(self):
         """ Clean up created objects."""
-        from workflow.models import Workflow
+        from invenio.modules.workflows.models import Workflow
         Workflow.get(Workflow.module_name == "unit_tests").delete()
         self.cleanup_registries()
 
     def test_workflow_delay(self):
         """Test simple delayed workflow."""
-        from workflow.models import DbWorkflowObject
+        from invenio.modules.workflows.models import DbWorkflowObject
         from invenio.modules.workflows.api import (start_delayed,
                                                    continue_oid_delayed,
                                                    start_by_wid_delayed)
@@ -75,7 +75,7 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
 
     def test_workflows_tasks_chained(self):
         """Test delayed workflows in delayed workflow."""
-        from workflow.models import DbWorkflowObject
+        from invenio.modules.workflows.models import DbWorkflowObject
         from invenio.modules.workflows.api import start_delayed
         from invenio.modules.workflows.worker_result import uuid_to_workflow
 
@@ -96,7 +96,7 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
         from ..workers.worker_celery import (celery_run, celery_restart,
                                              celery_continue)
         from invenio.modules.workflows.utils import BibWorkflowObjectIdContainer
-        from workflow.models import (DbWorkflowObject, get_default_extra_data)
+        from invenio.modules.workflows.models import (DbWorkflowObject, get_default_extra_data)
 
         test_objectb = DbWorkflowObject()
         test_objectb.set_data(22)
@@ -154,7 +154,7 @@ class WorkflowDelayedTest(WorkflowTasksTestCase):
 
     def test_workflows_tasks(self):
         """Test delayed workflows in non delayed one."""
-        from workflow.models import DbWorkflowObject
+        from invenio.modules.workflows.models import DbWorkflowObject
         from invenio.modules.workflows.api import start
 
         test_object = DbWorkflowObject()

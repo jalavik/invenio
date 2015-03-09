@@ -33,7 +33,7 @@ class OAIHarvesterTasks(WorkflowTasksTestCase):
 
     def tearDown(self):
         """Clean up created objects."""
-        from workflow.models import Workflow
+        from invenio.modules.workflows.models import Workflow
         Workflow.get(Workflow.module_name == "unit_tests").delete()
         self.cleanup_registries()
 
@@ -41,7 +41,7 @@ class OAIHarvesterTasks(WorkflowTasksTestCase):
         """Test filtering functionality."""
         from ..tasks.harvesting import filtering_oai_pmh_identifier
         from invenio.modules.workflows.api import start
-        from workflow.models import DbWorkflowObject
+        from invenio.modules.workflows.models import DbWorkflowObject
 
         my_test_obj = DbWorkflowObject()
         my_test_obj.set_data("<record><test></test>"
@@ -88,7 +88,7 @@ class OAIHarvesterTasks(WorkflowTasksTestCase):
         """Test harvesting."""
         from ..tasks.harvesting import init_harvesting
         from invenio.modules.workflows.api import start
-        from workflow.models import DbWorkflowObject
+        from invenio.modules.workflows.models import DbWorkflowObject
 
         my_test_obj = DbWorkflowObject()
         my_test_obj.set_data([2])

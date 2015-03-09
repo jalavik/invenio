@@ -183,7 +183,7 @@ def generate_snapshot(workflow_object, engine):
     is not in RUNNING state.
 
     :param workflow_object: DbWorkflowObject to create snapshot from.
-    :type workflow_object: py:class:`workflow.models.DbWorkflowObject`
+    :type workflow_object: py:class:`invenio.modules.workflows.models.DbWorkflowObject`
 
     :param engine: Instance of Workflow that is currently running.
     :type engine: py:class:`.engine.BibWorkflowEngine`

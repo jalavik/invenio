@@ -182,11 +182,11 @@ def start_by_wid_delayed(wid, **kwargs):
 
 
 def start_by_oids(workflow_name, oids, **kwargs):
-    """Start workflow by name with :py:class:`workflow.models.DbWorkflowObject`
+    """Start workflow by name with :py:class:`invenio.modules.workflows.models.DbWorkflowObject`
     ids.
 
     Wrapper to call :py:func:`.start` with list of
-    :py:class:`workflow.models.DbWorkflowObject` ids.
+    :py:class:`invenio.modules.workflows.models.DbWorkflowObject` ids.
 
     Special custom keyword arguments can be given to the workflow engine
     in order to pass certain variables to the tasks in the workflow execution,
@@ -212,7 +212,7 @@ def start_by_oids(workflow_name, oids, **kwargs):
 
 def start_by_oids_delayed(workflow_name, oids, **kwargs):
     """Start asynchronously workflow by name with
-    :py:class:`workflow.models.DbWorkflowObject` ids.
+    :py:class:`invenio.modules.workflows.models.DbWorkflowObject` ids.
 
     Similar behavior as :py:func:`.start_by_oids`, except it calls
     :py:func:`.start_delayed`.

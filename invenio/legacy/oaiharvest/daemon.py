@@ -58,7 +58,7 @@ from invenio.legacy.oaiharvest.utils import (compare_timestamps_with_tolerance,
 from invenio.legacy.webuser import email_valid_p
 from invenio.ext.email import send_email
 
-from workflow.models import (DbWorkflowEngineLog, Workflow,
+from invenio.modules.workflows.models import (DbWorkflowEngineLog, Workflow,
                              DbWorkflowObjectLog)
 from invenio.modules.workflows.registry import workflows as registry_workflows
 from invenio.modules.workflows.api import start

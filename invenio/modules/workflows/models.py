@@ -11,23 +11,22 @@
 """Models for DbWorkflow Objects."""
 
 import os
-import tempfile
+
 import base64
 import logging
-
-from six.moves import cPickle
-from six import iteritems, callable
+import tempfile
+from collections import Iterable
 from datetime import datetime
-
+from six import iteritems, callable
+from six.moves import cPickle
 from sqlalchemy import desc
 from sqlalchemy.orm.exc import NoResultFound
-
-from invenio.ext.sqlalchemy import db
-from invenio.ext.sqlalchemy.utils import session_manager
-from invenio.base.globals import cfg
-
 from workflow.engine_db import ObjectVersion
 from workflow.logger import get_logger, DbWorkflowLogHandler
+
+from invenio.base.globals import cfg
+from invenio.ext.sqlalchemy import db
+from invenio.ext.sqlalchemy.utils import session_manager
 
 
 def get_default_data():
@@ -705,27 +704,21 @@ class DbWorkflowObject(db.Model):
 
     def copy(self, other):
         """Copy data and metadata except id and id_workflow."""
-        self._data = other._data
-        self._extra_data = other._extra_data
-        self.version = other.version
-        self.id_parent = other.id_parent
-        self.created = other.created
-        self.modified = other.modified
-        self.status = other.status
-        self.data_type = other.data_type
-        self.uri = other.uri
+        for attr in ('_data', '_extra_data', 'version', 'id_parent', 'created',
+                     'modified', 'status', 'data_type', 'uri'):
+            setattr(self, attr, getattr(other, attr))
 
     @session_manager
     def save(self, version=None, task_counter=None, id_workflow=None):
         """Save object to persistent storage."""
         if task_counter is not None:
-            if isinstance(task_counter, list):
+            if not isinstance(task_counter, Iterable):
+                raise ValueError("Task counter must be an iterable!")
+            else:
                 self.log.debug("Saving task counter: %s" % (task_counter,))
                 extra_data = self.get_extra_data()
                 extra_data["_task_counter"] = task_counter
                 self.set_extra_data(extra_data)
-            else:
-                raise ValueError("Task counter must be a list!")
 
         if version is not None:
             if version != self.version:

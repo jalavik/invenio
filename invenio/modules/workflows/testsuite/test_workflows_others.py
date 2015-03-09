@@ -34,7 +34,7 @@ class WorkflowOthers(WorkflowTasksTestCase):
 
     def tearDown(self):
         """ Clean up created objects."""
-        from workflow.models import Workflow
+        from ..models import Workflow
         Workflow.get(Workflow.module_name == "unit_tests").delete()
         self.cleanup_registries()
 
@@ -42,7 +42,7 @@ class WorkflowOthers(WorkflowTasksTestCase):
         """Test abastraction layer for celery worker."""
         from invenio.ext.sqlalchemy import db
         from ..utils import BibWorkflowObjectIdContainer
-        from workflow.models import DbWorkflowObject
+        from ..models import DbWorkflowObject
         from ..worker_result import AsynchronousResultWrapper
 
         bwoic = BibWorkflowObjectIdContainer(None)
