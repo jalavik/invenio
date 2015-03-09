@@ -29,7 +29,7 @@ from collections import Iterable, namedtuple
 from datetime import datetime
 from six import iteritems, callable
 from six.moves import cPickle
-from sqlalchemy import desc
+from sqlalchemy import desc, orm
 from sqlalchemy.orm.exc import NoResultFound
 from workflow.engine_db import ObjectStatus
 from .logger import get_logger, DbWorkflowLogHandler
