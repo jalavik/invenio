@@ -19,7 +19,7 @@ from collections import Iterable
 from datetime import datetime
 from six import iteritems, callable
 from six.moves import cPickle
-from sqlalchemy import desc
+from sqlalchemy import desc, orm
 from sqlalchemy.orm.exc import NoResultFound
 from workflow.engine_db import ObjectVersion
 from workflow.logger import get_logger, DbWorkflowLogHandler
@@ -297,6 +297,12 @@ class DbWorkflowObject(db.Model):
     )
 
     _log = None
+
+    @orm.reconstructor
+    def init_on_load(self):
+        """Set data values."""
+        self.data = self.get_data()
+        self.extra_data = self.get_extra_data()
 
     @property
     def log(self):
