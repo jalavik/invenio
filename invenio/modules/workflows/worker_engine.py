@@ -20,8 +20,8 @@
 
 from invenio.modules.workflows.client import run_workflow, continue_execution
 from .engine import BibWorkflowEngine
-from invenio.modules.workflows.models import DbWorkflowObject, Workflow, ObjectVersion
-from workflow.errors import WorkflowObjectVersionError
+from invenio.modules.workflows.models import DbWorkflowObject, Workflow, ObjectStatus
+from workflow.errors import WorkflowObjectStatusError
 
 
 def run_worker(wname, data, **kwargs):
@@ -68,7 +68,7 @@ def restart_worker(wid, **kwargs):
         # First we get all initial objects
         initials = DbWorkflowObject.query.filter(
             DbWorkflowObject.id_workflow == wid,
-            DbWorkflowObject.version == ObjectVersion.INITIAL
+            DbWorkflowObject.version == ObjectStatus.INITIAL
         ).all()
 
         # Then we reset their children to the same state as initial
@@ -150,8 +150,8 @@ def get_workflow_object_instances(data, engine):
             if data_object.id:
                 data_object.log.debug("Existing workflow object found for "
                                       "this object. Saving a snapshot.")
-                if data_object.version == ObjectVersion.COMPLETED:
-                    data_object.version = ObjectVersion.INITIAL
+                if data_object.version == ObjectStatus.COMPLETED:
+                    data_object.version = ObjectStatus.INITIAL
                 workflow_objects.append(
                     generate_snapshot(data_object, engine)
                 )
@@ -188,13 +188,13 @@ def generate_snapshot(workflow_object, engine):
     :type engine: py:class:`.engine.BibWorkflowEngine`
 
     :returns: DbWorkflowObject -- workflow_object instance
-    :raises: WorkflowObjectVersionError
+    :raises: WorkflowObjectStatusError
     """
-    if workflow_object.version == ObjectVersion.RUNNING:
+    if workflow_object.version == ObjectStatus.RUNNING:
         # Trying to run an object that is running. Dangerous!
         msg = "Object is already in RUNNING state!"
         workflow_object.log.debug(msg)
-        raise WorkflowObjectVersionError(msg,
+        raise WorkflowObjectStatusError(msg,
                                          obj_version=workflow_object.version,
                                          id_object=workflow_object.id)
     else:
@@ -235,7 +235,7 @@ def create_data_object_from_data(data_object, engine, data_type):
     # create an initial object for each data object.
     current_obj = DbWorkflowObject.create_object(
         id_workflow=engine.uuid,
-        version=ObjectVersion.INITIAL,
+        version=ObjectStatus.INITIAL,
         data_type=data_type
     )
 
