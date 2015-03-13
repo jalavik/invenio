@@ -191,7 +191,7 @@ def list_objects():
     """Display main table interface of Holdingpen."""
     tags = session.get(
         "holdingpen_tags",
-        [ObjectStatus.name_from_version(ObjectStatus.HALTED)]
+        [ObjectStatus.name(ObjectStatus.HALTED)]
     )
     tags_to_print = [{"text": tag, "value": tag}
                      for tag in tags if tag]
