@@ -28,6 +28,7 @@ require(
     "js/workflows/common",
     "js/workflows/maintable",
     "js/workflows/holdingpen",
+    "js/workflows/selection",
     "js/workflows/tags",
     "js/workflows/tags_menu",
     "js/workflows/details",

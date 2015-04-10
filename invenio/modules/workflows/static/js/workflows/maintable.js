@@ -23,12 +23,14 @@ define(
     "js/workflows/holdingpen",
     "js/workflows/tags",
     "js/workflows/tags_menu",
+    "js/workflows/selection",
   ],
   function(
     HoldingPenCommon,
     HoldingPen,
     HoldingPenTags,
-    HoldingPenTagsMenu) {
+    HoldingPenTagsMenu,
+    HoldingPenSelection) {
 
     "use strict";
 
@@ -41,6 +43,7 @@ define(
         tags: context.tags,
       });
       HoldingPenTagsMenu.attachTo("#tags-menu");
+      HoldingPenSelection.attachTo("#maintable");
     }
 
     return initialize;

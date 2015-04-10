@@ -53,7 +53,7 @@ define(
           bServerSide: true,
           bDestroy: true,
           aoColumnDefs: [
-            {'bSortable': false, 'defaultContent': "", 'aTargets': [0]},
+            {'bSortable': false, 'aTargets': [0]},
             {'bSearchable': false, 'bVisible': false, 'aTargets': [1]},
             {'sWidth': "25%", 'aTargets': [2]},
             {'sWidth': "25%", 'aTargets': [3]}
@@ -71,7 +71,7 @@ define(
                 "sExtends": "select_none",
                 "sButtonClass": "btn btn-danger"
               }
-            ]
+            ],
           },
           deferRender: true,
         }
@@ -80,7 +80,11 @@ define(
       this.init_datatables = function(ev, data) {
         // DataTables ajax settings
         this.attr.oSettings["sAjaxSource"] = this.attr.load_url;
+        // Hook in selection callback
+        this.attr.oSettings.tableTools["fnRowSelected"] = this.rowSelectionTrigger;
+
         this.$node.DataTable(this.attr.oSettings);
+
         // Bootstrap TableTools
         var tt = $.fn.dataTable.TableTools.fnGetInstance(this.$node.attr("id"));
         $(tt.fnContainer()).insertBefore('div.dataTables_wrapper');
@@ -89,14 +93,14 @@ define(
       this.reloadTable = function (ev, data) {
         var $node = this.$node;
         $.ajax({
-            type: "POST",
-            url: this.attr.load_url,
-            data: JSON.stringify(data),
-            contentType: "application/json;charset=UTF-8",
-            traditional: true,
-            success: function(result) {
-                $node.dataTable().fnDraw(false);
-            }
+          type: "POST",
+          url: this.attr.load_url,
+          data: JSON.stringify(data),
+          contentType: "application/json;charset=UTF-8",
+          traditional: true,
+          success: function(result) {
+              $node.dataTable().fnDraw(false);
+          }
         });
       };
 
@@ -107,6 +111,12 @@ define(
 
         console.log(ev.keyCode);
         console.log(keycodes.escape);
+      }
+
+      this.rowSelectionTrigger = function(data) {
+        // Need to use jquery directly as "this" (e.g. flight component) is
+        // not in the context of the TableTools selection.
+        $.event.trigger("rowSelected", data, document);
       }
 
       this.after('initialize', function() {
