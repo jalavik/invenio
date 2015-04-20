@@ -61,8 +61,9 @@ except ImportError:
 
 from sqlalchemy.exc import SQLAlchemyError as Error
 
-PERMITTED_MODES = ['-i', '-r', '-c', '-a', '-ir',
-                   '--insert', '--replace', '--correct', '--append']
+PERMITTED_MODES = ['-i', '-r', '-c', '-a', '-ir', '-o',
+                   '--insert', '--replace', '--correct', '--append',
+                   '--holdingpen']
 
 _CFG_BATCHUPLOADER_WEB_ROBOT_AGENTS_RE = re.compile(CFG_BATCHUPLOADER_WEB_ROBOT_AGENTS)
 
