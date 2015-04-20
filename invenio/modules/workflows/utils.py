@@ -23,6 +23,7 @@ import msgpack
 
 from flask import current_app, jsonify
 from functools import wraps
+from operator import attrgetter
 from six import text_type
 
 from invenio.base.helpers import unicodifier
@@ -175,19 +176,19 @@ def _sort_from_cache(name):
     return _sorter
 
 
-def sort_bwolist(bwolist, filter_key):
+def sort_bwolist(bwolist, sort_key):
     """Sort a list of workflow objects for the list."""
-    if filter_key == "newest":
-        bwolist.sort(key=lambda x: x.created, reverse=True)
-    if filter_key == "oldest":
-        bwolist.sort(key=lambda x: x.created, reverse=False)
-    elif filter_key == "updated":
-        bwolist.sort(key=lambda x: x.modified, reverse=True)
-    elif filter_key == "least_updated":
-        bwolist.sort(key=lambda x: x.modified, reverse=False)
-    elif filter_key == "title":
+    if sort_key == "newest":
+        bwolist.sort(key=attrgetter("created"), reverse=True)
+    if sort_key == "oldest":
+        bwolist.sort(key=attrgetter("created"), reverse=False)
+    elif sort_key == "updated":
+        bwolist.sort(key=attrgetter("modified"), reverse=True)
+    elif sort_key == "least_updated":
+        bwolist.sort(key=attrgetter("modified"), reverse=False)
+    elif sort_key == "title":
         bwolist.sort(key=_sort_from_cache("title"), reverse=False)
-    elif filter_key == "title_desc":
+    elif sort_key == "title_desc":
         bwolist.sort(key=_sort_from_cache("title"), reverse=True)
     return bwolist
 

@@ -54,7 +54,7 @@ define(
         tags: context.tags
       });
       HoldingPenTagsMenu.attachTo("#tags-menu");
-      HoldingPenSelection.attachTo("#maintable");
+      HoldingPenSelection.attachTo(document);
     }
 
     return initialize;
