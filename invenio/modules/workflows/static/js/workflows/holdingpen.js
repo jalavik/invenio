@@ -40,8 +40,13 @@ define(
     */
     function HoldingPen() {
       this.attributes({
+        // Selectors
+        totalSelector: "#total_found",
+
         // URLs
         load_url: "",
+
+        // Data
         page: 1,
         per_page: 10,
         sort_key: ""
@@ -68,6 +73,7 @@ define(
             success: function(result) {
                 var table = $node.find("tbody");
                 table.html(result.rendered_rows);
+                $(that.attr.totalSelector).html(result.pagination.total_count);
                 that.trigger(document, "updatePagination", result.pagination);
             }
         });
