@@ -31,6 +31,7 @@ require(
     "js/workflows/selection",
     "js/workflows/tags",
     "js/workflows/tags_menu",
+    "js/workflows/type_menu",
     "js/workflows/details",
     "js/workflows/details_actions",
     "js/workflows/details_actions_buttons",

@@ -62,6 +62,7 @@ from ..utils import (
     alert_response_wrapper,
     extract_data,
     get_action_list,
+    get_data_types,
     get_formatted_holdingpen_object,
     get_holdingpen_objects,
     get_previous_next_objects,
@@ -115,7 +116,7 @@ def index():
     Acts as a hub for catalogers (may be removed)
     """
     # FIXME: Add user filtering
-    bwolist = get_holdingpen_objects()
+    bwolist = get_holdingpen_objects([ObjectVersion.name_from_version(ObjectVersion.HALTED)])
     action_list = get_action_list(bwolist)
 
     return dict(tasks=action_list)
@@ -127,22 +128,17 @@ def index():
 @permission_required(viewholdingpen.name)
 @wash_arguments({
     'page': (int, 1),
-    'per_page': (int, 10),
+    'per_page': (int, 0),
     'sort_key': (unicode, "created"),
 })
 def load(page, per_page, sort_key):
     """Load objects for the table."""
     # FIXME: Load tags in this way until wash_arguments handles lists.
-    tags = request.args.getlist("tags[]")
-    if not tags:
-        tags = session.setdefault(
-            "holdingpen_tags",
-            [ObjectVersion.name_from_version(ObjectVersion.HALTED)]
-        )
-
+    tags = request.args.getlist("tags[]") or []
     sort_key = request.args.get(
         'sort_key', session.get('holdingpen_sort_key', "created")
     )
+    per_page = per_page or session.get('holdingpen_per_page') or 10
     object_list = get_holdingpen_objects(tags)
     object_list = sort_bwolist(object_list, sort_key)
 
@@ -174,6 +170,7 @@ def load(page, per_page, sort_key):
     # Add current ids in table for use by previous/next
     session['holdingpen_current_ids'] = [o.id for o in object_list]
     session['holdingpen_sort_key'] = sort_key
+    session['holdingpen_per_page'] = per_page
     session['holdingpen_tags'] = tags
 
     display_start = max(pagination.per_page*(pagination.page-1), 0)
@@ -233,6 +230,7 @@ def list_objects():
     )
     object_list = get_holdingpen_objects(tags)
     action_list = get_action_list(object_list)
+    type_list = get_data_types()
 
     if 'version' in request.args:
         for key, value in ObjectVersion.MAPPING.items():
@@ -252,7 +250,9 @@ def list_objects():
         'workflows/list.html',
         action_list=action_list,
         tags=json.dumps(tags_to_print),
-        object_list=object_list
+        object_list=object_list,
+        type_list=type_list,
+        per_page=session.get('holdingpen_per_page')
     )
 
 

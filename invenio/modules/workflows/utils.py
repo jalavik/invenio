@@ -212,16 +212,20 @@ def get_holdingpen_objects(ptags=None):
 
     tags_copy = ptags[:]
     version_showing = []
+    type_showing = []
     for tag in ptags:
         if tag in ObjectVersion.MAPPING:
             version_showing.append(ObjectVersion.MAPPING[tag])
+            tags_copy.remove(tag)
+        elif tag.startswith("type:"):
+            type_showing.append(":".join(tag.split(":")[1:]))
             tags_copy.remove(tag)
 
     ssearch = tags_copy
     bwobject_list = BibWorkflowObject.query.filter(
         BibWorkflowObject.id_parent == None  # noqa E711
     ).filter(not version_showing or BibWorkflowObject.version.in_(
-        version_showing)).all()
+        version_showing), not type_showing or BibWorkflowObject.data_type.in_(type_showing)).all()
 
     if ssearch and ssearch[0]:
         if not isinstance(ssearch, list):
@@ -381,6 +385,13 @@ def extract_data(bwobject):
     else:
         extracted_data['workflow_func'] = []
     return extracted_data
+
+
+def get_data_types():
+    """Return a list of distinct data types from BibWorkflowObject."""
+    from .models import BibWorkflowObject
+    return [b.data_type for b in BibWorkflowObject.query.distinct(
+        BibWorkflowObject.data_type).group_by(BibWorkflowObject.data_type)]
 
 
 def get_action_list(object_list):
