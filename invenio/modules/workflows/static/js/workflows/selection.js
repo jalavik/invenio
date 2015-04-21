@@ -44,7 +44,8 @@ define(
       this.attributes({
           selectedIDs: [],
           selectAllSelector: "#list-select-all",
-          checkboxSelector: ".row-checkbox input[type=checkbox]"
+          checkboxSelector: ".row-checkbox input[type=checkbox]",
+          rowSelector: "*[data-href]"
       });
 
       this.selection = function (ev, data) {
@@ -96,6 +97,10 @@ define(
         console.log($(data.el).val());
       };
 
+      this.selectRow = function (ev, data) {
+        console.log("Selected row");
+      };
+
       this.deselectAll = function (ev) {
         $("#ToolTables_maintable_1").click();
       };
@@ -133,7 +138,8 @@ define(
 
         this.on("click", {
           selectAllSelector: this.selectAll,
-          checkboxSelector: this.selectOne
+          checkboxSelector: this.selectOne,
+          rowSelector: this.selectRow
         });
         console.log("Selection init");
       });
