@@ -20,6 +20,7 @@
 """Various utility functions for use across the workflows module."""
 
 from functools import wraps
+from operator import attrgetter
 
 from invenio.ext.cache import cache
 
@@ -173,29 +174,20 @@ def _sort_from_cache(name):
     return _sorter
 
 
-def sort_bwolist(bwolist, iSortCol_0, sSortDir_0):
-    """Sort a list of BibWorkflowObjects for DataTables."""
-    should_we_reverse = False
-    if sSortDir_0 == 'desc':
-        should_we_reverse = True
-    if iSortCol_0 == 0:
-        bwolist.sort(key=lambda x: x.id, reverse=should_we_reverse)
-    elif iSortCol_0 == 1:
-        bwolist.sort(key=lambda x: x.id, reverse=should_we_reverse)
-    elif iSortCol_0 == 2:
-        bwolist.sort(key=_sort_from_cache("title"), reverse=should_we_reverse)
-    elif iSortCol_0 == 3:
-        bwolist.sort(key=_sort_from_cache("description"), reverse=should_we_reverse)
-    elif iSortCol_0 == 4:
-        bwolist.sort(key=lambda x: x.created, reverse=should_we_reverse)
-    elif iSortCol_0 == 5:
-        bwolist.sort(key=lambda x: x.version, reverse=should_we_reverse)
-    elif iSortCol_0 == 6:
-        bwolist.sort(key=lambda x: x.data_type, reverse=should_we_reverse)
-    elif iSortCol_0 == 7:
-        bwolist.sort(key=lambda x: x.version, reverse=should_we_reverse)
-    elif iSortCol_0 == 8:
-        bwolist.sort(key=lambda x: x.version, reverse=should_we_reverse)
+def sort_bwolist(bwolist, sort_key):
+    """Sort a list of workflow objects for the list."""
+    if sort_key == "newest":
+        bwolist.sort(key=attrgetter("created"), reverse=True)
+    if sort_key == "oldest":
+        bwolist.sort(key=attrgetter("created"), reverse=False)
+    elif sort_key == "updated":
+        bwolist.sort(key=attrgetter("modified"), reverse=True)
+    elif sort_key == "least_updated":
+        bwolist.sort(key=attrgetter("modified"), reverse=False)
+    elif sort_key == "title":
+        bwolist.sort(key=_sort_from_cache("title"), reverse=False)
+    elif sort_key == "title_desc":
+        bwolist.sort(key=_sort_from_cache("title"), reverse=True)
     return bwolist
 
 
@@ -218,16 +210,20 @@ def get_holdingpen_objects(ptags=None):
 
     tags_copy = ptags[:]
     version_showing = []
+    type_showing = []
     for tag in ptags:
         if tag in ObjectVersion.MAPPING:
             version_showing.append(ObjectVersion.MAPPING[tag])
+            tags_copy.remove(tag)
+        elif tag.startswith("type:"):
+            type_showing.append(":".join(tag.split(":")[1:]))
             tags_copy.remove(tag)
 
     ssearch = tags_copy
     bwobject_list = BibWorkflowObject.query.filter(
         BibWorkflowObject.id_parent == None  # noqa E711
     ).filter(not version_showing or BibWorkflowObject.version.in_(
-        version_showing)).all()
+        version_showing), not type_showing or BibWorkflowObject.data_type.in_(type_showing)).all()
 
     if ssearch and ssearch[0]:
         if not isinstance(ssearch, list):
@@ -387,6 +383,13 @@ def extract_data(bwobject):
     else:
         extracted_data['workflow_func'] = []
     return extracted_data
+
+
+def get_data_types():
+    """Return a list of distinct data types from BibWorkflowObject."""
+    from .models import BibWorkflowObject
+    return [b.data_type for b in BibWorkflowObject.query.distinct(
+        BibWorkflowObject.data_type).group_by(BibWorkflowObject.data_type)]
 
 
 def get_action_list(object_list):
