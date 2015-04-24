@@ -26,7 +26,6 @@ define(
     "js/workflows/sort_menu",
     "js/workflows/tags",
     "js/workflows/tags_menu",
-    "js/workflows/type_menu",
     "js/workflows/selection"
   ],
   function(
@@ -37,7 +36,6 @@ define(
     HoldingPenSort,
     HoldingPenTags,
     HoldingPenTagsMenu,
-    HoldingPenTypeMenu,
     HoldingPenSelection) {
 
     "use strict";
@@ -55,8 +53,18 @@ define(
       HoldingPenTags.attachTo("#tags", {
         tags: context.tags
       });
-      HoldingPenTagsMenu.attachTo("#tags-menu");
-      HoldingPenTypeMenu.attachTo("#type-menu");
+      HoldingPenTagsMenu.attachTo("#tags-menu", {
+        menuitemSelector: "#tags-menu a",
+        valuePrefix: ""
+      });
+      HoldingPenTagsMenu.attachTo("#type-menu", {
+        menuitemSelector: "#type-menu a",
+        valuePrefix: "type:"
+      });
+      HoldingPenTagsMenu.attachTo("#filter-menu", {
+        menuitemSelector: "#filter-menu a",
+        valuePrefix: "f:"
+      });
       HoldingPenSelection.attachTo(document);
     }
 
