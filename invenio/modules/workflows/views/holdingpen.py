@@ -134,7 +134,8 @@ def index():
 def load(page, per_page, sort_key):
     """Load objects for the table."""
     # FIXME: Load tags in this way until wash_arguments handles lists.
-    tags = request.args.getlist("tags[]") or []
+    tags = request.args.getlist("tags[]") or \
+        [ObjectVersion.name_from_version(ObjectVersion.HALTED)]
     sort_key = request.args.get(
         'sort_key', session.get('holdingpen_sort_key', "created")
     )
@@ -229,7 +230,6 @@ def list_objects():
         [ObjectVersion.name_from_version(ObjectVersion.HALTED)]
     )
     object_list = get_holdingpen_objects(tags)
-    action_list = get_action_list(object_list)
     type_list = get_data_types()
 
     if 'version' in request.args:
@@ -248,7 +248,6 @@ def list_objects():
 
     return render_template(
         'workflows/list.html',
-        action_list=action_list,
         tags=json.dumps(tags_to_print),
         object_list=object_list,
         type_list=type_list,
