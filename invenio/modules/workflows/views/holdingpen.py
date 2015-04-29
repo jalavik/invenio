@@ -134,8 +134,7 @@ def index():
 def load(page, per_page, sort_key):
     """Load objects for the table."""
     # FIXME: Load tags in this way until wash_arguments handles lists.
-    tags = request.args.getlist("tags[]") or \
-        [ObjectVersion.name_from_version(ObjectVersion.HALTED)]
+    tags = request.args.getlist("tags[]") or []  # empty to show all
     sort_key = request.args.get(
         'sort_key', session.get('holdingpen_sort_key', "created")
     )
@@ -161,11 +160,11 @@ def load(page, per_page, sort_key):
 
     table_data = {'rows': [],
                   'pagination': {
-                    "page": pagination.page,
-                    "pages": pagination.pages,
-                    "iter_pages": pages_iteration,
-                    "per_page": pagination.per_page,
-                    "total_count": pagination.total_count
+                      "page": pagination.page,
+                      "pages": pagination.pages,
+                      "iter_pages": pages_iteration,
+                      "per_page": pagination.per_page,
+                      "total_count": pagination.total_count
                   }}
 
     # Add current ids in table for use by previous/next
@@ -180,40 +179,26 @@ def load(page, per_page, sort_key):
         pagination.total_count
     )
     for bwo in object_list[display_start:display_end]:
-        action_name = bwo.get_action()
-        action_message = bwo.get_action_message()
-        if not action_message:
-            action_message = ""
-
+        extra_data = bwo.get_extra_data()
         preformatted = get_formatted_holdingpen_object(bwo)
 
+        action_name = extra_data.get("_action") or ""
         action = actions.get(action_name, None)
         mini_action = None
         if action:
             mini_action = getattr(action, "render_mini", None)
-
-        extra_data = bwo.get_extra_data()
-        record = bwo.get_data()
-
-        if not hasattr(record, "get"):
-            try:
-                record = dict(record)
-            except (ValueError, TypeError):
-                record = {}
-        bwo._class = HOLDINGPEN_WORKFLOW_STATES[bwo.version]["class"]
-        bwo.message = HOLDINGPEN_WORKFLOW_STATES[bwo.version]["message"]
-        row = render_template('workflows/list_row.html',
-                              title=preformatted["title"],
-                              object=bwo,
-                              record=record,
-                              extra_data=extra_data,
-                              description=preformatted["description"],
-                              action=action,
-                              mini_action=mini_action,
-                              action_message=action_message,
-                              pretty_date=pretty_date,
-                              version=ObjectVersion,
-                              )
+        record = bwo.get_data() or {}
+        row = render_template(
+            'workflows/list_row.html',
+            title=preformatted["title"],
+            object=bwo,
+            display_class=HOLDINGPEN_WORKFLOW_STATES[bwo.version]["class"],
+            record=record,
+            extra_data=extra_data,
+            description=preformatted["description"],
+            action=action,
+            mini_action=mini_action
+        )
         table_data['rows'].append(row)
     table_data["rendered_rows"] = "".join(table_data["rows"])
     return jsonify(table_data)
@@ -229,28 +214,12 @@ def list_objects():
         "holdingpen_tags",
         [ObjectVersion.name_from_version(ObjectVersion.HALTED)]
     )
-    object_list = get_holdingpen_objects(tags)
-    type_list = get_data_types()
-
-    if 'version' in request.args:
-        for key, value in ObjectVersion.MAPPING.items():
-            if value == int(request.args.get('version')):
-                if key not in tags:
-                    tags.append(key)
-
-    tags_to_print = []
-    for tag in tags:
-        if tag:
-            tags_to_print.append({
-                "text": str(_(tag)),
-                "value": tag,
-            })
-
+    tags_to_print = [{"text": str(_(tag)), "value": tag} for tag in tags if tag]
     return render_template(
         'workflows/list.html',
         tags=json.dumps(tags_to_print),
-        object_list=object_list,
-        type_list=type_list,
+        object_list=get_holdingpen_objects(tags),
+        type_list=get_data_types(),
         per_page=session.get('holdingpen_per_page')
     )
 
