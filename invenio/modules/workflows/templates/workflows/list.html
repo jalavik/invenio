@@ -42,10 +42,42 @@
         page: 1,
         per_page: 10
       };
+      var $node = $("#tags");
+      $node.tagsinput({
+          tagClass: function (item) {
+              switch (item.value) {
+                case 'In process':
+                  return 'label label-warning';
+                case 'Need action':
+                  return 'label label-danger';
+                case 'Waiting':
+                  return 'label label-warning';
+                case 'Done':
+                  return 'label label-success';
+                case 'New':
+                  return 'label label-info';
+                case 'Error':
+                  return 'label label-danger';
+                default:
+                  return 'badge badge-warning';
+              }
+          },
+          itemValue: 'value',
+          itemText: 'text'
+      });
+      // Add any existing tags
+      context.tags.map(function(item) {
+        $node.tagsinput('add', item);
+      });
       initialize(context);
       initialize_actions(context);
-      $(document).trigger("initHoldingPenTable");
+      var data = {};
+      data.tags = context.tags.map(function(currentValue, index, array) {
+          return currentValue.value;
+      });
+      $(document).trigger("reloadHoldingPenTable", data);
     });
+
   </script>
 
 {% endblock javascript %}
