@@ -80,6 +80,7 @@ define(
           data: this.preparePayload(data),
           beforeSend: function() {
             console.log("Starting");
+            $("#list-loading").show();
           },
           success: function(result) {
             var table = $node.find("tbody");
@@ -89,6 +90,7 @@ define(
           },
           complete: function() {
             console.log("Ending request");
+            $("#list-loading").hide();
           }
         });
       };
