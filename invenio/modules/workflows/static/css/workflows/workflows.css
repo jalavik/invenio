@@ -51,8 +51,8 @@
   margin-bottom: 0px;
 }
 
-*[data-href] {
-  cursor: pointer;
+#help-bar {
+  margin-bottom: 5px;
 }
 
 table tr:hover {

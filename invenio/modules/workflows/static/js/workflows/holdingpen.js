@@ -88,23 +88,23 @@ define(
           qKey: 81
         };
 
-        if (event.ctrlKey && event.keyCode == keyCodes.aKey) {
+        var data = {};
+
+        if (event.ctrlKey && event.keyCode === keyCodes.aKey) {
           this.trigger(document, "selectAll");
           event.preventDefault();
         }
-        if (event.keyCode == keyCodes.escKey) {
+        if (event.keyCode === keyCodes.escKey) {
           this.trigger(document, "deselectAll");
           event.preventDefault();
         }
-        if (event.altKey && event.keyCode == keyCodes.wKey) {
-          var data = {};
+        if (event.altKey && event.keyCode === keyCodes.wKey) {
           data.el = $(this.attr.nextSelector);
 
           this.trigger(document,"hotkeysPagination", data);
           event.preventDefault();
         }
-        if (event.altKey && event.keyCode == keyCodes.qKey) {
-          var data = {};
+        if (event.altKey && event.keyCode === keyCodes.qKey) {
           data.el = $(this.attr.previousSelector);
 
           this.trigger(document,"hotkeysPagination", data);
