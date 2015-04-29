@@ -156,7 +156,7 @@ class oaiharvest_harvest_repositories(RecordWorkflow):
         )
 
     @staticmethod
-    def formatter(bwo):
+    def formatter(bwo, **kwargs):
         """Return description of object."""
         from flask import render_template
         from invenio.modules.workflows.models import BibWorkflowObject
