@@ -20,11 +20,11 @@
 <td class="row-checkbox">
     <input type="checkbox" value="{{object.id}}">
 </td>
-<td class="row-icon">
+<!-- <td class="row-icon">
     <i class="fa fa-info-circle text-{{display_class}}"></i>
-</td>
+</td>-->
 <td class="row-content">
-<div>
+
 <h4>
 <a href="{{url_for('holdingpen.details', objectid=object.id)}}">
   {{ title }}
@@ -32,11 +32,13 @@
 <small>on
 <time datetime="{{object.modified.isoformat()}}" title="{{object.modified.isoformat()}}">{{object.created.strftime("%b %d %H:%m")}}</time></small>
 </h4>
+
 {{ description|safe }}
-</div>
 
 </td>
-
+<td class="row-additional">
+  {{ additional|safe }}
+</td>
 <td class="row-action">
 {% if mini_action != None %}
   {% set action = action() %}
