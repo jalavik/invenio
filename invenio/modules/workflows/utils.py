@@ -297,7 +297,8 @@ def generate_formatted_holdingpen_object(bwo, date_format='%Y-%m-%d %H:%M:%S.%f'
         "name": workflows_name,
         "description": workflow_definition.get_description(bwo),
         "title": workflow_definition.get_title(bwo),
-        "date": bwo.modified.strftime(date_format)
+        "date": bwo.modified.strftime(date_format),
+        "additional": workflow_definition.get_additional(bwo)
     }
     return results
 

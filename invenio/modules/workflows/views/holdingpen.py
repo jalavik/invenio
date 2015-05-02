@@ -190,14 +190,15 @@ def load(page, per_page, sort_key):
         record = bwo.get_data() or {}
         row = render_template(
             'workflows/list_row.html',
-            title=preformatted["title"],
+            title=preformatted.get("title", ""),
             object=bwo,
             display_class=HOLDINGPEN_WORKFLOW_STATES[bwo.version]["class"],
             record=record,
             extra_data=extra_data,
-            description=preformatted["description"],
+            description=preformatted.get("description", ""),
             action=action,
-            mini_action=mini_action
+            mini_action=mini_action,
+            additional=preformatted.get("additional", "")
         )
         table_data['rows'].append(row)
     table_data["rendered_rows"] = "".join(table_data["rows"])
