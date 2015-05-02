@@ -50,6 +50,11 @@ class WorkflowBase(object):
         return "No description"
 
     @staticmethod
+    def get_additional(bwo, **kwargs):
+        """Return the value to put in the additional column of HoldingPen."""
+        return ""
+
+    @staticmethod
     def formatter(obj, **kwargs):
         """Format the object."""
         return "No data"
