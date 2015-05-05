@@ -276,6 +276,7 @@ def OAI_Request(server, script, params, method="POST", secure=False,
         headers["Authorization"] = "Basic " + base64.encodestring(user + ":" + password).strip()
 
     i = 0
+    import ipdb; ipdb.set_trace()
     while i < attempts:
         i = i + 1
         # Try to establish a connection

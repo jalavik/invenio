@@ -416,6 +416,7 @@ def oai_harvest_get(prefix, baseurl, harvestpath,
     :param verb:
     :param identifier:
     """
+    import ipdb; ipdb.set_trace()
     try:
         (addressing_scheme, network_location, path, dummy1,
          dummy2, dummy3) = urlparse.urlparse(baseurl)

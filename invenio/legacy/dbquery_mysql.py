@@ -43,6 +43,8 @@ from flask import current_app
 from invenio.base.globals import cfg
 from invenio.utils.datastructures import LazyDict
 
+from sqlalchemy.exc import OperationalError, InterfaceError
+
 from thread import get_ident
 
 from werkzeug.utils import cached_property
