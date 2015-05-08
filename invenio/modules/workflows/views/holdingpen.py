@@ -325,6 +325,22 @@ def get_file_from_task_result(object_id=None, filename=None):
         return send_from_directory(directory, actual_filename)
 
 
+@blueprint.route('/file/<int:object_id>/<path:filename>',
+                 methods=['POST', 'GET'])
+@login_required
+@permission_required(viewholdingpen.name)
+def get_file_from_object(object_id=None, filename=None):
+    """Send the requested file to user from a workflow object FFT value."""
+    bwobject = BibWorkflowObject.query.get_or_404(object_id)
+    data = bwobject.get_data()
+    urls = data.get("fft.url")
+    for url in urls:
+        if os.path.basename(filename) == os.path.basename(url):
+            directory, actual_filename = os.path.split(url)
+            return send_from_directory(directory, actual_filename)
+    # Return 404
+
+
 @blueprint.route('/restart_record', methods=['GET', 'POST'])
 @login_required
 @permission_required(viewholdingpen.name)

@@ -35,6 +35,24 @@ REGEXP_REFS = re.compile(
     re.DOTALL)
 
 
+def _attach_files_to_obj(obj, new_ffts):
+    """Given a SmartJSON representation, add any missing fft entries to obj."""
+    if not new_ffts or new_ffts.get("fft") is None:
+        obj.log.error("No files to add")
+        return
+    if "fft" not in obj.data:
+        obj.data['fft'] = new_ffts["fft"]
+        return
+    if not isinstance(new_ffts["fft"], list):
+        new_ffts["fft"] = [new_ffts["fft"]]
+    if not isinstance(obj.data["fft"], list):
+        obj.data["fft"] = [obj.data["fft"]]
+    for element in new_ffts["fft"]:
+        if element.get("url", "") in obj.data.get("fft.url", []):
+            continue
+        obj.data['fft'].append(element)
+
+
 def post_process_selected(post_process):
     """Check if post process is selected."""
     @wraps(post_process_selected)
@@ -88,7 +106,6 @@ def arxiv_fulltext_download(obj, eng):
     :param eng: BibWorkflowEngine processing the object
     """
     from invenio.utils.plotextractor.api import get_pdf_from_arxiv
-    from invenio.modules.workflows.utils import convert_marcxml_to_bibfield
 
     if "result" not in obj.extra_data:
         obj.extra_data["_result"] = {}
@@ -116,39 +133,30 @@ def arxiv_fulltext_download(obj, eng):
             doctype = 'arXiv'
         if pdf:
             obj.extra_data["_result"]["pdf"] = pdf
-            fulltext_xml = (
-                "  <datafield tag=\"FFT\" ind1=\" \" ind2=\" \">\n"
-                "    <subfield code=\"a\">%(url)s</subfield>\n"
-                "    <subfield code=\"t\">%(doctype)s</subfield>\n"
-                "    </datafield>"
-            ) % {'url': obj.extra_data["_result"]["pdf"],
-                 'doctype': doctype}
-            updated_xml = '<?xml version="1.0"?>\n' \
-                          '<collection>\n<record>\n' + fulltext_xml + \
-                          '</record>\n</collection>'
-
-            new_dict_representation = convert_marcxml_to_bibfield(updated_xml)
-            try:
-                if isinstance(new_dict_representation["fft"], list):
-                    for element in new_dict_representation["fft"]:
-                        obj.data['fft'].append(element)
-                else:
-                    obj.data['fft'].append(new_dict_representation["fft"])
-            except (KeyError, TypeError):
-                obj.data['fft'] = [new_dict_representation['fft']]
-
-            filename = os.path.basename(pdf)
+            new_dict_representation = {
+                "fft": [
+                    {
+                        "url": pdf,
+                        "docfile_type": doctype
+                    }
+                ]
+            }
+            _attach_files_to_obj(obj, new_dict_representation)
             fileinfo = {
-                "type": "Fulltext",
-                "filename": filename,
+                "type": "fulltext",
+                "filename": os.path.basename(pdf),
                 "full_path": pdf,
             }
-
-            obj.add_task_result(filename,
-                                fileinfo,
-                                "workflows/results/files.html")
+            obj.update_task_results(
+                "PDF",
+                [{
+                    "name": "PDF",
+                    "result": fileinfo,
+                    "template": "workflows/results/fft.html"
+                }]
+            )
         else:
-            obj.log.error("No PDF found.")
+            obj.log.info("No PDF found.")
     else:
         eng.log.info("There was already a pdf register for this record,"
                      "perhaps a duplicate task in you workflow.")
@@ -215,23 +223,13 @@ def plot_extract(plotextractor_types=("latex",)):
             if marcxml:
                 # We store the path to the directory the tarball contents lives
                 new_dict = convert_marcxml_to_bibfield(marcxml)
-
-                try:
-                    if isinstance(new_dict["fft"], list):
-                        for element in new_dict["fft"]:
-                            obj.data['fft'].append(element)
-                    else:
-                        obj.data['fft'] = new_dict["fft"]
-
-                except KeyError:
-                    obj.data['fft'] = new_dict['fft']
-
+                _attach_files_to_obj(obj, new_dict)
                 obj.update_task_results(
                     "Plots",
                     [{
                         "name": "Plots",
                         "result": new_dict["fft"],
-                        "template": "workflows/results/files.html"
+                        "template": "workflows/results/plots.html"
                     }]
                 )
 
