@@ -412,19 +412,26 @@ def resolve_action():
     Will call the resolve() function of the specific action.
     """
     objectids = request.values.getlist('objectids[]') or []
-    ids_length = len(objectids)
+    ids_resolved = 0
 
     for objectid in objectids:
         bwobject = BibWorkflowObject.query.get_or_404(objectid)
         action_name = bwobject.get_action()
-        action_form = actions[action_name]
-        res = action_form().resolve(bwobject)
+        if action_name:
+            action_form = actions[action_name]
+            res = action_form().resolve(bwobject)
+            ids_resolved += 1
 
-    if ids_length == 1:
+    if ids_resolved == 1:
         return jsonify(res)
+    elif ids_resolved == 0:
+        return jsonify({
+            "message": "No records resolved!",
+            "category": "danger"
+        })
     else:
         return jsonify({
-            "message": "{0} number of records resolved.".format(ids_length),
+            "message": "{0} number of records resolved.".format(ids_resolved),
             "category": "info"
         })
 
