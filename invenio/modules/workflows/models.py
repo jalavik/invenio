@@ -95,7 +95,7 @@ class Workflow(db.Model):
 
     Used by BibWorkflowEngine to store the state of the workflow.
     """
-
+    __table_args__ = {"mysql_engine": "InnoDB"}
     __tablename__ = "bwlWORKFLOW"
 
     uuid = db.Column(db.String(36), primary_key=True, nullable=False)
@@ -299,7 +299,7 @@ class BibWorkflowObject(db.Model):
 
         obj.start_workflow("sample_workflow")
     """
-
+    __table_args__ = {"mysql_engine": "InnoDB"}
     # db table definition
     __tablename__ = "bwlOBJECT"
 
@@ -316,7 +316,9 @@ class BibWorkflowObject(db.Model):
     id_workflow = db.Column(db.String(36),
                             db.ForeignKey("bwlWORKFLOW.uuid"), nullable=True)
     version = db.Column(db.Integer(3),
-                        default=ObjectVersion.INITIAL, nullable=False)
+                        default=ObjectVersion.INITIAL,
+                        nullable=False,
+                        index=True)
     id_parent = db.Column(db.Integer, db.ForeignKey("bwlOBJECT.id"),
                           default=None)
     child_objects = db.relationship("BibWorkflowObject",
@@ -325,8 +327,10 @@ class BibWorkflowObject(db.Model):
     modified = db.Column(db.DateTime, default=datetime.now,
                          onupdate=datetime.now, nullable=False)
     status = db.Column(db.String(255), default="", nullable=False)
-    data_type = db.Column(db.String(150), default="",
-                          nullable=True)
+    data_type = db.Column(db.String(150),
+                          default="",
+                          nullable=True,
+                          index=True)
     uri = db.Column(db.String(500), default="")
     id_user = db.Column(db.Integer, default=0, nullable=False)
 
@@ -842,7 +846,7 @@ class BibWorkflowObjectLog(db.Model):
     into the database. The object must be saved before using
     this class as it requires the object id.
     """
-
+    __table_args__ = {"mysql_engine": "InnoDB"}
     __tablename__ = 'bwlOBJECTLOGGING'
     id = db.Column(db.Integer, primary_key=True)
     id_object = db.Column(db.Integer(255),
@@ -905,7 +909,7 @@ class BibWorkflowEngineLog(db.Model):
     into the database. The object must be saved before using
     this class as it requires the object id.
     """
-
+    __table_args__ = {"mysql_engine": "InnoDB"}
     __tablename__ = "bwlWORKFLOWLOGGING"
     id = db.Column(db.Integer, primary_key=True)
     id_object = db.Column(db.String(255),
