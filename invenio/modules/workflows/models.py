@@ -548,21 +548,10 @@ class BibWorkflowObject(db.Model):
         :return: name of action assigned as string, or None
         """
         try:
-            return self.get_extra_data()["_action"]
-        except KeyError:
-            # No widget, try old _widget
-            extra_data = self.get_extra_data()
-            if "_widget" in extra_data:
-                import warnings
-
-                warnings.warn("Widget's are now stored in '_action'",
-                              DeprecationWarning)
-                # Migrate to new naming
-                extra_data["_action"] = extra_data['_widget']
-                del extra_data["_widget"]
-                self.set_extra_data(extra_data)
-                return extra_data["_action"]
-            return None
+            # Try first in case extra_data is set already
+            return self.extra_data.get("_action")
+        except AttributeError:
+            return self.get_extra_data().get("_action")
 
     def get_action_message(self):
         """Retrieve the currently assigned widget, if any."""

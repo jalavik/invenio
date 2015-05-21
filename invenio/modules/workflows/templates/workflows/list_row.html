@@ -37,9 +37,6 @@
 </td>
 
 <td class="row-action">
-    {% if mini_action != None %}
-      {% set action = action() %}
-      {{ action.render_mini(object)|safe }}
-    {% endif %}
+    {{ action|safe}}
 </td>
 </tr>

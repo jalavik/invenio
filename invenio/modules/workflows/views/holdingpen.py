@@ -61,13 +61,12 @@ from ..registry import actions, workflows
 from ..utils import (
     alert_response_wrapper,
     extract_data,
-    get_action_list,
     get_data_types,
-    get_formatted_holdingpen_object,
     get_holdingpen_objects,
     get_previous_next_objects,
     get_rendered_task_results,
-    sort_bwolist,
+    get_rows,
+    sort_bwolist
 )
 
 blueprint = Blueprint('holdingpen', __name__, url_prefix="/admin/holdingpen",
@@ -115,11 +114,11 @@ def index():
 
     Acts as a hub for catalogers (may be removed)
     """
-    # FIXME: Add user filtering
-    bwolist = get_holdingpen_objects([ObjectVersion.name_from_version(ObjectVersion.HALTED)])
-    action_list = get_action_list(bwolist)
-
-    return dict(tasks=action_list)
+    # TODO: Add user filtering
+    error_state = get_holdingpen_objects([ObjectVersion.name_from_version(ObjectVersion.ERROR)])
+    halted_state = get_holdingpen_objects([ObjectVersion.name_from_version(ObjectVersion.HALTED)])
+    return dict(error_state=error_state,
+                halted_state=halted_state)
 
 
 @blueprint.route('/load', methods=['GET', 'POST'])
@@ -158,14 +157,16 @@ def load(page, per_page, sort_key):
             res["active"] = False
         pages_iteration.append(res)
 
-    table_data = {'rows': [],
-                  'pagination': {
-                      "page": pagination.page,
-                      "pages": pagination.pages,
-                      "iter_pages": pages_iteration,
-                      "per_page": pagination.per_page,
-                      "total_count": pagination.total_count
-                  }}
+    table_data = {
+        'rows': [],
+        'pagination': {
+            "page": pagination.page,
+            "pages": pagination.pages,
+            "iter_pages": pages_iteration,
+            "per_page": pagination.per_page,
+            "total_count": pagination.total_count
+        }
+    }
 
     # Add current ids in table for use by previous/next
     session['holdingpen_current_ids'] = [o.id for o in object_list]
@@ -178,29 +179,7 @@ def load(page, per_page, sort_key):
         pagination.per_page*pagination.page,
         pagination.total_count
     )
-    for bwo in object_list[display_start:display_end]:
-        extra_data = bwo.get_extra_data()
-        preformatted = get_formatted_holdingpen_object(bwo)
-
-        action_name = extra_data.get("_action") or ""
-        action = actions.get(action_name, None)
-        mini_action = None
-        if action:
-            mini_action = getattr(action, "render_mini", None)
-        record = bwo.get_data() or {}
-        row = render_template(
-            'workflows/list_row.html',
-            title=preformatted.get("title", ""),
-            object=bwo,
-            display_class=HOLDINGPEN_WORKFLOW_STATES[bwo.version]["class"],
-            record=record,
-            extra_data=extra_data,
-            description=preformatted.get("description", ""),
-            action=action,
-            mini_action=mini_action,
-            additional=preformatted.get("additional", "")
-        )
-        table_data['rows'].append(row)
+    table_data["rows"] = get_rows(object_list[display_start:display_end])
     table_data["rendered_rows"] = "".join(table_data["rows"])
     return jsonify(table_data)
 
