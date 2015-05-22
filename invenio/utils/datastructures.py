@@ -238,7 +238,10 @@ class SmartDict(object):
             else:
                 tmp = []
                 for inner_v in v:
-                    tmp.append(getitem(k, inner_v))
+                    try:
+                        tmp.append(getitem(k, inner_v))
+                    except KeyError:
+                        continue
                 return tmp
 
         # Check if we are using python regular keys
