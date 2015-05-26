@@ -231,7 +231,8 @@ def main():
 def process_single(tarball, sdir=CFG_TMPSHAREDIR, xtract_text=False,
                    upload_plots=False, force=False, squash="",
                    yes_i_know=False, refno_url="",
-                   clean=False, recid=None, upload_mode='append'):
+                   clean=False, recid=None, upload_mode='append',
+                   direct_xml_output=False):
     """
     Processes one tarball end-to-end.
 
@@ -256,6 +257,8 @@ def process_single(tarball, sdir=CFG_TMPSHAREDIR, xtract_text=False,
     @param recid: the record ID linked to this tarball. Overrides C{refno_url}
     @param upload_mode: the mode in which to call bibupload (when C{upload_plots}
                         is set to True.
+    @param: direct_xml_output: allows to output MARCXML directly.
+
     @return: marc_name(string): path to generated marcxml file
     """
     sub_dir, refno = get_defaults(tarball, sdir, refno_url, recid)
