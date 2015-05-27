@@ -277,7 +277,9 @@ def get_formatted_holdingpen_object(bwo, date_format='%Y-%m-%d %H:%M:%S.%f'):
             return results
     results = generate_formatted_holdingpen_object(bwo)
     if results:
-        cache.set("workflows_holdingpen_{0}".format(bwo.id), msgpack.dumps(results))
+        cache.set("workflows_holdingpen_{0}".format(bwo.id),
+                  msgpack.dumps(results),
+                  timeout=current_app.config.get("WORKFLOWS_HOLDING_PEN_CACHE_TIMEOUT"))
     return results
 
 
