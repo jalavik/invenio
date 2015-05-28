@@ -19,4 +19,7 @@
 """Config variables for workflows module."""
 
 WORKFLOWS_HOLDING_PEN_CACHE_TIMEOUT = 2629743  # one month
-"""Determines the default timeout when caching formatted Holding Pen rows."""
+"""Determines the timeout when caching formatted Holding Pen rows."""
+
+WORKFLOWS_HOLDING_PEN_DEFAULT_OUTPUT_FORMAT = "hd"
+"""The default timeout when formatting Holding Pen detailed pages."""

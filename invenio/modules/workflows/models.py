@@ -386,13 +386,20 @@ class BibWorkflowObject(db.Model):
             pass
         return
 
-    def get_formatted_data(self, of="hd"):
+    def get_formatted_data(self, of=None):
         """Get the formatted representation for this object."""
         from .registry import workflows
+        if of is None:
+            of = cfg.get("WORKFLOWS_HOLDING_PEN_DEFAULT_OUTPUT_FORMAT")
         try:
             name = self.get_workflow_name()
             if not name:
                 return ""
+            # TODO: this can be removed when workflow refactoring is done
+            if not hasattr(self, "data"):
+                self.data = self.get_data()
+            if not hasattr(self, "extra_data"):
+                self.extra_data = self.get_extra_data()
             workflow_definition = workflows[name]
             formatted_data = workflow_definition.formatter(
                 self,

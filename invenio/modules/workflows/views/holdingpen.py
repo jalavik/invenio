@@ -215,14 +215,12 @@ def details(objectid):
     from invenio.ext.sqlalchemy import db
     from itertools import groupby
 
-    of = "hd"
     bwobject = BibWorkflowObject.query.get_or_404(objectid)
     previous_object, next_object = get_previous_next_objects(
         session.get("holdingpen_current_ids"),
         objectid
     )
-
-    formatted_data = bwobject.get_formatted_data(of)
+    formatted_data = bwobject.get_formatted_data()
     extracted_data = extract_data(bwobject)
 
     action_name = bwobject.get_action()
@@ -258,24 +256,25 @@ def details(objectid):
     results = get_rendered_task_results(bwobject)
     workflow_definition = get_workflow_info(extracted_data['workflow_func'])
     task_history = bwobject.get_extra_data().get('_task_history', [])
-    return render_template('workflows/details.html',
-                           bwobject=bwobject,
-                           rendered_actions=rendered_actions,
-                           history_objects=history_objects,
-                           bwparent=extracted_data['bwparent'],
-                           info=extracted_data['info'],
-                           log=extracted_data['logtext'],
-                           data_preview=formatted_data,
-                           workflow=extracted_data['w_metadata'],
-                           task_results=results,
-                           previous_object=previous_object,
-                           next_object=next_object,
-                           task_history=task_history,
-                           workflow_definition=workflow_definition,
-                           versions=ObjectVersion,
-                           pretty_date=pretty_date,
-                           workflow_class=workflows.get(extracted_data['w_metadata'].name),
-                           )
+    return render_template(
+        'workflows/details.html',
+        bwobject=bwobject,
+        rendered_actions=rendered_actions,
+        history_objects=history_objects,
+        bwparent=extracted_data['bwparent'],
+        info=extracted_data['info'],
+        log=extracted_data['logtext'],
+        data_preview=formatted_data,
+        workflow=extracted_data['w_metadata'],
+        task_results=results,
+        previous_object=previous_object,
+        next_object=next_object,
+        task_history=task_history,
+        workflow_definition=workflow_definition,
+        versions=ObjectVersion,
+        pretty_date=pretty_date,
+        workflow_class=workflows.get(extracted_data['w_metadata'].name),
+    )
 
 
 @blueprint.route('/files/<int:object_id>/<path:filename>',
