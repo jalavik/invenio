@@ -43,8 +43,7 @@ from .storage import DepositionStorage, Storage
 from invenio.base.helpers import unicodifier
 from invenio.ext.restful import UTCISODateTime
 from invenio.ext.sqlalchemy import db
-from invenio.modules.workflows.models import DbWorkflowObject, Workflow, \
-    ObjectStatus
+from invenio.modules.workflows.models import DbWorkflowObject, Workflow
 
 
 #
@@ -463,10 +462,9 @@ class DepositionType(object):
         Deposition.run_workflow().
         """
         if deposition.workflow_object.workflow is None or (
-                deposition.workflow_object.version == ObjectStatus.INITIAL
+                deposition.workflow_object.status == deposition.workflow_object.known_statuses.INITIAL
                 and
-                deposition.workflow_object.workflow.status ==
-                WorkflowStatus.NEW):
+                deposition.workflow_object.workflow.status == deposition.workflow_object.known_statuses.NEW):
             return deposition.workflow_object.start_workflow(
                 workflow_name=cls.get_identifier(),
                 id_user=deposition.workflow_object.id_user,
@@ -482,11 +480,11 @@ class DepositionType(object):
         # Only reinitialize if really needed (i.e. you can only
         # reinitialize a fully completed workflow).
         wo = deposition.workflow_object
-        if wo.version == ObjectStatus.COMPLETED and \
-           wo.workflow.status == WorkflowStatus.COMPLETED:
+        if wo.status == wo.known_statuses.COMPLETED and \
+           wo.workflow.status == wo.workflow.known_statuses.COMPLETED:
 
-            wo.version = ObjectStatus.INITIAL
-            wo.workflow.status = WorkflowStatus.NEW
+            wo.status = wo.known_statuses.INITIAL
+            wo.workflow.status = wo.workflow.known_statuses.NEW
 
             # Clear deposition drafts
             deposition.drafts = {}
@@ -495,14 +493,14 @@ class DepositionType(object):
     def stop_workflow(cls, deposition):
         # Only stop workflow if really needed
         wo = deposition.workflow_object
-        if wo.version != ObjectStatus.COMPLETED and \
-           wo.workflow.status != WorkflowStatus.COMPLETED:
+        if wo.status != wo.known_statuses.COMPLETED and \
+           wo.workflow.status != wo.workflow.known_statuses.COMPLETED:
 
             # Only workflows which has been fully completed once before
             # can be stopped
             if deposition.has_sip():
-                wo.version = ObjectStatus.COMPLETED
-                wo.workflow.status = WorkflowStatus.COMPLETED
+                wo.status = wo.known_statuses.COMPLETED
+                wo.workflow.status = wo.workflow.known_statuses.COMPLETED
 
                 # Clear all drafts
                 deposition.drafts = {}

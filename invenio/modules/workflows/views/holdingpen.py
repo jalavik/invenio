@@ -72,30 +72,31 @@ blueprint = Blueprint('holdingpen', __name__, url_prefix="/admin/holdingpen",
                       template_folder='../templates',
                       static_folder='../static')
 
+# XXX Could we avoid having Yet Another Mapping?
 default_breadcrumb_root(blueprint, '.holdingpen')
 HOLDINGPEN_WORKFLOW_STATES = {
-    ObjectStatus.HALTED: {
-        'message': _(ObjectStatus.HALTED.label),
+    DbWorkflowObject.known_statuses.HALTED: {
+        'message': _(DbWorkflowObject.known_statuses.HALTED.label),
         'class': 'danger'
     },
-    ObjectStatus.WAITING: {
-        'message': _(ObjectStatus.WAITING.label),
+    DbWorkflowObject.known_statuses.WAITING: {
+        'message': _(DbWorkflowObject.known_statuses.WAITING.label),
         'class': 'warning'
     },
-    ObjectStatus.ERROR: {
-        'message': _(ObjectStatus.ERROR.label),
+    DbWorkflowObject.known_statuses.ERROR: {
+        'message': _(DbWorkflowObject.known_statuses.ERROR.label),
         'class': 'danger'
     },
-    ObjectStatus.COMPLETED: {
-        'message': _(ObjectStatus.COMPLETED.label),
+    DbWorkflowObject.known_statuses.COMPLETED: {
+        'message': _(DbWorkflowObject.known_statuses.COMPLETED.label),
         'class': 'success'
     },
-    ObjectStatus.INITIAL: {
-        'message': _(ObjectStatus.INITIAL.label),
+    DbWorkflowObject.known_statuses.INITIAL: {
+        'message': _(DbWorkflowObject.known_statuses.INITIAL.label),
         'class': 'info'
     },
-    ObjectStatus.RUNNING: {
-        'message': _(ObjectStatus.RUNNING.label),
+    DbWorkflowObject.known_statuses.RUNNING: {
+        'message': _(DbWorkflowObject.known_statuses.RUNNING.label),
         'class': 'warning'
     }
 }
@@ -191,7 +192,7 @@ def list_objects():
     """Display main table interface of Holdingpen."""
     tags = session.get(
         "holdingpen_tags",
-        [ObjectStatus.HALTED.label]
+        [DbWorkflowObject.known_statuses.HALTED.label]
     )
     tags_to_print = [{"text": tag, "value": tag}
                      for tag in tags if tag]
@@ -242,17 +243,17 @@ def details(objectid):
 
     history_objects = {}
     temp = groupby(history_objects_db_request,
-                   lambda x: x.version)
+                   lambda x: x.status)
     for key, value in temp:
-        if key != ObjectStatus.RUNNING:
+        if key != DbWorkflowObject.known_statuses.RUNNING:
             value = list(value)
             value.sort(key=lambda x: x.modified, reverse=True)
             history_objects[key] = value
 
     history_objects = sum(history_objects.values(), [])
     for obj in history_objects:
-        obj._class = HOLDINGPEN_WORKFLOW_STATES[obj.version]["class"]
-        obj.message = HOLDINGPEN_WORKFLOW_STATES[obj.version]["message"]
+        obj._class = HOLDINGPEN_WORKFLOW_STATES[obj.status]["class"]
+        obj.message = HOLDINGPEN_WORKFLOW_STATES[obj.status]["message"]
     results = get_rendered_task_results(bwobject)
     workflow_definition = get_workflow_info(extracted_data['workflow_func'])
     task_history = bwobject.get_extra_data().get('_task_history', [])
