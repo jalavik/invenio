@@ -224,16 +224,15 @@ def get_holdingpen_objects(ptags=None):
     Uses DataTable naming for filtering/sorting. Work in progress.
     """
     if ptags is None:
-        ptags = DbWorkflowObject.version.type.choices.HALTED.label
+        ptags = DbWorkflowObject.known_statuses.HALTED.label
 
     tags_copy = ptags[:]
-    version_showing = []
     type_showing = []
     uri_showing = []
     status_showing = []
     for tag in ptags:
-        if tag in DbWorkflowObject.version.type.choices:
-            version_showing.append(DbWorkflowObject.version.type.choices.MAPPING[tag])
+        if tag in DbWorkflowObject.known_statuses.labels:
+            status_showing.append(DbWorkflowObject.known_statuses[tag])
             tags_copy.remove(tag)
         elif tag.startswith("type:"):
             type_showing.append(":".join(tag.split(":")[1:]))
@@ -241,20 +240,15 @@ def get_holdingpen_objects(ptags=None):
         elif tag.startswith("uri:"):
             uri_showing.append(":".join(tag.split(":")[1:]))
             tags_copy.remove(tag)
-        elif tag.startswith("status:"):
-            status_showing.append(":".join(tag.split(":")[1:]))
-            tags_copy.remove(tag)
 
     ssearch = tags_copy
     bwobject_list = DbWorkflowObject.query.filter(
         DbWorkflowObject.id_parent == None  # noqa E711
-    ).filter(not version_showing or DbWorkflowObject.version.in_(version_showing),
+    ).filter(not status_showing or DbWorkflowObject.version.in_(status_showing),
         or_(*[DbWorkflowObject.data_type.like(type_.replace("*", "%"))
               for type_ in type_showing]),
         or_(*[DbWorkflowObject.uri.like(uri.replace("*", "%"))
               for uri in uri_showing]),
-        or_(*[DbWorkflowObject.status.like(status.replace("*", "%"))
-              for status in status_showing])
     ).all()
 
     if ssearch and ssearch[0]:
@@ -282,18 +276,18 @@ def get_holdingpen_objects(ptags=None):
 
 
 def get_versions_from_tags(tags):
-    """Return a tuple with versions from tags.
+    """Return a tuple with statuses from tags.
 
     :param tags: list of tags
-    :return: tuple of (versions to show, cleaned tags list)
+    :return: tuple of (statuses to show, cleaned tags list)
     """
     tags_copy = tags[:]
-    version_showing = []
+    status_showing = []
     for i in range(len(tags_copy) - 1, -1, -1):
-        if tags_copy[i] in DbWorkflowObject.version.type.choices.MAPPING:
-            version_showing.append(DbWorkflowObject.version.type.choices.MAPPING[tags_copy[i]])
+        if tags_copy[i] in DbWorkflowObject.version.known_statuses.labels:
+            status_showing.append(DbWorkflowObject.known_statuses[tags_copy[i]])
             del tags_copy[i]
-    return version_showing, tags_copy
+    return status_showing, tags_copy
 
 
 def get_formatted_holdingpen_object(bwo, date_format='%Y-%m-%d %H:%M:%S.%f'):
