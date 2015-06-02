@@ -57,7 +57,6 @@ from .models import (
     Workflow,
 )
 from .signals import (workflow_finished,
-                      workflow_halted,
                       workflow_started)
 from .utils import dictproperty, get_task_history
 
@@ -491,7 +490,6 @@ BibWorkflowEngine
                     extra_data = obj.get_extra_data()
                     obj.set_extra_data(extra_data)
 
-                    workflow_halted.send(obj)
                     if type(e) == WorkflowHalt:
                         reraise(*sys.exc_info())
                     else:
