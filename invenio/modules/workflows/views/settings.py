@@ -31,7 +31,7 @@ from invenio.base.decorators import templated
 from invenio.base.i18n import _
 
 from .holdingpen import get_holdingpen_objects
-from ..models import ObjectVersion
+from ..models import ObjectStatus
 
 
 blueprint = Blueprint(
@@ -56,7 +56,7 @@ blueprint = Blueprint(
 )
 @templated("workflows/settings/index.html")
 def index():
-    error_state = get_holdingpen_objects([ObjectVersion.name_from_version(ObjectVersion.ERROR)])
-    halted_state = get_holdingpen_objects([ObjectVersion.name_from_version(ObjectVersion.HALTED)])
+    error_state = get_holdingpen_objects([ObjectStatus.ERROR.label])
+    halted_state = get_holdingpen_objects([ObjectStatus.HALTED.label])
     return dict(error_state=error_state,
                 halted_state=halted_state)

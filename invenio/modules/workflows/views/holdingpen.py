@@ -115,8 +115,8 @@ def index():
     Acts as a hub for catalogers (may be removed)
     """
     # TODO: Add user filtering
-    error_state = get_holdingpen_objects([ObjectStatus.name_from_version(ObjectStatus.ERROR)])
-    halted_state = get_holdingpen_objects([ObjectStatus.name_from_version(ObjectStatus.HALTED)])
+    error_state = get_holdingpen_objects([ObjectStatus.ERROR.label])
+    halted_state = get_holdingpen_objects([ObjectStatus.HALTED.label])
     return dict(error_state=error_state,
                 halted_state=halted_state)
 

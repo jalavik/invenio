@@ -495,7 +495,7 @@ class DbWorkflowObject(db.Model):
 
     id_user = db.Column(db.Integer, default=0, nullable=False)
 
-    child_logs = db.relationship("DbWorkflowObjectLog",
+    child_logs = db.relationship("DbWorkflowObjectLog",  # TODO: rename to logs
                                  backref='bibworkflowobject',
                                  cascade="all, delete, delete-orphan")
 
