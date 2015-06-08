@@ -85,7 +85,7 @@ def wash_urlargd(form, content):
 
         # Since we got here, 'value' is sure to be a single symbol,
         # not a list kind of structure anymore.
-        if dst_type in (int, float, long, bool):
+        if dst_type in (int, float, long):
             try:
                 result[k] = dst_type(value)
             except:
@@ -97,6 +97,11 @@ def wash_urlargd(form, content):
         elif dst_type is list:
             result[k] = [value]
 
+        elif dst_type is bool:
+            if value in (u"False", u"false"):
+                result[k] = False
+            else:
+                result[k] = dst_type(value)
         else:
             raise ValueError(
                 'cannot cast form value %s of type %r into type %r' % (
