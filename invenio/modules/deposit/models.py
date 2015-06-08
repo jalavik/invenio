@@ -19,39 +19,31 @@
 
 """Deposition data model classes.
 
-Classes for wrapping BibWorkflowObject and friends to make it easier to
+Classes for wrapping DbWorkflowObject and friends to make it easier to
 work with the data attributes.
 """
-
 import json
 import os
-from datetime import datetime
-
 from uuid import uuid4
 
+from datetime import datetime
 from dateutil.tz import tzutc
-
 from flask import current_app, flash, redirect, render_template, request, \
     session, url_for
 from flask_login import current_user
 from flask_restful import fields, marshal
-
-from invenio.base.helpers import unicodifier
-from invenio.ext.restful import UTCISODateTime
-
-from invenio.ext.sqlalchemy import db
-from invenio.modules.workflows.engine import WorkflowStatus
-from invenio.modules.workflows.models import BibWorkflowObject, ObjectVersion, \
-    Workflow
-
 from sqlalchemy.orm.exc import NoResultFound
-
 from werkzeug.datastructures import MultiDict
 from werkzeug.utils import secure_filename
+from workflow.engine_db import WorkflowStatus
 
 from .form import CFG_FIELD_FLAGS, DataExporter
 from .signals import file_uploaded
 from .storage import DepositionStorage, Storage
+from invenio.base.helpers import unicodifier
+from invenio.ext.restful import UTCISODateTime
+from invenio.ext.sqlalchemy import db
+from invenio.modules.workflows.models import DbWorkflowObject, Workflow, ObjectStatus
 
 
 #
@@ -464,13 +456,13 @@ class DepositionType(object):
     @classmethod
     def run_workflow(cls, deposition):
         """
-        Run workflow for the given BibWorkflowObject.
+        Run workflow for the given DbWorkflowObject.
 
         Usually not invoked directly, but instead indirectly through
         Deposition.run_workflow().
         """
         if deposition.workflow_object.workflow is None or (
-                deposition.workflow_object.version == ObjectVersion.INITIAL
+                deposition.workflow_object.version == ObjectStatus.INITIAL
                 and
                 deposition.workflow_object.workflow.status ==
                 WorkflowStatus.NEW):
@@ -489,10 +481,10 @@ class DepositionType(object):
         # Only reinitialize if really needed (i.e. you can only
         # reinitialize a fully completed workflow).
         wo = deposition.workflow_object
-        if wo.version == ObjectVersion.COMPLETED and \
+        if wo.version == ObjectStatus.COMPLETED and \
            wo.workflow.status == WorkflowStatus.COMPLETED:
 
-            wo.version = ObjectVersion.INITIAL
+            wo.version = ObjectStatus.INITIAL
             wo.workflow.status = WorkflowStatus.NEW
 
             # Clear deposition drafts
@@ -502,13 +494,13 @@ class DepositionType(object):
     def stop_workflow(cls, deposition):
         # Only stop workflow if really needed
         wo = deposition.workflow_object
-        if wo.version != ObjectVersion.COMPLETED and \
+        if wo.version != ObjectStatus.COMPLETED and \
            wo.workflow.status != WorkflowStatus.COMPLETED:
 
             # Only workflows which has been fully completed once before
             # can be stopped
             if deposition.has_sip():
-                wo.version = ObjectVersion.COMPLETED
+                wo.version = ObjectStatus.COMPLETED
                 wo.workflow.status = WorkflowStatus.COMPLETED
 
                 # Clear all drafts
@@ -965,9 +957,9 @@ class DepositionDraft(FactoryMixin):
 
 class Deposition(object):
     """
-    Wraps a BibWorkflowObject
+    Wraps a DbWorkflowObject
 
-    Basically an interface to work with BibWorkflowObject data attribute in an
+    Basically an interface to work with DbWorkflowObject data attribute in an
     easy manner.
     """
     def __init__(self, workflow_object, type=None, user_id=None):
@@ -979,7 +971,7 @@ class Deposition(object):
             self.title = ''
             self.sips = []
 
-            self.workflow_object = BibWorkflowObject.create_object(
+            self.workflow_object = DbWorkflowObject.create_object(
                 id_user=user_id,
             )
             # Ensure default data is set for all objects.
@@ -989,7 +981,7 @@ class Deposition(object):
         self.engine = None
 
     #
-    # Properties proxies to BibWorkflowObject
+    # Properties proxies to DbWorkflowObject
     #
     @property
     def id(self):
@@ -1042,10 +1034,10 @@ class Deposition(object):
 
     def __getstate__(self):
         """
-        Serialize deposition state for storing in the BibWorkflowObject
+        Serialize deposition state for storing in the DbWorkflowObject
         """
         # The bibworkflow object id and owner is implicit, as the Deposition
-        # object only wraps the data attribute of a BibWorkflowObject.
+        # object only wraps the data attribute of a DbWorkflowObject.
 
         # FIXME: Find better solution for setting the title.
         for d in self.drafts.values():
@@ -1065,7 +1057,7 @@ class Deposition(object):
 
     def __setstate__(self, state):
         """
-        Deserialize deposition from state stored in BibWorkflowObject
+        Deserialize deposition from state stored in DbWorkflowObject
         """
         self.type = DepositionType.get(state['type'])
         self.title = state['title']
@@ -1134,7 +1126,7 @@ class Deposition(object):
         if self.workflow_object.id_workflow:
             Workflow.delete(uuid=self.workflow_object.id_workflow)
 
-            BibWorkflowObject.query.filter_by(
+            DbWorkflowObject.query.filter_by(
                 id_workflow=self.workflow_object.id_workflow
             ).delete()
         else:
@@ -1407,19 +1399,19 @@ class Deposition(object):
         """
         Get the deposition with specified object id.
 
-        @param object_id: The BibWorkflowObject id.
-        @param user: Owner of the BibWorkflowObject
+        @param object_id: The DbWorkflowObject id.
+        @param user: Owner of the DbWorkflowObject
         @param type: Deposition type identifier.
         """
         if type:
             type = DepositionType.get(type)
 
         try:
-            workflow_object = BibWorkflowObject.query.filter(
-                BibWorkflowObject.id == object_id,
+            workflow_object = DbWorkflowObject.query.filter(
+                DbWorkflowObject.id == object_id,
                 # id_user!=0 means current version, as opposed to some snapshot
                 # version.
-                BibWorkflowObject.id_user != 0,
+                DbWorkflowObject.id_user != 0,
             ).one()
         except NoResultFound:
             raise DepositionDoesNotExists(object_id)
@@ -1439,16 +1431,16 @@ class Deposition(object):
         ]
 
         if user:
-            params.append(BibWorkflowObject.id_user == user.get_id())
+            params.append(DbWorkflowObject.id_user == user.get_id())
         else:
-            params.append(BibWorkflowObject.id_user != 0)
+            params.append(DbWorkflowObject.id_user != 0)
 
         if type:
             params.append(Workflow.name == type.get_identifier())
 
-        objects = BibWorkflowObject.query.join("workflow").options(
+        objects = DbWorkflowObject.query.join("workflow").options(
             db.contains_eager('workflow')).filter(*params).order_by(
-            BibWorkflowObject.modified.desc()).all()
+            DbWorkflowObject.modified.desc()).all()
 
         def _create_obj(o):
             try:

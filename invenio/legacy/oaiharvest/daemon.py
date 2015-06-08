@@ -58,11 +58,11 @@ from invenio.legacy.oaiharvest.utils import (compare_timestamps_with_tolerance,
 from invenio.legacy.webuser import email_valid_p
 from invenio.ext.email import send_email
 
-from invenio.modules.workflows.models import (BibWorkflowEngineLog, Workflow,
-                                              BibWorkflowObjectLog)
+from invenio.modules.workflows.models import (DbWorkflowEngineLog, Workflow,
+                                              DbWorkflowObjectLog)
 from invenio.modules.workflows.registry import workflows as registry_workflows
 from invenio.modules.workflows.api import start
-from invenio.modules.workflows.errors import WorkflowError
+from workflow.errors import WorkflowError
 import invenio.legacy.template
 
 oaiharvest_templates = invenio.legacy.template.load('oaiharvest')
@@ -139,8 +139,8 @@ def task_run_core():
                                  options=task_get_option(None))
         if workflow:
             workflow_id_preservation = workflow.uuid
-            workflowlog = BibWorkflowEngineLog.query.filter(
-                BibWorkflowEngineLog.id_object == workflow.uuid
+            workflowlog = DbWorkflowEngineLog.query.filter(
+                DbWorkflowEngineLog.id_object == workflow.uuid
             ).all()
             for log in workflowlog:
                 write_message(log.message)
@@ -150,26 +150,27 @@ def task_run_core():
         write_message("ERRORS HAPPENED")
         write_message("____________Workflow log output____________")
         workflow_id_preservation = e.id_workflow
-        workflowlog = BibWorkflowEngineLog.query.filter(
-            BibWorkflowEngineLog.id_object == e.id_workflow
-        ).filter(BibWorkflowEngineLog.log_type >= 40).all()
+        workflowlog = DbWorkflowEngineLog.query.filter(
+            DbWorkflowEngineLog.id_object == e.id_workflow
+        ).filter(DbWorkflowEngineLog.log_type >= 40).all()
 
         for log in workflowlog:
             write_message(log.message)
 
-        for i in e.payload:
-            write_message("\n\n____________Workflow " + i + " log output____________")
-            workflowlog = BibWorkflowEngineLog.query.filter(
-                BibWorkflowEngineLog.id_object == i
-            ).filter(BibWorkflowEngineLog.log_type >= 40).all()
-            for log in workflowlog:
-                write_message(log.message)
+        if e.payload:
+            for i in e.payload:
+                write_message("\n\n____________Workflow " + i + " log output____________")
+                workflowlog = DbWorkflowEngineLog.query.filter(
+                    DbWorkflowEngineLog.id_object == i
+                ).filter(DbWorkflowEngineLog.log_type >= 40).all()
+                for log in workflowlog:
+                    write_message(log.message)
 
         write_message("____________Object log output____________")
 
-        objectlog = BibWorkflowObjectLog.query.filter(
-            BibWorkflowObjectLog.id_object == e.id_object
-        ).filter(BibWorkflowEngineLog.log_type >= 40).all()
+        objectlog = DbWorkflowObjectLog.query.filter(
+            DbWorkflowObjectLog.id_object == e.id_object
+        ).filter(DbWorkflowEngineLog.log_type >= 40).all()
 
         for log in objectlog:
             write_message(log.message)

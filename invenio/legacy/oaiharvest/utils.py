@@ -45,7 +45,7 @@ from invenio.legacy.bibcatalog.api import BIBCATALOG_SYSTEM
 
 from invenio.legacy.bibsched.bibtask import (write_message,
                                              task_low_level_submission)
-from invenio.modules.workflows.models import BibWorkflowEngineLog
+from invenio.modules.workflows.models import DbWorkflowEngineLog
 
 
 # precompile some often-used regexp for speed reasons:
@@ -271,9 +271,9 @@ List of OAI IDs harvested:
 No identifiers specified.
 """
 
-    workflowlog = BibWorkflowEngineLog.query.filter(
-        BibWorkflowEngineLog.id_object == workflow.uuid
-    ).filter(BibWorkflowEngineLog.log_type > 10).all()
+    workflowlog = DbWorkflowEngineLog.query.filter(
+        DbWorkflowEngineLog.id_object == workflow.uuid
+    ).filter(DbWorkflowEngineLog.log_type > 10).all()
 
     logs = ""
     for log in workflowlog:
