@@ -121,7 +121,11 @@ REMOTE_SANDBOX_APP['params'].update(dict(
 
 def account_info(remote, resp):
     """Retrieve remote account information used to find local user."""
-    account_info = dict(external_id=resp.get("orcid"), external_method="orcid")
+    orcid = resp.get("orcid")
+    # Created users will have the ORCID id as their nickname by default
+    account_info = dict(external_id=orcid,
+                        external_method="orcid",
+                        nickname=orcid)
     return account_info
 
 

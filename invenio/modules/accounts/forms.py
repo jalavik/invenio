@@ -28,6 +28,7 @@ from flask_wtf import Form, validators
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
+from wtforms.compat import string_types
 from wtforms.fields import BooleanField, HiddenField, PasswordField, \
     StringField, SubmitField
 from wtforms.validators import DataRequired, StopValidation, ValidationError
@@ -43,6 +44,11 @@ from .validators import validate_email, validate_nickname, \
 
 def nickname_validator(form, field):
     """Validate nickname."""
+    if cfg["ACCOUNTS_NICKNAME_REQUIRED"] and (
+            not field.data or
+            isinstance(field.data, string_types) and not field.data.strip()
+            ):
+        raise StopValidation(_("This field is required"))
     validate_nickname(field.data)
     # is nickname already taken?
     try:
@@ -182,7 +188,7 @@ class ProfileForm(InvenioBaseForm):
 
     nickname = StringField(
         _("Username"),
-        validators=[DataRequired(), current_user_validator('nickname'),
+        validators=[current_user_validator('nickname'),
                     nickname_validator]
     )
     family_name = StringField(_("Family name"))

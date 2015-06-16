@@ -22,3 +22,6 @@
 from __future__ import unicode_literals
 
 CFG_ACCOUNT_MIN_PASSWORD_LENGTH = 6
+
+ACCOUNTS_NICKNAME_REQUIRED = True
+""" Are nicknames required for user accounts ? """
