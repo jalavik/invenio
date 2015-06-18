@@ -518,10 +518,11 @@ BibWorkflowEngine
             obj.extra_data["_task_counter"] = self._i[1]
             obj.extra_data["_last_task_name"] = callback.func_name
             task_history = get_task_history(callback)
-            if "_task_history" not in obj:
-                obj.extra_data["_task_history"] = [task_history]
-            else:
-                obj.extra_data["_task_history"].append(task_history)
+            if task_history:
+                if "_task_history" not in obj:
+                    obj.extra_data["_task_history"] = [task_history]
+                else:
+                    obj.extra_data["_task_history"].append(task_history)
             obj.set_extra_data(obj.extra_data)
 
     def get_current_taskname(self):
