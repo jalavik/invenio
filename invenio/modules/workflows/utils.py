@@ -160,12 +160,15 @@ class dictproperty(object):
         return self._proxy(obj, self._fget, self._fset, self._fdel)
 
 
-def _sort_from_cache(name):
+def _sort_from_cache(name, from_data=False):
     def _sorter(item):
         try:
-            results = cache.get("workflows_holdingpen_{0}".format(item.id))
-            if results:
-                return msgpack.loads(results)[name]
+            cached_results = get_formatted_holdingpen_object(item)
+            if from_data:
+                # Get value from sort_data
+                return cached_results.get("sort_data", {}).get(name)
+            else:
+                return cached_results.get(name)
         except Exception:
             current_app.logger.exception(
                 "Invalid format for object {0}: {1}".format(
@@ -180,7 +183,7 @@ def sort_bwolist(bwolist, sort_key):
     """Sort a list of workflow objects for the list."""
     if sort_key == "newest":
         bwolist.sort(key=attrgetter("created"), reverse=True)
-    if sort_key == "oldest":
+    elif sort_key == "oldest":
         bwolist.sort(key=attrgetter("created"), reverse=False)
     elif sort_key == "updated":
         bwolist.sort(key=attrgetter("modified"), reverse=True)
@@ -190,6 +193,15 @@ def sort_bwolist(bwolist, sort_key):
         bwolist.sort(key=_sort_from_cache("title"), reverse=False)
     elif sort_key == "title_desc":
         bwolist.sort(key=_sort_from_cache("title"), reverse=True)
+    else:
+        # Try a sort from sort_data
+        reverse = False
+        if sort_key.endswith("_desc"):
+            # Remove the suffix to get the correct data and set reverse
+            reverse = True
+            sort_key = sort_key[:-5]
+        bwolist.sort(key=_sort_from_cache(sort_key, from_data=True),
+                     reverse=reverse)
     return bwolist
 
 
@@ -310,7 +322,8 @@ def generate_formatted_holdingpen_object(bwo, date_format='%Y-%m-%d %H:%M:%S.%f'
         "title": workflow_definition.get_title(bwo),
         "date": bwo.modified.strftime(date_format),
         "additional": workflow_definition.get_additional(bwo),
-        "action": mini_action
+        "action": mini_action,
+        "sort_data": workflow_definition.get_sort_data(bwo)
     }
     return results
 

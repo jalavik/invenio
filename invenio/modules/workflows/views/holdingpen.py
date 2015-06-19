@@ -40,7 +40,6 @@ from flask import (
     request,
     send_from_directory,
     session,
-    url_for,
 )
 from flask_breadcrumbs import default_breadcrumb_root, register_breadcrumb
 from flask_login import login_required
@@ -128,14 +127,14 @@ def index():
 @wash_arguments({
     'page': (int, 1),
     'per_page': (int, 0),
-    'sort_key': (unicode, "created"),
+    'sort_key': (unicode, "updated"),
 })
 def load(page, per_page, sort_key):
     """Load objects for the table."""
     # FIXME: Load tags in this way until wash_arguments handles lists.
     tags = request.args.getlist("tags[]") or []  # empty to show all
     sort_key = request.args.get(
-        'sort_key', session.get('holdingpen_sort_key', "created")
+        'sort_key', session.get('holdingpen_sort_key', "updated")
     )
     per_page = per_page or session.get('holdingpen_per_page') or 10
     object_list = get_holdingpen_objects(tags)
@@ -416,7 +415,6 @@ def resolve_action():
             action_form = actions[action_name]
             res = action_form().resolve(bwobject)
             ids_resolved += 1
-
 
     if ids_resolved == 1:
         return jsonify(res)
