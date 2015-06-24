@@ -224,27 +224,35 @@ def get_holdingpen_objects(ptags=None):
     Uses DataTable naming for filtering/sorting. Work in progress.
     """
     if ptags is None:
-        ptags = DbWorkflowObject.known_statuses.HALTED.label
+        ptags = [DbWorkflowObject.known_statuses.HALTED.label]
 
     tags_copy = ptags[:]
     type_showing = []
     uri_showing = []
     status_showing = []
     for tag in ptags:
-        if tag in DbWorkflowObject.known_statuses.labels:
-            status_showing.append(DbWorkflowObject.known_statuses[tag])
-            tags_copy.remove(tag)
-        elif tag.startswith("type:"):
+        if tag.startswith("type:"):
             type_showing.append(":".join(tag.split(":")[1:]))
             tags_copy.remove(tag)
         elif tag.startswith("uri:"):
             uri_showing.append(":".join(tag.split(":")[1:]))
             tags_copy.remove(tag)
+        else:
+            # Extract id from the label
+            try:
+                status_id = next((status_id for status_id, label in
+                                  DbWorkflowObject.known_statuses.labels.items()
+                                  if label == tag))
+            except StopIteration:
+                pass
+            else:
+                status_showing.append(DbWorkflowObject.known_statuses(status_id))
+                tags_copy.remove(tag)
 
     ssearch = tags_copy
     bwobject_list = DbWorkflowObject.query.filter(
         DbWorkflowObject.id_parent == None  # noqa E711
-    ).filter(not status_showing or DbWorkflowObject.version.in_(status_showing),
+    ).filter(not status_showing or DbWorkflowObject.status.in_(status_showing),
         or_(*[DbWorkflowObject.data_type.like(type_.replace("*", "%"))
               for type_ in type_showing]),
         or_(*[DbWorkflowObject.uri.like(uri.replace("*", "%"))
