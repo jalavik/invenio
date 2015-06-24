@@ -26,6 +26,8 @@ from flask import current_app, jsonify, render_template
 from operator import attrgetter
 from six import text_type
 
+from sqlalchemy import or_
+
 from invenio.base.helpers import unicodifier
 from invenio.ext.cache import cache
 
@@ -225,6 +227,8 @@ def get_holdingpen_objects(ptags=None):
     tags_copy = ptags[:]
     version_showing = []
     type_showing = []
+    uri_showing = []
+    status_showing = []
     for tag in ptags:
         if tag in ObjectVersion.MAPPING:
             version_showing.append(ObjectVersion.MAPPING[tag])
@@ -232,12 +236,26 @@ def get_holdingpen_objects(ptags=None):
         elif tag.startswith("type:"):
             type_showing.append(":".join(tag.split(":")[1:]))
             tags_copy.remove(tag)
+        elif tag.startswith("uri:"):
+            uri_showing.append(":".join(tag.split(":")[1:]))
+            tags_copy.remove(tag)
+        elif tag.startswith("status:"):
+            status_showing.append(":".join(tag.split(":")[1:]))
+            tags_copy.remove(tag)
 
     ssearch = tags_copy
     bwobject_list = BibWorkflowObject.query.filter(
         BibWorkflowObject.id_parent == None  # noqa E711
-    ).filter(not version_showing or BibWorkflowObject.version.in_(
-        version_showing), not type_showing or BibWorkflowObject.data_type.in_(type_showing)).all()
+    ).filter(
+        or_(*[BibWorkflowObject.version.like(version)
+              for version in version_showing]),
+        or_(*[BibWorkflowObject.data_type.like(type_)
+              for type_ in type_showing]),
+        or_(*[BibWorkflowObject.uri.like(uri)
+              for uri in uri_showing]),
+        or_(*[BibWorkflowObject.status.like(status)
+              for status in status_showing])
+    ).all()
 
     if ssearch and ssearch[0]:
         if not isinstance(ssearch, list):
