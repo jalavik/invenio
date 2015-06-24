@@ -432,8 +432,13 @@ def extract_data(bwobject):
 def get_data_types():
     """Return a list of distinct data types from BibWorkflowObject."""
     from .models import BibWorkflowObject
-    return [b.data_type for b in BibWorkflowObject.query.distinct(
-        BibWorkflowObject.data_type).group_by(BibWorkflowObject.data_type)]
+    return [
+        t[0] for t in BibWorkflowObject.query.with_entities(
+            BibWorkflowObject.data_type
+        ).distinct(
+            BibWorkflowObject.data_type
+        )
+    ]
 
 
 def get_action_list(object_list):
