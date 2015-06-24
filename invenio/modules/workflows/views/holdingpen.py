@@ -193,7 +193,8 @@ def list_objects():
         "holdingpen_tags",
         [ObjectVersion.name_from_version(ObjectVersion.HALTED)]
     )
-    tags_to_print = [{"text": str(_(tag)), "value": tag} for tag in tags if tag]
+    tags_to_print = [{"text": tag, "value": tag}
+                     for tag in tags if tag]
     return render_template(
         'workflows/list.html',
         tags=json.dumps(tags_to_print),

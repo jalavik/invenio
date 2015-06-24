@@ -246,14 +246,12 @@ def get_holdingpen_objects(ptags=None):
     ssearch = tags_copy
     bwobject_list = BibWorkflowObject.query.filter(
         BibWorkflowObject.id_parent == None  # noqa E711
-    ).filter(
-        or_(*[BibWorkflowObject.version.like(version)
-              for version in version_showing]),
-        or_(*[BibWorkflowObject.data_type.like(type_)
+    ).filter(not version_showing or BibWorkflowObject.version.in_(version_showing),
+        or_(*[BibWorkflowObject.data_type.like(type_.replace("*", "%"))
               for type_ in type_showing]),
-        or_(*[BibWorkflowObject.uri.like(uri)
+        or_(*[BibWorkflowObject.uri.like(uri.replace("*", "%"))
               for uri in uri_showing]),
-        or_(*[BibWorkflowObject.status.like(status)
+        or_(*[BibWorkflowObject.status.like(status.replace("*", "%"))
               for status in status_showing])
     ).all()
 
