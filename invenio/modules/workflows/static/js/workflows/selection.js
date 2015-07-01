@@ -116,7 +116,8 @@ define(
         var removedIDs = {"ids": []};
 
         if (row.prop('checked') == false) {
-          this.removeElementFromIDs(removedIDs.ids.push(row.val()));
+          removedIDs.ids.push(row.val());
+          this.removeElementFromIDs(removedIDs);
         } else {
           this.attr.selectedIDs.push(row.val());
         }
