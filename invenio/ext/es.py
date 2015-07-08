@@ -107,7 +107,7 @@ SEARCH_RECORD_MAPPING = {
                         }
                     }
                 },
-                "authors": {
+                "exactauthor": {
                     "type": "string",
                     "fields": {
                         "raw": {
@@ -116,22 +116,12 @@ SEARCH_RECORD_MAPPING = {
                         }
                     }
                 },
-                "main_entry_personal_name": {
+                "authors": {
                     "type": "object",
                     "properties": {
-                        "personal_name": {
+                        "full_name": {
                             "type": "string",
-                            "copy_to": ["authors"],
-                            "analyzer": "natural_text"
-                        }
-                    }
-                },
-                "added_entry_personal_name": {
-                    "type": "object",
-                    "properties": {
-                        "personal_name": {
-                            "type": "string",
-                            "copy_to": ["authors"],
+                            "copy_to": ["exactauthor"],
                             "analyzer": "natural_text"
                         }
                     }
