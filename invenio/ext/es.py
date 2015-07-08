@@ -126,15 +126,22 @@ SEARCH_RECORD_MAPPING = {
                         }
                     }
                 },
-                "division": {
-                    "type": "string"
-                },
-                "experiment": {
-                    "type": "string"
-                },
                 "date": {
                     "type": "date",
                     "format": "yyyy||yyyy-MM||yyyy-MM-dd"
+                },
+                "publication_info": {
+                    "type": "object",
+                    "properties": {
+                        "journal_volume": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        },
+                        "year": {
+                            "type": "date",
+                            "format": "yyyy"
+                        }
+                    }
                 }
             }
         }
