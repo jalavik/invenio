@@ -95,6 +95,42 @@ SEARCH_RECORD_MAPPING = {
                     "type": "string",
                     "index": "not_analyzed"
                 },
+                "hidden_note": {
+                    "type": "object",
+                    "properties": {
+                        "cds": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "accelerator_experiment": {
+                    "type": "object",
+                    "properties": {
+                        "experiment": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "report_number": {
+                    "type": "object",
+                    "properties": {
+                        "primary": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "collaboration": {
+                    "type": "object",
+                    "properties": {
+                        "collaboration": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
                 "collections": {
                     "properties": {
                         "primary": {
@@ -123,6 +159,9 @@ SEARCH_RECORD_MAPPING = {
                             "type": "string",
                             "copy_to": ["exactauthor"],
                             "analyzer": "natural_text"
+                        },
+                        "affiliation": {
+                            "type": "string",
                         }
                     }
                 },
