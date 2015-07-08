@@ -243,7 +243,7 @@ def search(collection, p, of, ot, so, sf, sp, rm, rg, jrec):
         'from': jrec-1,
         'aggs': {
             "collection": {"terms": {"field": "_collections"}},
-            "author": {"terms": {"field": "authors.raw"}},
+            "author": {"terms": {"field": "exactauthor.raw"}},
         },
     })
 

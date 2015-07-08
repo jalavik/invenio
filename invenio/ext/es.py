@@ -126,46 +126,11 @@ SEARCH_RECORD_MAPPING = {
                         }
                     }
                 },
-                "abstract": {
-                    "type": "string",
-                    "analyzer": "natural_text"
-                },
-                "title": {
-                    "type": "string",
-                    "analyzer": "natural_text"
-                },
-                "title_statement": {
-                    "type": "object",
-                    "properties": {
-                        "title": {
-                            "type": "string", "copy_to": ["title", "global_fulltext"],
-                            "analyzer": "natural_text"
-                        }
-                    }
-                },
                 "division": {
                     "type": "string"
                 },
                 "experiment": {
                     "type": "string"
-                },
-                "varying_form_of_title": {
-                    "type": "object",
-                    "properties": {
-                        "title_proper_short_title": {
-                            "type": "string", "copy_to": ["title", "global_fulltext"],
-                            "analyzer": "natural_text"
-                        }
-                    }
-                },
-                "summary_": {
-                    "type": "object",
-                    "properties": {
-                        "summary_": {
-                            "type": "string", "copy_to": ["abstract", "global_fulltext"],
-                            "analyzer": "natural_text"
-                        }
-                    }
                 },
                 "date": {
                     "type": "date",
