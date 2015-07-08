@@ -37,12 +37,16 @@ SEARCH_RECORD_MAPPING = {
                     "type": "asciifolding",
                     "preserve_original": True
                 },
-
                 "synonyms_kbr": {
                     "type": "synonym",
                     "synonyms": [
                         "production => creation"
                     ]
+                },
+                "autocomplete_filter": {
+                    "type":     "edge_ngram",
+                    "min_gram": 1,
+                    "max_gram": 20
                 }
             },
             "analyzer": {
@@ -61,6 +65,14 @@ SEARCH_RECORD_MAPPING = {
                     "filter": [
                         "asciifold_with_orig",
                         "lowercase"
+                    ]
+                },
+                "autocomplete": {
+                    "type":      "custom",
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase",
+                        "autocomplete_filter"
                     ]
                 }
             }
@@ -152,6 +164,16 @@ SEARCH_RECORD_MAPPING = {
                         }
                     }
                 },
+                "affautocomplete": {
+                    "type": "string",
+                    "fields": {
+                        "affiliation": {
+                            "type": "string",
+                            "index_analyzer":  "autocomplete",
+                            "search_analyzer": "standard"
+                        }
+                    }
+                },
                 "authors": {
                     "type": "object",
                     "properties": {
@@ -162,6 +184,16 @@ SEARCH_RECORD_MAPPING = {
                         },
                         "affiliation": {
                             "type": "string",
+                        }
+                    }
+                },
+                "institution": {
+                    "type": "object",
+                    "properties": {
+                        "affiliation": {
+                            "type": "string",
+                            "copy_to": ["affautocomplete"],
+                            "analyzer": "natural_text"
                         }
                     }
                 },
