@@ -40,6 +40,7 @@ def acc_authorize_action(req, name_action, authorized_if_no_roles=False, batch_a
     """
     from invenio.ext.login import UserInfo
     from werkzeug.local import LocalProxy
+
     if isinstance(req, LocalProxy):
         req = req._get_current_object()
     if isinstance(req, UserInfo):
